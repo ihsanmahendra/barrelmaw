@@ -1,0 +1,32 @@
+[
+ {
+  "asset_id": "7bf03b7a-64a0-48ec-94b8-4b35fd6e695f",
+  "sha12": "55fc750a63db",
+  "label": "pirate with cannon"
+ },
+ {
+  "asset_id": "fed54fb6-f743-4b4e-bf61-ba6fb7c048e4",
+  "sha12": "884d1191c4bf",
+  "label": "barrel and cannonball sheet"
+ },
+ {
+  "asset_id": "dc93af63-2366-43e8-b156-e2632ffefd35",
+  "sha12": "8e402eac57e5",
+  "label": "beach background"
+ },
+ {
+  "asset_id": "cf9736b2-f300-4f4f-9ea1-3e8fcae1fa94",
+  "sha12": "7d7f7d4d7488",
+  "label": "UI sheet: plank, parchment, star, ribbon"
+ },
+ {
+  "asset_id": "480c5bbd-e785-437e-a40e-0ac591a86a70",
+  "sha12": "4e71cd1b3649",
+  "label": "card frame and name plate on magenta (keyed out by script)"
+ },
+ {
+  "asset_id": "f923b239-290a-4610-a8be-ca786164d5e2",
+  "sha12": "85ac02d82c64",
+  "label": "map islands: palm, dock, chest, skull (magenta keyed out by script)"
+ }
+]

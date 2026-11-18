@@ -1,0 +1,9 @@
+# Godot
+.godot/
+*.import
+# Web export output
+prototype/build/
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,451 @@
+{
+ "hand_size": 3,
+ "cards": [
+  {
+   "id": "power_shot",
+   "name": "Power Shot",
+   "rarity": "common",
+   "desc": "+2 hits for the next cannonball",
+   "effects": [
+    {
+     "kind": "ammo",
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "heavy_round",
+   "name": "Heavy Round",
+   "rarity": "common",
+   "desc": "+3 hits for the next cannonball",
+   "effects": [
+    {
+     "kind": "ammo",
+     "n": 3
+    }
+   ]
+  },
+  {
+   "id": "row_strike",
+   "name": "Row Strike",
+   "rarity": "common",
+   "desc": "Each hit clears a whole row (same color)",
+   "effects": [
+    {
+     "kind": "shape",
+     "shape": "row"
+    }
+   ]
+  },
+  {
+   "id": "column_strike",
+   "name": "Column Strike",
+   "rarity": "common",
+   "desc": "Each hit clears a whole column (same color)",
+   "effects": [
+    {
+     "kind": "shape",
+     "shape": "col"
+    }
+   ]
+  },
+  {
+   "id": "wildcard",
+   "name": "Wildcard",
+   "rarity": "common",
+   "desc": "Next cannonball can hit any color",
+   "effects": [
+    {
+     "kind": "wild"
+    }
+   ]
+  },
+  {
+   "id": "skip",
+   "name": "Skip",
+   "rarity": "common",
+   "desc": "Move the first cannonball to the back",
+   "effects": [
+    {
+     "kind": "skip"
+    }
+   ]
+  },
+  {
+   "id": "scatter",
+   "name": "Scatter",
+   "rarity": "common",
+   "desc": "Remove 3 random barrels",
+   "effects": [
+    {
+     "kind": "clear_random",
+     "n": 3
+    }
+   ]
+  },
+  {
+   "id": "pick_off",
+   "name": "Pick Off",
+   "rarity": "common",
+   "desc": "Remove 2 random barrels",
+   "effects": [
+    {
+     "kind": "clear_random",
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "quick_draw",
+   "name": "Quick Draw",
+   "rarity": "common",
+   "desc": "Draw 1 more card",
+   "effects": [
+    {
+     "kind": "draw",
+     "n": 1
+    }
+   ]
+  },
+  {
+   "id": "focus",
+   "name": "Focus",
+   "rarity": "common",
+   "desc": "First cannonball changes to the most common color",
+   "effects": [
+    {
+     "kind": "recolor_next"
+    }
+   ]
+  },
+  {
+   "id": "reload",
+   "name": "Reload",
+   "rarity": "common",
+   "desc": "Add a new 3-hit cannonball to the front",
+   "effects": [
+    {
+     "kind": "add_shooter",
+     "n": 3
+    }
+   ]
+  },
+  {
+   "id": "rapid_fire",
+   "name": "Rapid Fire",
+   "rarity": "common",
+   "desc": "Double the hits of the next cannonball",
+   "effects": [
+    {
+     "kind": "double"
+    }
+   ]
+  },
+  {
+   "id": "tidy_up",
+   "name": "Tidy Up",
+   "rarity": "common",
+   "desc": "Remove 1 barrel and +1 hit",
+   "effects": [
+    {
+     "kind": "clear_random",
+     "n": 1
+    },
+    {
+     "kind": "ammo",
+     "n": 1
+    }
+   ]
+  },
+  {
+   "id": "sniper",
+   "name": "Sniper",
+   "rarity": "common",
+   "desc": "+1 hit and draw 1 card",
+   "effects": [
+    {
+     "kind": "ammo",
+     "n": 1
+    },
+    {
+     "kind": "draw",
+     "n": 1
+    }
+   ]
+  },
+  {
+   "id": "cross_strike",
+   "name": "Cross Strike",
+   "rarity": "rare",
+   "desc": "Each hit clears its row and column",
+   "effects": [
+    {
+     "kind": "shape",
+     "shape": "cross"
+    }
+   ]
+  },
+  {
+   "id": "diagonal",
+   "name": "Diagonal",
+   "rarity": "rare",
+   "desc": "Each hit clears both diagonals",
+   "effects": [
+    {
+     "kind": "shape",
+     "shape": "diag"
+    }
+   ]
+  },
+  {
+   "id": "color_bomb",
+   "name": "Color Bomb",
+   "rarity": "rare",
+   "desc": "Remove 5 barrels of the biggest color",
+   "effects": [
+    {
+     "kind": "clear_color",
+     "n": 5
+    }
+   ]
+  },
+  {
+   "id": "clone",
+   "name": "Clone",
+   "rarity": "rare",
+   "desc": "Copy the first cannonball",
+   "effects": [
+    {
+     "kind": "dup"
+    }
+   ]
+  },
+  {
+   "id": "overclock",
+   "name": "Overclock",
+   "rarity": "rare",
+   "desc": "+4 hits and draw 1 card",
+   "effects": [
+    {
+     "kind": "ammo",
+     "n": 4
+    },
+    {
+     "kind": "draw",
+     "n": 1
+    }
+   ]
+  },
+  {
+   "id": "second_wind",
+   "name": "Second Wind",
+   "rarity": "rare",
+   "desc": "Play one more card this turn",
+   "effects": [
+    {
+     "kind": "extra_play",
+     "n": 1
+    }
+   ]
+  },
+  {
+   "id": "wild_row",
+   "name": "Wild Row",
+   "rarity": "rare",
+   "desc": "Any color; each hit clears a row",
+   "effects": [
+    {
+     "kind": "wild"
+    },
+    {
+     "kind": "shape",
+     "shape": "row"
+    }
+   ]
+  },
+  {
+   "id": "wild_column",
+   "name": "Wild Column",
+   "rarity": "rare",
+   "desc": "Any color; each hit clears a column",
+   "effects": [
+    {
+     "kind": "wild"
+    },
+    {
+     "kind": "shape",
+     "shape": "col"
+    }
+   ]
+  },
+  {
+   "id": "arsenal",
+   "name": "Arsenal",
+   "rarity": "rare",
+   "desc": "Add a new 5-hit cannonball to the front",
+   "effects": [
+    {
+     "kind": "add_shooter",
+     "n": 5
+    }
+   ]
+  },
+  {
+   "id": "triple_draw",
+   "name": "Triple Draw",
+   "rarity": "rare",
+   "desc": "Draw 2 more cards",
+   "effects": [
+    {
+     "kind": "draw",
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "echo",
+   "name": "Echo",
+   "rarity": "rare",
+   "desc": "Double hits; each hit clears a row",
+   "effects": [
+    {
+     "kind": "double"
+    },
+    {
+     "kind": "shape",
+     "shape": "row"
+    }
+   ]
+  },
+  {
+   "id": "blast",
+   "name": "Blast",
+   "rarity": "epic",
+   "desc": "Each hit clears a 3x3 area",
+   "effects": [
+    {
+     "kind": "shape",
+     "shape": "blast"
+    }
+   ]
+  },
+  {
+   "id": "wild_cross",
+   "name": "Wild Cross",
+   "rarity": "epic",
+   "desc": "Any color; each hit clears row and column",
+   "effects": [
+    {
+     "kind": "wild"
+    },
+    {
+     "kind": "shape",
+     "shape": "cross"
+    }
+   ]
+  },
+  {
+   "id": "color_storm",
+   "name": "Color Storm",
+   "rarity": "epic",
+   "desc": "Remove 8 barrels of the biggest color",
+   "effects": [
+    {
+     "kind": "clear_color",
+     "n": 8
+    }
+   ]
+  },
+  {
+   "id": "pierce_blast",
+   "name": "Heavy Blast",
+   "rarity": "epic",
+   "desc": "+2 hits; each hit clears a 3x3 area",
+   "effects": [
+    {
+     "kind": "shape",
+     "shape": "blast"
+    },
+    {
+     "kind": "ammo",
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "double_blast",
+   "name": "Double Blast",
+   "rarity": "epic",
+   "desc": "Double hits; each hit clears 3x3",
+   "effects": [
+    {
+     "kind": "double"
+    },
+    {
+     "kind": "shape",
+     "shape": "blast"
+    }
+   ]
+  },
+  {
+   "id": "roulette",
+   "name": "Roulette",
+   "rarity": "epic",
+   "desc": "A random strong effect",
+   "effects": [
+    {
+     "kind": "chaos"
+    }
+   ]
+  },
+  {
+   "id": "prism",
+   "name": "Prism",
+   "rarity": "legendary",
+   "desc": "Any color, 3x3 clear, +3 hits",
+   "effects": [
+    {
+     "kind": "wild"
+    },
+    {
+     "kind": "shape",
+     "shape": "blast"
+    },
+    {
+     "kind": "ammo",
+     "n": 3
+    }
+   ]
+  },
+  {
+   "id": "pixel_rain",
+   "name": "Pixel Rain",
+   "rarity": "legendary",
+   "desc": "Remove 10 random barrels",
+   "effects": [
+    {
+     "kind": "clear_random",
+     "n": 10
+    }
+   ]
+  }
+ ],
+ "rarity_weights": {
+  "common": 70,
+  "rare": 22,
+  "epic": 7,
+  "legendary": 1
+ },
+ "starter_deck": [
+  "power_shot",
+  "power_shot",
+  "row_strike",
+  "column_strike",
+  "wildcard",
+  "skip",
+  "scatter",
+  "quick_draw",
+  "focus",
+  "reload"
+ ]
+}

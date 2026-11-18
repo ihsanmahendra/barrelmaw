@@ -1,0 +1,1749 @@
+{
+ "palette": {
+  "R": "ef476f",
+  "O": "f78c4a",
+  "Y": "ffd166",
+  "G": "06d6a0",
+  "B": "4cc9f0",
+  "P": "9b5de5",
+  "K": "3d405b",
+  "W": "f8f9fa",
+  "N": "a47148",
+  "S": "ff9ecb"
+ },
+ "pictures": [
+  {
+   "name": "Heart",
+   "tier": 0,
+   "rows": [
+    "........",
+    ".RR..RR.",
+    "RSSRRRRR",
+    "RSRRRRRR",
+    "RRRRRRRR",
+    ".RRRRRR.",
+    "..RRRR..",
+    "...RR..."
+   ]
+  },
+  {
+   "name": "Cutlass",
+   "tier": 0,
+   "rows": [
+    "........WW.",
+    ".......WWW.",
+    "......WWW..",
+    ".....WWW...",
+    "....WWW....",
+    "...WWW.....",
+    "..YWW......",
+    ".YYY.......",
+    "..YN.......",
+    ".NN........",
+    "NY........."
+   ]
+  },
+  {
+   "name": "Starfish",
+   "tier": 0,
+   "rows": [
+    "....O....",
+    "....O....",
+    "...OOO...",
+    "OOOOYOOOO",
+    ".OOYYYOO.",
+    "..OOYOO..",
+    ".OOO.OOO.",
+    ".OO...OO.",
+    "OO.....OO"
+   ]
+  },
+  {
+   "name": "Mushroom",
+   "tier": 0,
+   "rows": [
+    "..RRRR..",
+    ".RWWRRR.",
+    "RRWWRWRR",
+    "RRRRRWRR",
+    ".RRRRRR.",
+    "...NN...",
+    "..NNNN..",
+    "..NNNN.."
+   ]
+  },
+  {
+   "name": "Tree",
+   "tier": 1,
+   "rows": [
+    "....G....",
+    "...GGG...",
+    "..GGGGG..",
+    ".GGRGGGG.",
+    "GGGGGGRGG",
+    ".GGGGGGG.",
+    "..GGRGG..",
+    "....N....",
+    "....N....",
+    "...NNN..."
+   ]
+  },
+  {
+   "name": "Cherry",
+   "tier": 1,
+   "rows": [
+    "......GG..",
+    ".....G.GG.",
+    "....G...G.",
+    "...G....G.",
+    "..G.....G.",
+    ".RRR...RRR",
+    "RRWRR.RRWR",
+    "RRRRR.RRRR",
+    "RRRRR.RRRR",
+    ".RRR...RRR"
+   ]
+  },
+  {
+   "name": "Crab",
+   "tier": 0,
+   "rows": [
+    "RR.......RR",
+    "R.R.....R.R",
+    "R.RRRRRRR.R",
+    "..RWKRWKR..",
+    "..RRRRRRR..",
+    ".RRRRRRRRR.",
+    "R.R.R.R.R.R"
+   ]
+  },
+  {
+   "name": "Anchor",
+   "tier": 0,
+   "rows": [
+    "....K....",
+    "...KKK...",
+    "....K....",
+    ".KKKKKKK.",
+    "....K....",
+    "....K....",
+    "K...K...K",
+    "KK..K..KK",
+    ".KK.K.KK.",
+    "..KKKKK..",
+    "...KKK...",
+    "BBBBBBBBB",
+    "BBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Fish",
+   "tier": 0,
+   "rows": [
+    "..........",
+    "...BBB..B.",
+    ".BBBBBBBBB",
+    "BBWKBBBBBB",
+    "BBBBBBBBBB",
+    ".BBYYYBBB.",
+    "...BBB..B.",
+    ".........."
+   ]
+  },
+  {
+   "name": "Parrot",
+   "tier": 0,
+   "rows": [
+    "...RRR...",
+    "..RRRRR..",
+    "..RKRRYY.",
+    "..RRRRY..",
+    "..RRRR...",
+    ".BBRRRR..",
+    "BBBBRRR..",
+    "BBBBRRR..",
+    ".BBBRR...",
+    "...GGG...",
+    "...GGG..."
+   ]
+  },
+  {
+   "name": "Cat",
+   "tier": 1,
+   "rows": [
+    "O........O",
+    "OO......OO",
+    "OOOOOOOOOO",
+    "OOOOOOOOOO",
+    "OWKOOOOKWO",
+    "OOOOSSOOOO",
+    "OOOOOOOOOO",
+    ".OOWOOWOO.",
+    "..OOOOOO.."
+   ]
+  },
+  {
+   "name": "House",
+   "tier": 0,
+   "rows": [
+    "....RR....",
+    "...RRRR...",
+    "..RRRRRR..",
+    ".RRRRRRRR.",
+    "RRRRRRRRRR",
+    ".NNNNNNNN.",
+    ".NYYNNYYN.",
+    ".NYYNNYYN.",
+    ".NNNNBBNN.",
+    ".NNNNBBNN."
+   ]
+  },
+  {
+   "name": "Ghost",
+   "tier": 0,
+   "rows": [
+    "..WWWWW..",
+    ".WWWWWWW.",
+    "WWWWWWWWW",
+    "WWKKWKKWW",
+    "WWKKWKKWW",
+    "WWWWWWWWW",
+    "WWWPPPWWW",
+    "WWWWWWWWW",
+    "WWWWWWWWW",
+    "WW.WW.WW."
+   ]
+  },
+  {
+   "name": "Skull",
+   "tier": 0,
+   "rows": [
+    "..RRRRRR..",
+    ".RRRRRRRR.",
+    "WWWWWWWWWW",
+    "WWKKWWKKWW",
+    "WWKKWWKKWW",
+    "WWWWKKWWWW",
+    ".WWWKKWWW.",
+    "..WWWWWW..",
+    "..WKWKWKW.",
+    "..WWWWWW.."
+   ]
+  },
+  {
+   "name": "Smiley",
+   "tier": 0,
+   "rows": [
+    "...YYYY...",
+    "..YYYYYY..",
+    ".YYYYYYYY.",
+    "YYKKYYKKYY",
+    "YYKKYYKKYY",
+    "YOYYYYYYOY",
+    "YKYYYYYYKY",
+    "YYKKKKKKYY",
+    ".YYYYYYYY.",
+    "..YYYYYY.."
+   ]
+  },
+  {
+   "name": "Octopus",
+   "tier": 0,
+   "rows": [
+    "..PPPPPPP..",
+    ".PPPPPPPPP.",
+    "PPWKPPPWKPP",
+    "PPPPPPPPPPP",
+    "PPPPPPPPPPP",
+    ".PPPPPPPPP.",
+    "P.P.P.P.P.P",
+    "P.P.P.P.P.P",
+    "PP.PP.PP.PP",
+    ".P..P..P..P"
+   ]
+  },
+  {
+   "name": "Island",
+   "tier": 0,
+   "rows": [
+    "..GGG.GGG..",
+    ".GGGGGGGGG.",
+    "GGGGGNGGGGG",
+    "..GGGNGGG..",
+    ".....N.....",
+    ".....N.....",
+    "....NN.....",
+    "YYYYNNYYYYY",
+    "YYYYYYYYYYY",
+    "BBBBBBBBBBB",
+    "BBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Chest",
+   "tier": 0,
+   "rows": [
+    "..NNNNNNN..",
+    ".NNNNNNNNN.",
+    "NNNNNNNNNNN",
+    "KKKKKYKKKKK",
+    "NNNNNYNNNNN",
+    "NNNNNNNNNNN",
+    "KKKKKKKKKKK",
+    "NNYYNNNYYNN",
+    "NNNNNNNNNNN",
+    "KKKKKKKKKKK"
+   ]
+  },
+  {
+   "name": "Ship",
+   "tier": 0,
+   "rows": [
+    ".....KR.....",
+    ".....KRR....",
+    "....WKWWW...",
+    "...WWKWWWW..",
+    "..WWWKWWWWW.",
+    "..WWWKWWWWW.",
+    ".WWWWKWWWWWW",
+    ".....K......",
+    "NNNNNNNNNNNN",
+    ".NNNNNNNNNN.",
+    "BBBBBBBBBBBB",
+    "BBBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Crown",
+   "tier": 2,
+   "rows": [
+    "Y....YY....Y",
+    "YY..YYYY..YY",
+    "YYY.YYYY.YYY",
+    "YYYYYYYYYYYY",
+    "YYYYYYYYYYYY",
+    "YYRYYBBYYRYY",
+    "YYYYYYYYYYYY",
+    "YPPYYYYYYPPY",
+    "YYYYYYYYYYYY",
+    "WWWWWWWWWWWW"
+   ]
+  },
+  {
+   "name": "Moon",
+   "tier": 0,
+   "rows": [
+    "...........",
+    "....WW.....",
+    "..WWW...Y..",
+    "..WW.......",
+    ".WWW.......",
+    ".WWW.......",
+    ".WWW.......",
+    ".WWW.....Y.",
+    ".WWWW......",
+    "..WWWW.....",
+    "..WWWWWWY..",
+    "....WWW...."
+   ]
+  },
+  {
+   "name": "Key",
+   "tier": 0,
+   "rows": [
+    ".............",
+    ".YYYYY.......",
+    "YYYYYYY......",
+    "YY...YYYYYYYY",
+    "YY...YOOOOOOO",
+    "YYYYYYY.Y.Y.Y",
+    ".YYYYY..Y.Y.Y",
+    "............Y"
+   ]
+  },
+  {
+   "name": "Sun",
+   "tier": 0,
+   "rows": [
+    ".....O.....",
+    ".O...O...O.",
+    "..O.YYY.O..",
+    "...YYYYY...",
+    "..YYKYKYY..",
+    "OOYYYYYYYOO",
+    "..YYOYOYY..",
+    "...YYOYY...",
+    "..O.YYY.O..",
+    ".O...O...O.",
+    ".....O....."
+   ]
+  },
+  {
+   "name": "Lighthouse",
+   "tier": 0,
+   "rows": [
+    "....K....",
+    "..KKKKK..",
+    "...YYY...",
+    "...YYY...",
+    "....W....",
+    "...WWW...",
+    "...RRR...",
+    "...RRR...",
+    "...WWW...",
+    "..RRRRR..",
+    "..RRRRR..",
+    "...WWW...",
+    "..RRRRR..",
+    ".KKKKKKK."
+   ]
+  },
+  {
+   "name": "Coins",
+   "tier": 0,
+   "rows": [
+    ".....YYY....",
+    "....YOOOY...",
+    "....YYYYY...",
+    "...OOYYYOY..",
+    "...YYYYYYY..",
+    "..YWYYWYYWY.",
+    ".YOOYOOYOOOY",
+    "..YYYYYYYYY.",
+    "............"
+   ]
+  },
+  {
+   "name": "Seahorse",
+   "tier": 0,
+   "rows": [
+    "...O.O...",
+    "...OOO...",
+    "..OKOOOOO",
+    "..OOOOOOO",
+    "..OOOOO..",
+    "..YYYYO..",
+    ".OYYYYO..",
+    ".OYYYY...",
+    "..YYYY...",
+    "...OOO...",
+    "...OOO...",
+    "..YYY....",
+    "..YYO...."
+   ]
+  },
+  {
+   "name": "Shell",
+   "tier": 0,
+   "rows": [
+    "...........",
+    ".....W.....",
+    "....SWS....",
+    "...SWWWS...",
+    "...SWWWS...",
+    "..SSWWWSS..",
+    ".SSSWWWSSS.",
+    "SSSWSWSWSSS",
+    ".SSWSWSWSS.",
+    "..OOOOOOO.."
+   ]
+  },
+  {
+   "name": "Crossbones",
+   "tier": 0,
+   "rows": [
+    ".............",
+    ".............",
+    "....WWWWW....",
+    ".N.WWWWWWW.N.",
+    "..NWKKWKKWN..",
+    "...WKKWKKW...",
+    "...WWWKWWW...",
+    "....WWWWW....",
+    "....WKWKW....",
+    "...NWWWWWN...",
+    "..N.......N..",
+    ".N.........N."
+   ]
+  },
+  {
+   "name": "Gem",
+   "tier": 0,
+   "rows": [
+    "..WWWPPP...",
+    "..WWWBPPP..",
+    ".WWWBBBPPP.",
+    "BBBBBBBPBBB",
+    ".BBBBBPPBB.",
+    "..BBBBPBB..",
+    "...BBBPB...",
+    "....BPP....",
+    ".....P.....",
+    "..........."
+   ]
+  },
+  {
+   "name": "Bottle",
+   "tier": 0,
+   "rows": [
+    "..NNN..",
+    "..NNN..",
+    "..GGG..",
+    "..GGG..",
+    "..GGG..",
+    "..GGG..",
+    ".WGGGG.",
+    "GGGGGG.",
+    "GWWWWW.",
+    "GWWYWW.",
+    "GWWWWW.",
+    "GGGGGG.",
+    "......."
+   ]
+  },
+  {
+   "name": "Dolphin",
+   "tier": 0,
+   "rows": [
+    "..............",
+    ".......B......",
+    "......B.......",
+    "..BBBBBBBBB.B.",
+    "BBKBBBBBBBBBB.",
+    "BBBBBBBBBBBBB.",
+    "BBWWWWWWWWBB..",
+    "..BBBBBBBBB...",
+    "......B.......",
+    ".............."
+   ]
+  },
+  {
+   "name": "Pirate Hat",
+   "tier": 0,
+   "rows": [
+    ".............",
+    "...KKKKKK....",
+    "...KWKWKWK...",
+    "..KKKKWKKKK..",
+    "..KKKWWWKKK..",
+    ".KKKKKWKKKKK.",
+    "KYYYYYYYYYYYK",
+    "..KKKKKKKKK..",
+    "............."
+   ]
+  },
+  {
+   "name": "Palm Island",
+   "tier": 0,
+   "rows": [
+    ".........G...",
+    "....G...G....",
+    ".....GGG.....",
+    "......G....G.",
+    "..GGGGGGGGG..",
+    "......N......",
+    "......NN.....",
+    "......NN.....",
+    "......NN.....",
+    "......NN.....",
+    "..YYYYYYYYY..",
+    ".YYYYYYYYYYY.",
+    "BBBBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Telescope",
+   "tier": 0,
+   "rows": [
+    "..............",
+    "..........NNNB",
+    ".....NNNNYNNNB",
+    "KNNNYNNNNYNNNB",
+    "KNNNYNNNNYNNNB",
+    "KNNNYNNNNYNNNB",
+    "..NN......NNNB",
+    "..NN.........."
+   ]
+  },
+  {
+   "name": "Turtle",
+   "tier": 0,
+   "rows": [
+    "............",
+    "....GGGG....",
+    "..GGGGGGGG..",
+    "..GGYYYYGGGK",
+    "NGGGYYYYGGGG",
+    "..GGYYYYGGGG",
+    "..GGGGGGGG..",
+    ".NG.GGGGGN..",
+    ".NN.....NN.."
+   ]
+  },
+  {
+   "name": "Flag",
+   "tier": 0,
+   "rows": [
+    ".N..........",
+    ".NRRRRRRRRRR",
+    ".NRRRRRRRRR.",
+    ".NRRRKKRRR..",
+    ".NRRRWWRR...",
+    ".NRRRWWRRR..",
+    ".NRRRRRRRRR.",
+    ".N..........",
+    ".N..........",
+    ".N..........",
+    ".N..........",
+    "NNNN........"
+   ]
+  },
+  {
+   "name": "Ship Wheel",
+   "tier": 0,
+   "rows": [
+    "......N......",
+    "....NNNNN....",
+    "..NNN.N.NNN..",
+    "..NN..N..NN..",
+    ".NN.N.N.N.NN.",
+    ".N...YYY...N.",
+    "NNNNNYKYNNNNN",
+    ".N...YYY...N.",
+    ".NN.N.N.N.NN.",
+    "..NN..N..NN..",
+    "..NNN.N.NNN..",
+    "....NNNNN....",
+    "......N......"
+   ]
+  },
+  {
+   "name": "Sailboat",
+   "tier": 0,
+   "rows": [
+    "......N......",
+    "......RRRR...",
+    "......N......",
+    "....W.NW.....",
+    "...WW.NWW....",
+    "...WW.NWW....",
+    "..WWW.NWWW...",
+    ".WWWW.NWWWW..",
+    "......N......",
+    ".NNNNNNNNNNN.",
+    "..NNNNNNNNN..",
+    ".............",
+    "BBBBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Boot",
+   "tier": 0,
+   "rows": [
+    ".NNNNN...",
+    ".YYYYY...",
+    ".ONNNN...",
+    ".ONNNN...",
+    ".ONYNN...",
+    ".ONNNN...",
+    ".NNYNN...",
+    ".NNNNN...",
+    ".NNNNNNN.",
+    ".NNNNNNN.",
+    "KKKKKKKKK",
+    "KKKKKKKKK"
+   ]
+  },
+  {
+   "name": "Whale",
+   "tier": 0,
+   "rows": [
+    ".....WWW......",
+    "......W.......",
+    "...BBBBBBBB...",
+    "..BBBBBBBBBBBB",
+    ".BBKBBBBBBBBB.",
+    ".BBBBBBBBBBBB.",
+    ".BWWWWWWWWBBB.",
+    "..WWWWWWWWBB..",
+    "...BBBBBBBB..."
+   ]
+  },
+  {
+   "name": "Cannon",
+   "tier": 0,
+   "rows": [
+    "YR............",
+    "O.............",
+    ".KKNNKKKKKKKKK",
+    ".KKKNKKKKKKKKK",
+    ".KKKNKKKKKKKKK",
+    ".KKKNNNKKKKKKK",
+    "...NNYNN......",
+    "...NNYNN......",
+    "....NNN......."
+   ]
+  },
+  {
+   "name": "Jellyfish",
+   "tier": 0,
+   "rows": [
+    "...........",
+    "...PPPPP...",
+    ".PPWPPPPPP.",
+    ".PWPPPPPPP.",
+    "PPPKPPPKPPP",
+    "PPPPPPPPPPP",
+    ".SPSPSPSPS.",
+    ".S.SPSPS.S.",
+    ".S.S.S.S.S.",
+    ".S.S.S.S.S.",
+    ".S...S...S.",
+    ".S...S...S.",
+    "..........."
+   ]
+  },
+  {
+   "name": "Barrel",
+   "tier": 0,
+   "rows": [
+    "....NN....",
+    "..NNNNNN..",
+    ".KKKNNKKK.",
+    ".NNNNNNNN.",
+    "ONNNNNNNNN",
+    "ONNNOONNNN",
+    "ONNNNNNNNN",
+    "ONNNNNNNNN",
+    ".NNNNNNNN.",
+    ".KKKNNKKK.",
+    "..NNNNNN..",
+    "....NN...."
+   ]
+  },
+  {
+   "name": "Bomb",
+   "tier": 0,
+   "rows": [
+    ".......Y...",
+    "....NNO.O..",
+    "....KKK....",
+    "...KKKKK...",
+    "..KKWKKKK..",
+    ".KKWKKKKKK.",
+    ".KKWKKKKKK.",
+    ".KKKKKKKKK.",
+    ".KKKKKKKKK.",
+    ".KKKKKKKKK.",
+    "..KKKKKKK..",
+    "...KKKKK..."
+   ]
+  },
+  {
+   "name": "Mug",
+   "tier": 0,
+   "rows": [
+    ".WWWWWWW...",
+    "WWWWWWWWW..",
+    ".WWWWWWW...",
+    ".YYYYYYY...",
+    ".YYYYYYYNN.",
+    ".YWYYYYN..N",
+    ".YWYYYYN..N",
+    ".YYYYYYN..N",
+    ".OOOOOOONN.",
+    ".OOOOOOO...",
+    ".OOOOOOO..."
+   ]
+  },
+  {
+   "name": "Apple",
+   "tier": 0,
+   "rows": [
+    "...........",
+    ".....N..G..",
+    ".....GGGG..",
+    "..RRRNRRRR.",
+    ".RRWRRRRRRR",
+    ".RWRRRRRRRR",
+    "RRWRRRRRRRR",
+    "RRRRRRRRRRR",
+    ".RRRRRRRRRR",
+    ".RRRRRRRRRR",
+    "..RRRRRRRR.",
+    "...RR..RR.."
+   ]
+  },
+  {
+   "name": "Compass",
+   "tier": 0,
+   "rows": [
+    ".....Y......",
+    "...KKKKKK...",
+    "..KWWRWWWK..",
+    ".KWWWRWWWWK.",
+    ".KWWWRRWWWK.",
+    "YKWWWYYWWWKY",
+    ".KWKKKKWWWK.",
+    ".KWWKKWWWWK.",
+    ".KWWKKWWWWK.",
+    "..KWWKWWWK..",
+    "...KKKKKK...",
+    ".....Y......"
+   ]
+  },
+  {
+   "name": "Treasure Map",
+   "tier": 0,
+   "rows": [
+    "NNNNNNNNNNNN",
+    "NYYYYYYYRYYN",
+    "NYYYYYYRNRYN",
+    "NYYYYYNNRYYN",
+    "NYYYNNYYYRYN",
+    "NYYNYYYYYYYN",
+    "NBBBBYYYYYYN",
+    "NBBBBYYYYYYN",
+    "NBBBBYYYYYYN",
+    "NNNNNNNNNNNN"
+   ]
+  },
+  {
+   "name": "Kraken",
+   "tier": 0,
+   "rows": [
+    "..............",
+    "....PPPPPP....",
+    "..PPPPPPPPPP..",
+    "..PPWWPPWWPP..",
+    ".PPWKWWWKWWPP.",
+    ".PPPWWPPWWPPP.",
+    "..PPPPPPPPPP..",
+    "..PPPKKKKPPP..",
+    ".P.PPPPPPP.P..",
+    ".P.P..P..P.P..",
+    ".PSP..P..P.P..",
+    "PPPS.PS.PSPPP.",
+    ".P.P..P..PSP..",
+    "PPPP.P..PPPPP."
+   ]
+  },
+  {
+   "name": "Hoard",
+   "tier": 0,
+   "rows": [
+    "..............",
+    "..KKKKKKKKKK..",
+    "..KKKKKKKKKK..",
+    ".KNNNNNNNNNNK.",
+    ".KNNNNYYNNNNK.",
+    ".KKKKKYYKKKKK.",
+    ".KNNNNYYNNNNK.",
+    ".KNNNNNNNNNNK.",
+    "..ORYYYYYYRO..",
+    ".YYYYYYRYYYYY.",
+    ".YYYOYYYYOYYY.",
+    ".YYYYYYYYYYYY.",
+    "..YYYYYYYYYY..",
+    ".....YYYY....."
+   ]
+  },
+  {
+   "name": "Night Star",
+   "tier": 0,
+   "rows": [
+    "...........",
+    ".....Y.....",
+    ".....Y.....",
+    "....YYY....",
+    ".YYYOYYYYY.",
+    "..YYYWYYY..",
+    "...YYYYY...",
+    "...YYYYY...",
+    "...YY.YY...",
+    "...........",
+    "..........."
+   ]
+  },
+  {
+   "name": "Bone Key",
+   "tier": 0,
+   "rows": [
+    ".............",
+    "..WWW........",
+    ".WWWWW.......",
+    "WWK..WWWWWWWW",
+    "WW...WWWWWWWW",
+    ".WWWWW...W.W.",
+    "..WWW....W.W.",
+    "...........W."
+   ]
+  },
+  {
+   "name": "Crescent",
+   "tier": 0,
+   "rows": [
+    "...........",
+    "....WWW....",
+    "..WWW...Y..",
+    "..WW.......",
+    ".WPW.......",
+    ".WWW.......",
+    ".WWW.......",
+    ".WWW.......",
+    ".WWWW....Y.",
+    "..WWWWW....",
+    "..WWWWWWY..",
+    "....WWW...."
+   ]
+  },
+  {
+   "name": "Ghost Anchor",
+   "tier": 0,
+   "rows": [
+    "....YYY....",
+    "....Y.Y....",
+    "....Y.Y....",
+    "....YKY....",
+    "...KKKKK...",
+    ".....Y.....",
+    ".....K.....",
+    "KK...K...KK",
+    "KW...Y....K",
+    ".KW..K..KK.",
+    "..KW.K.KK..",
+    "...KWKKK...",
+    ".....K....."
+   ]
+  },
+  {
+   "name": "Bat",
+   "tier": 0,
+   "rows": [
+    "..............",
+    ".............P",
+    ".P...P..P...P.",
+    ".PPPPKKKKPPPP.",
+    ".PPPPKRRKPPPP.",
+    ".PPPPKKKKPPPP.",
+    "...PPPKKPPP...",
+    "..............",
+    ".............."
+   ]
+  },
+  {
+   "name": "Candle",
+   "tier": 0,
+   "rows": [
+    ".........",
+    "...YYY...",
+    "...YOY...",
+    "...YYY...",
+    "....Y....",
+    "...SSS...",
+    "...SSS...",
+    "...WWW...",
+    "...SWW...",
+    "...WWW...",
+    "...WWW...",
+    "...WWW...",
+    ".NNNNNNN."
+   ]
+  },
+  {
+   "name": "Spider",
+   "tier": 0,
+   "rows": [
+    ".............",
+    ".............",
+    "..K..KKK..K..",
+    "...K.RKR.K...",
+    ".K..KKKKK..K.",
+    "..KKKKKKKKK..",
+    ".K..KKRKK..K.",
+    "..KKKKKKKKK..",
+    "..K.KKKKK.K..",
+    "...KKKKKKK...",
+    "....K.K.K...."
+   ]
+  },
+  {
+   "name": "Firefly",
+   "tier": 0,
+   "rows": [
+    "............",
+    "...WWWWWW...",
+    "..WWWWWWW...",
+    ".K..WWKK....",
+    "...RKKKYYYY.",
+    "..KKKKKYYWY.",
+    "...KKKKYYYY.",
+    ".....KKK....",
+    ".....K.K....",
+    "....K...K..."
+   ]
+  },
+  {
+   "name": "Dagger",
+   "tier": 0,
+   "rows": [
+    "..WW...",
+    "..WWW..",
+    "..WWW..",
+    "..WWW..",
+    "..WWW..",
+    "..WWW..",
+    "..WWW..",
+    "..WWW..",
+    "KKKRKKK",
+    "KKKKKKK",
+    "..NNN..",
+    "..NNN..",
+    "..NNN..",
+    "..YYY.."
+   ]
+  },
+  {
+   "name": "Kraken Eye",
+   "tier": 0,
+   "rows": [
+    "..............",
+    ".....PPPPP....",
+    "...PPPPPPPPP..",
+    "..PPPPYYYPPPP.",
+    "..PPPYYKYYPPP.",
+    ".PPPYYKKKYYPPP",
+    ".PPPYYKKKYYPPP",
+    ".PPPYYKKKYYPPP",
+    "..PPPYYKYYPPP.",
+    "..PPPPYYYPPPP.",
+    ".S.PSPPSPPSPS.",
+    ".S..SPPSPPS.S.",
+    "..SS....SS.S..",
+    "..SS....SS.S.."
+   ]
+  },
+  {
+   "name": "Moth",
+   "tier": 0,
+   "rows": [
+    "............S",
+    ".S...N.N...S.",
+    ".SSW..N..WSS.",
+    ".SSSS.N.SSSS.",
+    ".SSSSSNSSSSS.",
+    ".SSSSNNNSSSS.",
+    "...PPPNPP....",
+    "...PP.N.PP...",
+    "..P...N...P..",
+    "............."
+   ]
+  },
+  {
+   "name": "Squid",
+   "tier": 0,
+   "rows": [
+    "...........",
+    ".....P.....",
+    "....PPP....",
+    "...PPPPP...",
+    ".PPPPPPPPP.",
+    "PPPWPPPWPPP",
+    "..PPPPPPP..",
+    "..PPPPPPP..",
+    "..S.S.S.S..",
+    "..S.S.S.S..",
+    ".SS.SSS.SS.",
+    ".S...S...S.",
+    ".S...S...S."
+   ]
+  },
+  {
+   "name": "Coffin",
+   "tier": 0,
+   "rows": [
+    "...NNN...",
+    "...NNNN..",
+    "...NYNN..",
+    "..NNYNNN.",
+    ".NKYYYNKN",
+    "..KYYYNK.",
+    "..KNYNNK.",
+    "..KNYNNK.",
+    "..KKYNKK.",
+    "...KYNK..",
+    "...KNNK..",
+    "...KNNK..",
+    "...KNNK..",
+    "........."
+   ]
+  },
+  {
+   "name": "Shark Fin",
+   "tier": 0,
+   "rows": [
+    "..WW.........",
+    "..BWW........",
+    "..BBWW.......",
+    "..BBBB.......",
+    "..BBBB.......",
+    ".BBBBBB......",
+    ".BBBBBB......",
+    ".BBBBBBB.....",
+    ".BBBBBBBBBBBB",
+    "BBBBBBBBBBBBB",
+    "WWWWWWWWWWWWW"
+   ]
+  },
+  {
+   "name": "Peg Leg",
+   "tier": 0,
+   "rows": [
+    "..RRRRR..",
+    "..RYYRR..",
+    "..RYYRR..",
+    "..RYYRR..",
+    "..RRRRR..",
+    ".KKKKKKK.",
+    ".KKKKKKK.",
+    "...NNN...",
+    "...NNN...",
+    "...NNN...",
+    "...NNN...",
+    "...NNN...",
+    "...NNN...",
+    "..KKKKK.."
+   ]
+  },
+  {
+   "name": "Mermaid",
+   "tier": 0,
+   "rows": [
+    "...........",
+    "..OOOOO....",
+    "..OOOOO....",
+    ".OOSSS.....",
+    ".OOKSKS....",
+    ".OOSSS.....",
+    ".OOSSS.....",
+    ".OOSSS.....",
+    ".OGGGGG....",
+    "...GGGGG...",
+    "...GGGGG...",
+    "...GGGGG...",
+    "...GGGGG...",
+    "..........."
+   ]
+  },
+  {
+   "name": "Spyglass",
+   "tier": 0,
+   "rows": [
+    "..............",
+    ".........NNNNB",
+    "....NNNNYNNNNB",
+    "YYYKNNNNYNNNNB",
+    "YYYKNNNNYNNNNB",
+    "YYYKNNNNYNNNNB",
+    ".........NNNNB",
+    ".............."
+   ]
+  },
+  {
+   "name": "Sextant",
+   "tier": 0,
+   "rows": [
+    "......Y......",
+    "......Y......",
+    "......YY.....",
+    "...Y.YKY.....",
+    "...YYYKYY....",
+    "....YYKKY....",
+    "....YYKKYY...",
+    "...YYYKKKYY..",
+    "...YKYWKKKY..",
+    "..YYYYYYYYYY.",
+    "NNNNNNNNNNNNN"
+   ]
+  },
+  {
+   "name": "Narwhal",
+   "tier": 0,
+   "rows": [
+    "..............",
+    "..............",
+    "Y.............",
+    "YY....WBB.....",
+    ".Y.BBBBBBBBB.B",
+    "..YKBBBBBBBBBB",
+    "..BBBBBBBBBBBB",
+    "..BBWWWWWWBBBB",
+    "...BWWWWWWBB.B",
+    "......BBB....."
+   ]
+  },
+  {
+   "name": "Moon Dragon",
+   "tier": 0,
+   "rows": [
+    "..............",
+    ".......W......",
+    "....WWWWWWW...",
+    "...WWWWWWKWW..",
+    "..WWWWWWWWWWW.",
+    "..WWWWWWWWWYP.",
+    "..WWWWWWWWWPR.",
+    "..WWWPPPPPPPP.",
+    "..WWPPPPPPPPPP",
+    "..PPPPPPPPPPP.",
+    "...PPPPPPPPP..",
+    "..PPPPPPPPP...",
+    "..PPP........."
+   ]
+  },
+  {
+   "name": "Sea Serpent",
+   "tier": 0,
+   "rows": [
+    "..............",
+    "..............",
+    ".....GG.....GG",
+    "....GGG....GYG",
+    "....GGG....GGR",
+    "G...G..G...G..",
+    "G..G...G..G...",
+    "GGGG...GGGG...",
+    ".GGG....GGG...",
+    "WGGW..W.GW..W.",
+    "BBBBBBBBBBBBBB",
+    ".............."
+   ]
+  },
+  {
+   "name": "Rum",
+   "tier": 0,
+   "rows": [
+    "..NNN...",
+    "..NNN...",
+    "..GGG...",
+    "..GGG...",
+    "..GGG...",
+    "..GGGG..",
+    ".WGGGGG.",
+    "GGGGGGG.",
+    "GWWWWWW.",
+    "GWWRWWW.",
+    "GWWWRWW.",
+    "GWWWWWW.",
+    "GGGGGGG.",
+    "........"
+   ]
+  },
+  {
+   "name": "Toadstool",
+   "tier": 0,
+   "rows": [
+    "......W.....",
+    "...WPWWWP...",
+    ".PWWWPWPWPP.",
+    ".PPWPWPWWWP.",
+    "PPPPWWWPWPPP",
+    "PPPPPWPPPPPP",
+    ".PPPWWWWPPP.",
+    "...PWWWWP...",
+    "....WWWW....",
+    "....WWWW....",
+    "...WWWWWW..."
+   ]
+  },
+  {
+   "name": "Fox",
+   "tier": 0,
+   "rows": [
+    "............O",
+    ".K.........K.",
+    ".OO.......OO.",
+    ".OOOOOOOOOOO.",
+    ".OOOKOOOKOOO.",
+    ".OOOOOOOOOOO.",
+    ".OWWWWWWWWWO.",
+    "..OWWWWWWWO..",
+    "...OWWWWWO...",
+    "....OWKWO....",
+    ".....OKO....."
+   ]
+  },
+  {
+   "name": "Potion",
+   "tier": 0,
+   "rows": [
+    "....NN....",
+    "....NN....",
+    "...WWWW...",
+    "...WWWW...",
+    "...WWWW...",
+    "...WWWW...",
+    "..WWWWWW..",
+    ".WWWWWWWW.",
+    "WPPPPPPPW.",
+    "WPPSPPPPW.",
+    "WPPPPPSPW.",
+    "WWWWWWWWW.",
+    ".........."
+   ]
+  },
+  {
+   "name": "Raven",
+   "tier": 0,
+   "rows": [
+    ".............",
+    ".............",
+    "........KKKK.",
+    "...KKKKKKKWKK",
+    ".KKKKKKKKKKKY",
+    ".KKKKKKKKKKK.",
+    ".KKPPPPKKK...",
+    "KKKPPPPKKK...",
+    "...KKKKKK....",
+    ".....O.O.....",
+    ".....O.O....."
+   ]
+  },
+  {
+   "name": "Rowboat",
+   "tier": 0,
+   "rows": [
+    "...........NN.",
+    ".........NNN..",
+    ".......NNN....",
+    "NYYYYYNNYYYYYN",
+    ".NNNNNNNNNNNN.",
+    ".NNNNNNNNNNNN.",
+    "..NNNNNNNNNN..",
+    "..W...W...W...",
+    "BBBBBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Campfire",
+   "tier": 0,
+   "rows": [
+    ".............",
+    "......R......",
+    ".....RRR.....",
+    "....RRRRR....",
+    "...RRRORRR...",
+    "..RRROOORRR..",
+    "...ROOOOOR...",
+    "...RROYORR...",
+    "...RRYYYRR...",
+    "NNNNROYORNNNN",
+    "...NNNNNNN...",
+    "NNNN.....NNNN"
+   ]
+  },
+  {
+   "name": "Hedgehog",
+   "tier": 0,
+   "rows": [
+    "N.N.N.N.N....",
+    "N.N.N.N.N....",
+    "NNNNNNNNNN...",
+    ".NKNKNKNKNKK.",
+    ".NKNKNKNKNKK.",
+    "KKKKKKKKKKSKS",
+    ".KKKKKKKKKSS.",
+    ".KKKKKKKKKKK.",
+    "...SSKKSSK..."
+   ]
+  },
+  {
+   "name": "Night Isle",
+   "tier": 0,
+   "rows": [
+    "..........GW..",
+    "....G....GWWW.",
+    ".....G.GG.WWW.",
+    ".......G...W.G",
+    ".GGGGGNGGGGGG.",
+    "......NN......",
+    "......NN......",
+    "......NN......",
+    "...YYYNNYYYY..",
+    ".YYYYYNNYYYYYY",
+    "YYYYYYYYYYYYYY",
+    "BBBBBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Anglerfish",
+   "tier": 0,
+   "rows": [
+    "WYKKK.........",
+    "YY...K........",
+    ".....K........",
+    "....BBKBBBB...",
+    "...BBKBBBBBB.B",
+    "..BBBWBBBBBBBB",
+    "..BBBBBBBBBBBB",
+    "..WWBBBBBBBBBB",
+    "..WWWWWWBBBB..",
+    "....BBBBBBB..."
+   ]
+  },
+  {
+   "name": "Skull Lantern",
+   "tier": 0,
+   "rows": [
+    "....KKK....",
+    "...WWWWW...",
+    "..WWWWWWW..",
+    ".WWYWWWYWW.",
+    ".WYOYWYOYW.",
+    ".WYYYWYYYW.",
+    ".WWWWKWWWW.",
+    "..WWWWWWW..",
+    "..WWWWWWW..",
+    "..WKKKKKW..",
+    "..WWKWKWW..",
+    "..........."
+   ]
+  },
+  {
+   "name": "Pumpkin",
+   "tier": 0,
+   "rows": [
+    ".....GG.....",
+    ".....GG.....",
+    ".....GG.....",
+    "..OOOOOOOOO.",
+    ".OOOOOOOOOOO",
+    ".OOOOOOOOOOO",
+    ".OOOOOOOOOOO",
+    ".OOOOOOOOOOO",
+    ".OOKKKKKKOOO",
+    "..OOKOKKOOO.",
+    "...OOOOOOO.."
+   ]
+  },
+  {
+   "name": "Night Light",
+   "tier": 0,
+   "rows": [
+    "......KK.....",
+    "YY.KKKKKKKK.Y",
+    "YYY.YYYYYYYYY",
+    "YY..YYYYYY..Y",
+    "......WW.....",
+    ".....WWWW....",
+    ".....RRRR....",
+    ".....RRRR....",
+    ".....WWWW....",
+    ".....WWWW....",
+    "....RRRRRR...",
+    "....RRRRRR...",
+    ".....WWWW....",
+    "...KKKKKKKK.."
+   ]
+  },
+  {
+   "name": "Lantern",
+   "tier": 0,
+   "rows": [
+    "...KKK...",
+    "...KKK...",
+    "..KKKKK..",
+    ".KKKKKKK.",
+    ".KYYKYYK.",
+    ".KYYKYYK.",
+    ".KYOKOYK.",
+    ".KYOKOYK.",
+    ".KYOKOYK.",
+    ".KYOKOYK.",
+    ".KYYKYYK.",
+    ".KKKKKKK.",
+    ".KKKKKKK.",
+    ".KKKKKKK."
+   ]
+  },
+  {
+   "name": "Black Cat",
+   "tier": 0,
+   "rows": [
+    "............",
+    "...K.K.K....",
+    "...KKKKK....",
+    "..KKKKKKK...",
+    "..KYKKKYK...",
+    "...KKSKK...K",
+    "..KKKKKKK..K",
+    "..KKKKKKK..K",
+    "..KKKKKKK.KK",
+    "..KKKKKKKKKK",
+    "..KKKKKKKKKK",
+    "..KKKKKKKKK.",
+    "...KKKKKKK.."
+   ]
+  },
+  {
+   "name": "Owl",
+   "tier": 0,
+   "rows": [
+    ".......N...",
+    "...N...N...",
+    "..NNNNNNN..",
+    "..NYYNYYN..",
+    "..YYYYYYY..",
+    ".NYKYYYKYN.",
+    ".NYYYOYYYN.",
+    ".NNWWOWWNN.",
+    ".NNWWWWWNN.",
+    "..NWWWWWN..",
+    "..NNWWWNN..",
+    "...OONOO..."
+   ]
+  },
+  {
+   "name": "Bone Crown",
+   "tier": 0,
+   "rows": [
+    ".WWWWWWWWWWWW",
+    "..W..W..W..W.",
+    "..W..W..W..W.",
+    "..W..W..W..W.",
+    "..W..W..W..W.",
+    "WWWWWWWWWWWWW",
+    "WWWKWWRWWKWWW",
+    "WWWWWWWWWWWWW",
+    "WWWWWWWWWWWWW",
+    "KKKKKKKKKKKKK"
+   ]
+  },
+  {
+   "name": "Hourglass",
+   "tier": 0,
+   "rows": [
+    "NNNNNNNNN",
+    "NNNNNNNNN",
+    "NWWWWWWWN",
+    "N.YYYYY.N",
+    "N.WYYYW.N",
+    "N..WWW..N",
+    "N..WW...N",
+    "N..WWW..N",
+    "N..WYW..N",
+    "N.WWYWW.N",
+    "N.WWWWW.N",
+    "N.......N",
+    "NNNNNNNNN",
+    "NNNNNNNNN"
+   ]
+  },
+  {
+   "name": "Ghost Ship",
+   "tier": 0,
+   "rows": [
+    ".......W......",
+    ".......PPPP...",
+    ".......W......",
+    ".....W.WW.....",
+    "...KWW.WWK....",
+    "....KW.WWWK...",
+    "...WWW.WWWWW..",
+    "..WWWW.WWWWWW.",
+    ".......W......",
+    "PPPPPPPPPPPPPP",
+    ".PPPPYPPYPPPP.",
+    "..PPPPPPPPPP..",
+    "..............",
+    "BBBBBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Cobweb",
+   "tier": 0,
+   "rows": [
+    ".....WWW.....",
+    "...WWWWWWW...",
+    "..W..WWW..W..",
+    ".W.WWWWWWW.W.",
+    ".W.WWWWWWW.W.",
+    "WWWWWWWWWWWWW",
+    "WWWWWWSWWWWWW",
+    "WWWWWWWWWWWWW",
+    ".W.WWWWWWW.W.",
+    ".W.WWWWWWW.W.",
+    "..W..WWW..W..",
+    "...WWWWWWW...",
+    ".....WWW....."
+   ]
+  },
+  {
+   "name": "Wolf",
+   "tier": 0,
+   "rows": [
+    ".............",
+    "..B........B.",
+    "..KB......KB.",
+    "..BBBBBBBBBB.",
+    ".BBBBBBBBBBB.",
+    ".BBBYBBBYBBB.",
+    "BBBWWWWWWWBBB",
+    ".BBBWWWWWBBB.",
+    "..BBWWWWWBB..",
+    "..BBWKKKWBB..",
+    "...BWKKKWB...",
+    "...BBBBBBB..."
+   ]
+  },
+  {
+   "name": "Galleon",
+   "tier": 0,
+   "rows": [
+    ".......N......",
+    ".......KKKK...",
+    ".......N......",
+    ".....W.NW.....",
+    "....WW.NWW....",
+    "....WW.NWWW...",
+    "...WWW.NWWWW..",
+    "..WWWW.NWWWWW.",
+    ".......N......",
+    "KKKKKKKKKKKKKK",
+    ".KKYYKKKYYKKK.",
+    "..KKKKKKKKKK..",
+    "..............",
+    "BBBBBBBBBBBBBB"
+   ]
+  },
+  {
+   "name": "Cauldron",
+   "tier": 0,
+   "rows": [
+    "...G.GGG.G...",
+    "..GGG.G.GGG..",
+    "...GGGGGGG...",
+    ".GGGGGGGGGGG.",
+    ".KKGGGGGGGKK.",
+    ".KKKWKKKKKKK.",
+    ".KKKKKKKKKKK.",
+    ".KKKKKKKKKKK.",
+    ".KKKKKKKKKKK.",
+    "..KKKKKKKKK..",
+    "..NNKKKKKNN.."
+   ]
+  },
+  {
+   "name": "Tombstone",
+   "tier": 0,
+   "rows": [
+    ".....K.....",
+    "..KKKKKKK..",
+    ".KKKKKKKKK.",
+    ".KKKWWKKKK.",
+    ".KKKWWKKKK.",
+    ".KWWWWWWKK.",
+    ".KWWWWWWKK.",
+    ".KKKWWKKKK.",
+    ".KKKWWKKKK.",
+    ".KKKKKKKKK.",
+    ".KKKKKKKKK.",
+    ".GKKKKKKKG.",
+    "GGGGGGGGGGG"
+   ]
+  },
+  {
+   "name": "Firefly Jar",
+   "tier": 0,
+   "rows": [
+    "..NNNNNN..",
+    "..NNNNNN..",
+    "..NNNNNN..",
+    ".WWWWWWWW.",
+    ".WKKKKKKW.",
+    ".WKYKKKYW.",
+    ".WKKKKKKW.",
+    ".WKKKKYKW.",
+    ".WKOYKKKW.",
+    ".WKKKKKKW.",
+    ".WKKKKKKW.",
+    ".WWWWWWWW.",
+    ".NNNNNNNN."
+   ]
+  },
+  {
+   "name": "Moon Ship",
+   "tier": 0,
+   "rows": [
+    "......W......",
+    "...WWWWWWW...",
+    "..WYWWWWWWW..",
+    ".WWWWWKWWWPW.",
+    ".WWWWKKKWWWW.",
+    ".WWWWWKKKWWW.",
+    "WWWWKWKKKWWWW",
+    ".WWKKWKKKKWW.",
+    ".WWWWWKWWWWW.",
+    ".KKKKKKKKKKK.",
+    "..KKKKKKKKK..",
+    "...KKKKKKK...",
+    "......W......"
+   ]
+  },
+  {
+   "name": "Hut",
+   "tier": 0,
+   "rows": [
+    "..............",
+    "......NNN.....",
+    ".....NNNNN....",
+    "...NNNNNNNN...",
+    "..NNNNNNNNNN..",
+    ".KKKKKKKKKKKK.",
+    ".NNNNNNNNNNNN.",
+    ".NYYYYNNKKKKN.",
+    ".NYOYYNNKKKKN.",
+    ".NYYYYNNKKYKN.",
+    ".NNNNNNNKKKKN.",
+    "GGGGGGGGGGGGGG"
+   ]
+  },
+  {
+   "name": "Open Chest",
+   "tier": 0,
+   "rows": [
+    "...NNNNNNN...",
+    "...NNNNNNNN..",
+    "...NNNONNNN..",
+    "..NWYYYYYWNN.",
+    "..YYYYYYYYY..",
+    "KKKYYYYYYYKKK",
+    "NNNNNYYYNNNNN",
+    "NNNNNYYYNNNNN",
+    "NNNNNYYYNNNNN",
+    "NNNNNNNNNNNNN",
+    "KKKKKKKKKKKKK"
+   ]
+  },
+  {
+   "name": "Treasure Moon",
+   "tier": 0,
+   "rows": [
+    ".......W......",
+    "....WWWWWWW...",
+    "...WWBWWWWWW..",
+    "..WWBBBWWWWWW.",
+    "..WWWBWWWWWWW.",
+    ".WWWWWWWBBBWWW",
+    "..WWWWWWBBBWW.",
+    "..WBBBWWBBBWW.",
+    "...WWWWYWWWW..",
+    "..YYYYYYOYYY..",
+    ".YYYOYYYYYYYYY",
+    ".YYYYYYYYYOYYY",
+    ".YYRYYRYYYYYYY",
+    "...YYYYYYYYY.."
+   ]
+  }
+ ]
+}
