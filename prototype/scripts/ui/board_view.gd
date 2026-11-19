@@ -37,9 +37,9 @@ var _ov_accum: float = 0.0
 var _cel: float = -1.0  # win celebration clock in seconds; -1 when it is not running
 var _coins: Array = []  # falling doubloons: pos, vel, spin, spin_speed, size, delay
 
-const REVEAL_TIME: float = 1.4  # the finished picture lights up over this long
-const STAMP_AT: float = 1.3  # when the stamp slams down
-const STAMP_SLAM: float = 0.4
+const REVEAL_TIME: float = 1.2  # the finished picture lights up over this long
+const STAMP_AT: float = 1.05  # when the stamp slams down
+const STAMP_SLAM: float = 0.32
 ## Cells the next shot will hit; shown as pulsing outlines. Set by the screen after each action.
 var preview: Array = []
 ## Cells a card being previewed would remove itself (shown crossed out in orange).
@@ -187,7 +187,7 @@ func celebrate() -> void:
 			"pos": Vector2(randf() * size.x, -20.0 - randf() * 120.0),
 			"vel": Vector2(randf_range(-40.0, 40.0), randf_range(170.0, 330.0)),
 			"spin": randf() * TAU, "spin_speed": randf_range(5.0, 11.0),
-			"size": randf_range(11.0, 19.0), "delay": randf_range(0.0, 1.7),
+			"size": randf_range(11.0, 19.0), "delay": randf_range(0.0, 1.4),
 		})
 	_shake = maxf(_shake, 5.0)
 	set_process(true)
