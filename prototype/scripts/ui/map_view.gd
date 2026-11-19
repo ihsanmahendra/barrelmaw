@@ -7,7 +7,7 @@ signal stage_tapped(index: int)
 
 const GAP: float = 168.0
 const TOP_PAD: float = 250.0
-const BOTTOM_PAD: float = 190.0
+const BOTTOM_PAD: float = 270.0
 const NIGHT_GAP: float = 190.0  # extra space between stage 50 and 51 for the "Night Seas" ribbon
 
 var _press: Vector2 = Vector2.ZERO
@@ -180,7 +180,7 @@ func _draw_start_beach(t: float) -> void:
 	if _start_beach != null:
 		var k := size.x / float(_start_beach.get_width())
 		var h := float(_start_beach.get_height()) * k
-		draw_texture_rect(_start_beach, Rect2(0.0, size.y - h, size.x, h), false)
+		draw_texture_rect(_start_beach, Rect2(0.0, size.y - h + 50.0, size.x, h), false)
 	else:
 		_draw_start_beach_fallback(t)
 	_draw_start_label()
