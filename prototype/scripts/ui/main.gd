@@ -931,10 +931,8 @@ func _after_action(kind: String) -> void:
 		if battle.won:
 			board_view.celebrate()
 			sfx.play("win", 1.0, 0.1)
-			for k in 6:  # doubloons clinking while they fall
-				sfx.play("reward", 1.2 + 0.07 * (k % 3), 0.15 + 0.22 * k)
-			sfx.play("boom", 0.9, 0.95)  # the stamp lands
-		await get_tree().create_timer(2.5 if battle.won else 0.8).timeout
+
+		await get_tree().create_timer(1.7 if battle.won else 0.8).timeout
 		_on_battle_over()
 		return
 	busy = false
