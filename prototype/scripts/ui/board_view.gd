@@ -37,8 +37,8 @@ var _ov_accum: float = 0.0
 var _cel: float = -1.0  # win celebration clock in seconds; -1 when it is not running
 var _coins: Array = []  # falling doubloons: pos, vel, spin, spin_speed, size, delay
 
-const REVEAL_TIME: float = 0.7  # the finished picture lights up over this long
-const STAMP_AT: float = 0.6  # when the stamp slams down
+const REVEAL_TIME: float = 1.8  # the finished picture lights up over this long
+const STAMP_AT: float = 1.7  # when the stamp slams down
 const STAMP_SLAM: float = 0.28
 ## Cells the next shot will hit; shown as pulsing outlines. Set by the screen after each action.
 var preview: Array = []
@@ -172,6 +172,7 @@ func show_dud(shooter_origin: Vector2) -> void:
 ## Grey "Miss" feedback with a small wobble.
 func show_miss() -> void:
 	_popups.append({"pos": size / 2.0, "text": "MISS", "t": 0.0, "size": 44, "color": Color("a9adc8")})
+	_shake = maxf(_shake, 5.0)
 	set_process(true)
 
 
@@ -181,12 +182,12 @@ func show_miss() -> void:
 func celebrate() -> void:
 	_cel = 0.0
 	_coins.clear()
-	for i in 22:
+	for i in 70:
 		_coins.append({
 			"pos": Vector2(randf() * size.x, -20.0 - randf() * 120.0),
-			"vel": Vector2(randf_range(-40.0, 40.0), randf_range(110.0, 200.0)),
+			"vel": Vector2(randf_range(-40.0, 40.0), randf_range(170.0, 330.0)),
 			"spin": randf() * TAU, "spin_speed": randf_range(5.0, 11.0),
-			"size": randf_range(9.0, 14.0), "delay": randf_range(0.0, 1.0),
+			"size": randf_range(11.0, 19.0), "delay": randf_range(0.0, 2.2),
 		})
 	_shake = maxf(_shake, 5.0)
 	set_process(true)
@@ -242,6 +243,12 @@ func _process(delta: float) -> void:
 				c["vel"].y += 260.0 * delta
 				c["pos"] += c["vel"] * delta
 				c["spin"] += float(c["spin_speed"]) * delta
+		if _cel >= STAMP_AT and _cel - delta < STAMP_AT:  # the moment the stamp lands
+			_shake = maxf(_shake, 14.0)
+			for k in 18:
+				var ang := TAU * float(k) / 18.0
+				_parts.append({"pos": size / 2.0, "vel": Vector2(cos(ang), sin(ang)) * randf_range(160.0, 330.0), "t": 0.0, "life": randf_range(0.4, 0.8),
+					"color": Color("c4284d") if k % 2 == 0 else Color("ffd166"), "size": randf_range(5.0, 10.0), "grav": 120.0})
 	var alive_blasts: Array = []
 	for bl in _blasts:
 		bl["t"] += delta
@@ -370,12 +377,11 @@ func _draw() -> void:
 				if _pending.has(key):
 					_draw_barrel_cell(r, _pending[key][1])  # removed, but its cannonball has not landed yet
 				elif ghost != "":
-					var wave_delay := float(bd.h - 1 - y) * 0.04 + float(x) * 0.01
+					var wave_delay := float(bd.h - 1 - y) * 0.115 + float(x) * 0.03
 					if _cel >= wave_delay:  # lit up by the win: the finished picture in full color
-						var pop := clampf((_cel - wave_delay) / 0.18, 0.0, 1.0)
-						var lit_col := GameData.color_of(ghost)
-						lit_col.a = pop
-						_draw_barrel_cell(r, lit_col)
+						var pop := clampf((_cel - wave_delay) / 0.4, 0.0, 1.0)
+						var lit := Rect2(r.get_center() - r.size * (0.5 + 0.08 * sin(pop * PI)), r.size * (1.0 + 0.16 * sin(pop * PI)))
+						_draw_barrel_cell(lit, GameData.color_of(ghost))
 					else:
 						var g := GameData.color_of(ghost)
 						g.a = 0.14
@@ -512,15 +518,34 @@ func _draw_celebration(cs: float) -> void:
 	var st := _cel - STAMP_AT
 	if st < 0.0:
 		return
-	var alpha := clampf(st / 0.4, 0.0, 1.0)  # fades in gently
+	var k := clampf(st / STAMP_SLAM, 0.0, 1.0)
+	var slam := 1.0 + 1.5 * (1.0 - k) * (1.0 - k)  # drops in from big, lands at 1.0
+	var alpha := clampf(st / 0.2, 0.0, 1.0)
+	var center := size / 2.0 + Vector2(0.0, size.y * 0.02)
+	var m := Transform2D(Vector2(1, 0), Vector2(0, 1), Vector2.ZERO)
+	m = Transform2D(-0.13, center) * Transform2D(Vector2(slam, 0.0), Vector2(0.0, slam), Vector2.ZERO)
+	draw_set_transform_matrix(m)
 	var font := UiKit.bold_font()
-	var fs := int(clampf(size.x * 0.08, 24.0, 40.0))
-	var text := "Plundered!"
+	var fs := int(clampf(size.x * 0.088, 26.0, 46.0))
+	var text := "PLUNDERED!"
 	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var box := Rect2(Vector2(size.x / 2.0 - tw / 2.0 - 22.0, size.y / 2.0 - fs * 0.85), Vector2(tw + 44.0, fs * 1.5))
-	draw_set_transform_matrix(Transform2D.IDENTITY)
-	_style.bg_color = Color(0.2, 0.12, 0.07, 0.85 * alpha)
-	_style.set_corner_radius_all(12)
+	var box := Rect2(Vector2(-tw / 2.0 - 22.0, -fs * 0.82), Vector2(tw + 44.0, fs * 1.4))
+	var red := Color(0.78, 0.16, 0.3, alpha)
+	_style.bg_color = Color(0.99, 0.94, 0.82, 0.92 * alpha)
+	_style.set_corner_radius_all(10)
 	draw_style_box(_style, box)
-	draw_string(font, Vector2(box.position.x + 22.0, box.position.y + fs * 1.08), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1.0, 0.93, 0.75, alpha))
+	# Ink rim like a rubber stamp: a thick border and a thin inner one.
+	var rim := StyleBoxFlat.new()
+	rim.bg_color = Color(0, 0, 0, 0)
+	rim.set_corner_radius_all(10)
+	rim.set_border_width_all(6)
+	rim.border_color = red
+	draw_style_box(rim, box)
+	rim.set_border_width_all(2)
+	draw_style_box(rim, box.grow(-12.0))
+	draw_string(font, Vector2(-tw / 2.0, fs * 0.28), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, red)
+	# Ring of ink that flies outward when it lands.
+	if st > 0.0 and st < 0.5:
+		var rk := st / 0.5
+		draw_arc(Vector2.ZERO, tw * 0.5 + 40.0 + rk * 140.0, 0.0, TAU, 40, Color(0.78, 0.16, 0.3, 0.55 * (1.0 - rk)), maxf(1.0, 10.0 * (1.0 - rk)))
 	draw_set_transform_matrix(Transform2D.IDENTITY)

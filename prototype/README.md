@@ -41,8 +41,8 @@ deck of the next stage you play. The sky follows the time of day (dawn, day, dus
 and has gulls and water glints. Tap the pirate to make him fire. The version number comes from `project.godot`.
 
 ## Win celebration
-When a picture is cleared its ghost image lights up barrel by barrel from the bottom, a few gold doubloons drift down,
-and a small "Plundered!" label fades in (`BoardView.celebrate`). Kept deliberately simple.
+When a picture is cleared its ghost image lights up barrel by barrel from the bottom, gold doubloons spin down the
+board, and a "PLUNDERED!" rubber stamp slams onto it (`BoardView.celebrate`).
 
 ## Debug mode
 Menu gear > Settings > "Debug" opens every stage on the map (nothing else changes; clearing still records stars).
