@@ -39,7 +39,7 @@ var _coins: Array = []  # falling doubloons: pos, vel, spin, spin_speed, size, d
 
 const REVEAL_TIME: float = 1.8  # the finished picture lights up over this long
 const STAMP_AT: float = 1.7  # when the stamp slams down
-const STAMP_SLAM: float = 0.28
+const STAMP_SLAM: float = 0.5
 ## Cells the next shot will hit; shown as pulsing outlines. Set by the screen after each action.
 var preview: Array = []
 ## Cells a card being previewed would remove itself (shown crossed out in orange).
