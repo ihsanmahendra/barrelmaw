@@ -78,9 +78,3 @@ func _draw() -> void:
 				UiKit.draw_star(self, c, 9.0, Color(0.15, 0.1, 0.07, 0.6), Color(0.5, 0.4, 0.3, 0.8))
 		var turn_text := "%d/%d" % [turn, limit] if limit > 0 else "%d" % turn
 		_number(stars_chip, turn_text, UiKit.CREAM if limit < 0 or turn < limit else Color("ffd9a0"))
-	if warn:
-		var msg := "Not enough hits yet: cards can clear more."
-		var mw := ThemeDB.fallback_font.get_string_size(msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-		var mp := Vector2((size.x - mw) / 2.0, y + h + 20.0)
-		draw_string_outline(ThemeDB.fallback_font, mp, msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 5, Color(0.1, 0.06, 0.03, 0.9))
-		draw_string(ThemeDB.fallback_font, mp, msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("ffd9a0"))
