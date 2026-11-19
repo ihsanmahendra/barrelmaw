@@ -228,6 +228,13 @@ func _ready() -> void:
 				while busy:
 					await get_tree().create_timer(0.1).timeout
 			print("BOTPLAY done: won=", battle.won, " turns=", battle.turns)
+		if args.has("--win-demo"):  # debug: clear the whole board and play the win celebration
+			await get_tree().create_timer(0.4).timeout
+			for y in battle.board.h:
+				for x in battle.board.w:
+					battle.board.remove_at(x, y)
+			_refresh()
+			board_view.celebrate()
 		if args.has("--cheer"):
 			await get_tree().create_timer(0.5).timeout
 			queue_view.cheer(8)  # debug: show the grin without having to land a big hit
@@ -923,9 +930,11 @@ func _after_action(kind: String) -> void:
 	if battle.over:
 		if battle.won:
 			board_view.celebrate()
-			_flash(GOLD)
 			sfx.play("win", 1.0, 0.1)
-		await get_tree().create_timer(1.4 if battle.won else 0.8).timeout
+			for k in 6:  # doubloons clinking while they fall
+				sfx.play("reward", 1.2 + 0.07 * (k % 3), 0.15 + 0.22 * k)
+			sfx.play("boom", 0.9, 0.95)  # the stamp lands
+		await get_tree().create_timer(2.5 if battle.won else 0.8).timeout
 		_on_battle_over()
 		return
 	busy = false

@@ -40,6 +40,10 @@ progress), a plaque with the next stage, the next boss and the star total, and a
 deck of the next stage you play. The sky follows the time of day (dawn, day, dusk, night with stars and a moon)
 and has gulls and water glints. Tap the pirate to make him fire. The version number comes from `project.godot`.
 
+## Win celebration
+When a picture is cleared its ghost image lights up barrel by barrel from the bottom, gold doubloons spin down the
+board, and a "PLUNDERED!" rubber stamp slams onto it (`BoardView.celebrate`).
+
 ## Debug mode
 Menu gear > Settings > "Debug" opens every stage on the map (nothing else changes; clearing still records stars).
 Turn it off in the same place. Reset progress also turns it off.

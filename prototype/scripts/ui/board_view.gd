@@ -34,6 +34,12 @@ var _overlay: Control
 var _snap_special: Array = []  # special kinds before the latest action, for barrels still shown while their shot flies
 var _blasts: Array = []  # bomb shock rings: pos, t
 var _ov_accum: float = 0.0
+var _cel: float = -1.0  # win celebration clock in seconds; -1 when it is not running
+var _coins: Array = []  # falling doubloons: pos, vel, spin, spin_speed, size, delay
+
+const REVEAL_TIME: float = 1.1  # the finished picture lights up over this long
+const STAMP_AT: float = 0.95  # when the stamp slams down
+const STAMP_SLAM: float = 0.28
 ## Cells the next shot will hit; shown as pulsing outlines. Set by the screen after each action.
 var preview: Array = []
 ## Cells a card being previewed would remove itself (shown crossed out in orange).
@@ -67,6 +73,8 @@ func set_battle(b: Battle) -> void:
 	_snapshot = b.board.cells.duplicate()
 	_snap_special = b.board.special.duplicate()
 	_blasts.clear()
+	_coins.clear()
+	_cel = -1.0
 	set_process(true)
 	_flashes.clear()
 	_parts.clear()
@@ -169,18 +177,19 @@ func show_miss() -> void:
 
 
 ## Confetti shower for a cleared picture.
+## Win celebration, pirate style: the finished picture lights up barrel by barrel, a shower of spinning
+## gold doubloons falls, and a "PLUNDERED!" stamp slams onto the board.
 func celebrate() -> void:
-	var palette_values: Array = GameData.palette.values()
-	for i in 140:
-		var col := Color.html("#" + String(palette_values[randi() % palette_values.size()]))
-		_parts.append({
-			"pos": Vector2(randf() * size.x, -randf() * 60.0),
-			"vel": Vector2(randf_range(-70.0, 70.0), randf_range(120.0, 340.0)),
-			"t": 0.0, "life": randf_range(1.4, 2.4), "color": col,
-			"size": randf_range(7.0, 13.0), "grav": 140.0,
+	_cel = 0.0
+	_coins.clear()
+	for i in 70:
+		_coins.append({
+			"pos": Vector2(randf() * size.x, -20.0 - randf() * 120.0),
+			"vel": Vector2(randf_range(-40.0, 40.0), randf_range(170.0, 330.0)),
+			"spin": randf() * TAU, "spin_speed": randf_range(5.0, 11.0),
+			"size": randf_range(11.0, 19.0), "delay": randf_range(0.0, 1.4),
 		})
-	_popups.append({"pos": size / 2.0, "text": "CLEARED!", "t": 0.0, "size": 56, "color": Color("ffd166")})
-	_shake = maxf(_shake, 8.0)
+	_shake = maxf(_shake, 5.0)
 	set_process(true)
 
 
@@ -227,13 +236,26 @@ func _process(delta: float) -> void:
 	_shake = _shake * exp(-10.0 * delta)
 	if _shake < 0.3:
 		_shake = 0.0
+	if _cel >= 0.0:
+		_cel += delta
+		for c in _coins:
+			if _cel >= float(c["delay"]):
+				c["vel"].y += 260.0 * delta
+				c["pos"] += c["vel"] * delta
+				c["spin"] += float(c["spin_speed"]) * delta
+		if _cel >= STAMP_AT and _cel - delta < STAMP_AT:  # the moment the stamp lands
+			_shake = maxf(_shake, 14.0)
+			for k in 18:
+				var ang := TAU * float(k) / 18.0
+				_parts.append({"pos": size / 2.0, "vel": Vector2(cos(ang), sin(ang)) * randf_range(160.0, 330.0), "t": 0.0, "life": randf_range(0.4, 0.8),
+					"color": Color("c4284d") if k % 2 == 0 else Color("ffd166"), "size": randf_range(5.0, 10.0), "grav": 120.0})
 	var alive_blasts: Array = []
 	for bl in _blasts:
 		bl["t"] += delta
 		if bl["t"] < 0.45:
 			alive_blasts.append(bl)
 	_blasts = alive_blasts
-	var animating := _seq_active or not (_flashes.is_empty() and _parts.is_empty() and _popups.is_empty() and _rings.is_empty() and _blasts.is_empty()) or _shake > 0.0
+	var animating := _seq_active or _cel >= 0.0 or not (_flashes.is_empty() and _parts.is_empty() and _popups.is_empty() and _rings.is_empty() and _blasts.is_empty()) or _shake > 0.0
 	var pulsing := not (preview.is_empty() and card_preview.is_empty()) or _has_specials()
 	if animating:
 		queue_redraw()  # the barrels only redraw while something is actually moving
@@ -355,9 +377,15 @@ func _draw() -> void:
 				if _pending.has(key):
 					_draw_barrel_cell(r, _pending[key][1])  # removed, but its cannonball has not landed yet
 				elif ghost != "":
-					var g := GameData.color_of(ghost)
-					g.a = 0.14
-					_fill(r, g, cs * 0.3)
+					var wave_delay := float(bd.h - 1 - y) * 0.07 + float(x) * 0.018
+					if _cel >= wave_delay:  # lit up by the win: the finished picture in full color
+						var pop := clampf((_cel - wave_delay) / 0.18, 0.0, 1.0)
+						var lit := Rect2(r.get_center() - r.size * (0.5 + 0.08 * sin(pop * PI)), r.size * (1.0 + 0.16 * sin(pop * PI)))
+						_draw_barrel_cell(lit, GameData.color_of(ghost))
+					else:
+						var g := GameData.color_of(ghost)
+						g.a = 0.14
+						_fill(r, g, cs * 0.3)
 				continue
 			_draw_barrel_cell(r, GameData.color_of(letter))
 	for bl in _blasts:
@@ -379,6 +407,7 @@ func _draw() -> void:
 		c.a = clampf(k * 1.5, 0.0, 1.0)
 		var s: float = float(pt["size"]) * (0.4 + 0.6 * k)
 		_fill(Rect2(pt["pos"] - Vector2(s, s) / 2.0, Vector2(s, s)), c, s * 0.3)
+	_draw_celebration(cs)
 	var font := ThemeDB.fallback_font
 	for pu in _popups:
 		var k2: float = float(pu["t"]) / POPUP_TIME
@@ -462,3 +491,61 @@ func _draw_overlay() -> void:
 			_overlay.draw_line(cr.position + cr.size * 0.28, cr.position + cr.size * 0.72, Color(1, 0.95, 0.8, pulse2), 4.0)
 			_overlay.draw_line(cr.position + Vector2(cr.size.x * 0.72, cr.size.y * 0.28), cr.position + Vector2(cr.size.x * 0.28, cr.size.y * 0.72), Color(1, 0.95, 0.8, pulse2), 4.0)
 	_overlay.draw_set_transform(Vector2.ZERO)
+
+
+## Gold doubloons that spin as they fall, and the "PLUNDERED!" stamp.
+func _draw_celebration(cs: float) -> void:
+	if _cel < 0.0:
+		return
+	for c in _coins:
+		if _cel < float(c["delay"]):
+			continue
+		var p: Vector2 = c["pos"]
+		if p.y > size.y + 30.0:
+			continue
+		var r: float = float(c["size"])
+		var w := absf(cos(float(c["spin"]))) * r + 1.5  # a spinning coin is seen edge-on every half turn
+		draw_set_transform_matrix(Transform2D(Vector2(1, 0), Vector2(0, 1), Vector2.ZERO))
+		draw_circle(p + Vector2(2, 3), r, Color(0, 0, 0, 0.0))
+		var shade := 0.75 + 0.25 * absf(cos(float(c["spin"])))
+		_style.bg_color = Color("a8651a")
+		_style.set_corner_radius_all(int(r))
+		draw_style_box(_style, Rect2(p - Vector2(w + 2.0, r + 2.0), Vector2(w + 2.0, r + 2.0) * 2.0))
+		_style.bg_color = Color(1.0 * shade, 0.82 * shade, 0.25 * shade)
+		draw_style_box(_style, Rect2(p - Vector2(w, r), Vector2(w, r) * 2.0))
+		if w > r * 0.5:
+			draw_circle(p, r * 0.42, Color(0.72 * shade, 0.5 * shade, 0.1))
+	var st := _cel - STAMP_AT
+	if st < 0.0:
+		return
+	var k := clampf(st / STAMP_SLAM, 0.0, 1.0)
+	var slam := 1.0 + 1.5 * (1.0 - k) * (1.0 - k)  # drops in from big, lands at 1.0
+	var alpha := clampf(st / 0.08, 0.0, 1.0)
+	var center := size / 2.0 + Vector2(0.0, size.y * 0.02)
+	var m := Transform2D(Vector2(1, 0), Vector2(0, 1), Vector2.ZERO)
+	m = Transform2D(-0.13, center) * Transform2D(Vector2(slam, 0.0), Vector2(0.0, slam), Vector2.ZERO)
+	draw_set_transform_matrix(m)
+	var font := UiKit.bold_font()
+	var fs := int(clampf(size.x * 0.088, 26.0, 46.0))
+	var text := "PLUNDERED!"
+	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var box := Rect2(Vector2(-tw / 2.0 - 22.0, -fs * 0.82), Vector2(tw + 44.0, fs * 1.4))
+	var red := Color(0.78, 0.16, 0.3, alpha)
+	_style.bg_color = Color(0.99, 0.94, 0.82, 0.92 * alpha)
+	_style.set_corner_radius_all(10)
+	draw_style_box(_style, box)
+	# Ink rim like a rubber stamp: a thick border and a thin inner one.
+	var rim := StyleBoxFlat.new()
+	rim.bg_color = Color(0, 0, 0, 0)
+	rim.set_corner_radius_all(10)
+	rim.set_border_width_all(6)
+	rim.border_color = red
+	draw_style_box(rim, box)
+	rim.set_border_width_all(2)
+	draw_style_box(rim, box.grow(-12.0))
+	draw_string(font, Vector2(-tw / 2.0, fs * 0.28), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, red)
+	# Ring of ink that flies outward when it lands.
+	if st > 0.0 and st < 0.5:
+		var rk := st / 0.5
+		draw_arc(Vector2.ZERO, tw * 0.5 + 40.0 + rk * 140.0, 0.0, TAU, 40, Color(0.78, 0.16, 0.3, 0.55 * (1.0 - rk)), maxf(1.0, 10.0 * (1.0 - rk)))
+	draw_set_transform_matrix(Transform2D.IDENTITY)
