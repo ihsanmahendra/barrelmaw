@@ -377,15 +377,9 @@ func _draw() -> void:
 				if _pending.has(key):
 					_draw_barrel_cell(r, _pending[key][1])  # removed, but its cannonball has not landed yet
 				elif ghost != "":
-					var wave_delay := float(bd.h - 1 - y) * 0.115 + float(x) * 0.03
-					if _cel >= wave_delay:  # lit up by the win: the finished picture in full color
-						var pop := clampf((_cel - wave_delay) / 0.4, 0.0, 1.0)
-						var lit := Rect2(r.get_center() - r.size * (0.5 + 0.08 * sin(pop * PI)), r.size * (1.0 + 0.16 * sin(pop * PI)))
-						_draw_barrel_cell(lit, GameData.color_of(ghost))
-					else:
-						var g := GameData.color_of(ghost)
-						g.a = 0.14
-						_fill(r, g, cs * 0.3)
+					var g := GameData.color_of(ghost)
+					g.a = 0.14
+					_fill(r, g, cs * 0.3)
 				continue
 			_draw_barrel_cell(r, GameData.color_of(letter))
 	for bl in _blasts:
