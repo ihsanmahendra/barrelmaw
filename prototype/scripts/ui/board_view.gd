@@ -39,7 +39,7 @@ var _coins: Array = []  # falling doubloons: pos, vel, spin, spin_speed, size, d
 
 const REVEAL_TIME: float = 1.2  # the finished picture lights up over this long
 const STAMP_AT: float = 1.05  # when the stamp slams down
-const STAMP_SLAM: float = 0.32
+const STAMP_SLAM: float = 0.3
 ## Cells the next shot will hit; shown as pulsing outlines. Set by the screen after each action.
 var preview: Array = []
 ## Cells a card being previewed would remove itself (shown crossed out in orange).
@@ -243,11 +243,11 @@ func _process(delta: float) -> void:
 				c["vel"].y += 260.0 * delta
 				c["pos"] += c["vel"] * delta
 				c["spin"] += float(c["spin_speed"]) * delta
-		if _cel >= STAMP_AT and _cel - delta < STAMP_AT:  # the moment the stamp lands
-			_shake = maxf(_shake, 14.0)
-			for k in 18:
-				var ang := TAU * float(k) / 18.0
-				_parts.append({"pos": size / 2.0, "vel": Vector2(cos(ang), sin(ang)) * randf_range(160.0, 330.0), "t": 0.0, "life": randf_range(0.4, 0.8),
+		if _cel >= STAMP_AT + STAMP_SLAM and _cel - delta < STAMP_AT + STAMP_SLAM:  # the moment the stamp hits
+			_shake = maxf(_shake, 26.0)
+			for k in 34:
+				var ang := TAU * float(k) / 34.0 + randf_range(-0.1, 0.1)
+				_parts.append({"pos": size / 2.0, "vel": Vector2(cos(ang), sin(ang)) * randf_range(200.0, 460.0), "t": 0.0, "life": randf_range(0.5, 1.0),
 					"color": Color("c4284d") if k % 2 == 0 else Color("ffd166"), "size": randf_range(5.0, 10.0), "grav": 120.0})
 	var alive_blasts: Array = []
 	for bl in _blasts:
@@ -513,11 +513,17 @@ func _draw_celebration(cs: float) -> void:
 	if st < 0.0:
 		return
 	var k := clampf(st / STAMP_SLAM, 0.0, 1.0)
-	var slam := 1.0 + 1.5 * (1.0 - k) * (1.0 - k)  # drops in from big, lands at 1.0
-	var alpha := clampf(st / 0.2, 0.0, 1.0)
+	var fall := k * k * k  # accelerates all the way down
+	var slam := 1.0 + 2.4 * (1.0 - fall)
+	var tilt := -0.13 - 0.3 * (1.0 - fall)
+	if st > STAMP_SLAM:  # squash and bounce after the hit
+		var bt := st - STAMP_SLAM
+		slam = 1.0 - 0.14 * exp(-bt * 9.0) * cos(bt * 26.0)
+		tilt = -0.13 + 0.05 * exp(-bt * 8.0) * sin(bt * 30.0)
+	var alpha := clampf(st / 0.1, 0.0, 1.0)
 	var center := size / 2.0 + Vector2(0.0, size.y * 0.02)
 	var m := Transform2D(Vector2(1, 0), Vector2(0, 1), Vector2.ZERO)
-	m = Transform2D(-0.13, center) * Transform2D(Vector2(slam, 0.0), Vector2(0.0, slam), Vector2.ZERO)
+	m = Transform2D(tilt, center) * Transform2D(Vector2(slam, 0.0), Vector2(0.0, slam), Vector2.ZERO)
 	draw_set_transform_matrix(m)
 	var font := UiKit.bold_font()
 	var fs := int(clampf(size.x * 0.088, 26.0, 46.0))
@@ -539,7 +545,10 @@ func _draw_celebration(cs: float) -> void:
 	draw_style_box(rim, box.grow(-12.0))
 	draw_string(font, Vector2(-tw / 2.0, fs * 0.28), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, red)
 	# Ring of ink that flies outward when it lands.
-	if st > 0.0 and st < 0.5:
-		var rk := st / 0.5
-		draw_arc(Vector2.ZERO, tw * 0.5 + 40.0 + rk * 140.0, 0.0, TAU, 40, Color(0.78, 0.16, 0.3, 0.55 * (1.0 - rk)), maxf(1.0, 10.0 * (1.0 - rk)))
+	var hit := st - STAMP_SLAM
+	if hit > 0.0 and hit < 0.6:
+		var rk := hit / 0.6
+		draw_arc(Vector2.ZERO, tw * 0.5 + 30.0 + rk * 200.0, 0.0, TAU, 40, Color(0.78, 0.16, 0.3, 0.6 * (1.0 - rk)), maxf(1.0, 14.0 * (1.0 - rk)))
+		var rk2 := clampf(hit / 0.6 - 0.15, 0.0, 1.0)
+		draw_arc(Vector2.ZERO, tw * 0.5 + 20.0 + rk2 * 120.0, 0.0, TAU, 40, Color(1.0, 0.85, 0.4, 0.5 * (1.0 - rk2)), maxf(1.0, 8.0 * (1.0 - rk2)))
 	draw_set_transform_matrix(Transform2D.IDENTITY)
