@@ -381,6 +381,9 @@ func _draw() -> void:
 					g.a = 0.14
 					_fill(r, g, cs * 0.3)
 				continue
+			var base_col := GameData.color_of(letter)
+			base_col.a = 0.5  # a color tile under each barrel so the whole picture reads as one shape
+			draw_rect(r.grow(GAP / 2.0), base_col)
 			_draw_barrel_cell(r, GameData.color_of(letter))
 	for bl in _blasts:
 		var k: float = float(bl["t"]) / 0.45
