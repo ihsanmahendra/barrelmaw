@@ -165,9 +165,28 @@ func _night_banner(yb: float) -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, yb - h * 0.5 - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("c9d6ff"))
 
 
+const START_BEACH_PATH: String = "res://assets/art/map_start_beach.png"
+static var _start_beach: Texture2D = null
+static var _start_beach_checked: bool = false
+
+
+## The starting beach is cut from the gameplay background (sand, foam, rocks and the two palms).
 func _draw_start_beach(t: float) -> void:
-	if not _visible(size.y - 60.0, 260.0):
+	if not _visible(size.y - 200.0, 420.0):
 		return
+	if not _start_beach_checked:
+		_start_beach_checked = true
+		_start_beach = load(START_BEACH_PATH) if ResourceLoader.exists(START_BEACH_PATH) else null
+	if _start_beach != null:
+		var k := size.x / float(_start_beach.get_width())
+		var h := float(_start_beach.get_height()) * k
+		draw_texture_rect(_start_beach, Rect2(0.0, size.y - h, size.x, h), false)
+	else:
+		_draw_start_beach_fallback(t)
+	_draw_start_label()
+
+
+func _draw_start_beach_fallback(t: float) -> void:
 	var top := size.y - 120.0
 	var pts := PackedVector2Array()
 	var x := 0.0
@@ -181,6 +200,9 @@ func _draw_start_beach(t: float) -> void:
 	draw_polyline(pts, Color(1, 1, 1, 0.9), 6.0)
 	_palm(Vector2(size.x * 0.12, size.y - 20.0), 90.0, 0.3, t)
 	_palm(Vector2(size.x * 0.88, size.y - 12.0), 76.0, -0.3, t + 1.0)
+
+
+func _draw_start_label() -> void:
 	var font := UiKit.bold_font()
 	draw_string_outline(font, Vector2(size.x / 2.0 - 40.0, size.y - 36.0), "START", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 8, Color(0.3, 0.18, 0.08, 0.9))
 	draw_string(font, Vector2(size.x / 2.0 - 40.0, size.y - 36.0), "START", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, UiKit.CREAM)
