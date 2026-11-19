@@ -337,6 +337,23 @@ func _finish_sequence(cs: float, origin: Vector2) -> void:
 	sequence_done.emit(n)
 
 
+## Tile under a barrel. Only the corners on the outside edge of the picture are rounded, so
+## neighbouring tiles melt into one smooth shape.
+func _draw_silhouette_tile(bd: Board, x: int, y: int, rect: Rect2, col: Color, cs: float) -> void:
+	var up := bd.get_c(x, y - 1) != ""
+	var down := bd.get_c(x, y + 1) != ""
+	var lf := bd.get_c(x - 1, y) != ""
+	var rt := bd.get_c(x + 1, y) != ""
+	var rad := int(cs * 0.42)
+	_style.bg_color = col
+	_style.set_border_width_all(0)
+	_style.corner_radius_top_left = 0 if (up or lf) else rad
+	_style.corner_radius_top_right = 0 if (up or rt) else rad
+	_style.corner_radius_bottom_left = 0 if (down or lf) else rad
+	_style.corner_radius_bottom_right = 0 if (down or rt) else rad
+	_style.draw(get_canvas_item(), rect)
+
+
 func _draw_barrel_cell(r: Rect2, col: Color) -> void:
 	PirateArt.draw_barrel(self, r.get_center(), r.size.x * 0.94, r.size.y, col)
 
@@ -383,7 +400,7 @@ func _draw() -> void:
 				continue
 			var base_col := GameData.color_of(letter)
 			base_col.a = 0.5  # a color tile under each barrel so the whole picture reads as one shape
-			draw_rect(r.grow(GAP / 2.0), base_col)
+			_draw_silhouette_tile(bd, x, y, r.grow(GAP / 2.0), base_col, cs)
 			_draw_barrel_cell(r, GameData.color_of(letter))
 	for bl in _blasts:
 		var k: float = float(bl["t"]) / 0.45
