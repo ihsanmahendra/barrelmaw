@@ -20,6 +20,7 @@ const BARREL_ASPECT: float = 210.0 / 256.0
 # Barrels are baked per game color into one atlas (design/art-source/make_barrels.py). Same order as there.
 const BARREL_ATLAS_COLORS: Array = ["ef476f", "f78c4a", "ffd166", "06d6a0", "4cc9f0", "9b5de5", "3d405b", "f8f9fa", "a47148", "ff9ecb"]
 const BARREL_TILE: Vector2 = Vector2(210.0, 256.0)
+const BARREL_PAD: float = 16.0  # transparent margin around each barrel in the atlas so mipmaps do not bleed
 
 
 static func _tex(art_name: String) -> Texture2D:
@@ -118,7 +119,7 @@ static func draw_barrel(c: CanvasItem, center: Vector2, w: float, h: float, col:
 	if atlas != null and slot >= 0:
 		var dh2 := minf(h, w / BARREL_ASPECT)
 		var sz := Vector2(dh2 * BARREL_ASPECT, dh2)
-		var src := Rect2(Vector2(float(slot % 5), float(slot / 5)) * BARREL_TILE, BARREL_TILE)
+		var src := Rect2(Vector2(float(slot % 5), float(slot / 5)) * (BARREL_TILE + Vector2(BARREL_PAD * 2.0, BARREL_PAD * 2.0)) + Vector2(BARREL_PAD, BARREL_PAD), BARREL_TILE)
 		c.draw_texture_rect_region(atlas, Rect2(center - sz / 2.0, sz), src)
 		if number != "":
 			_barrel_plaque(c, center, w, number, font_size)
