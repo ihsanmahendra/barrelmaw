@@ -1,5 +1,7 @@
 # Barrelmaw
 
+**Play it in your browser: https://ihsanmahendra.github.io/barrelmaw/**
+
 A pirate card-and-puzzle game made with Godot 4.7 (web first, Android later). Smash colored barrels with
 cannonballs, play cards to change how they fire, and sail a 100-stage treasure map (50 day stages, 50 night stages).
 
