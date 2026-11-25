@@ -70,6 +70,42 @@ func _check(label: String, roots: Array) -> void:
 					return
 
 
+## Text drawn on top of a picture has to sit on the part of the picture meant for it. The ribbon's red band is
+## the top of its image (the tails hang below), so RibbonLabel.BAND_CENTER must match the band in the image.
+func _check_ribbon_art() -> void:
+	var tex := UiKit.ui_texture("ribbon")
+	if tex == null:
+		return
+	var img := tex.get_image()
+	var mid := img.get_width() / 2
+	var top := -1
+	var bottom := -1
+	for y in img.get_height():
+		if img.get_pixel(mid, y).a > 0.15:
+			if top < 0:
+				top = y
+			bottom = y
+	var measured := (float(top + bottom) / 2.0) / float(img.get_height())
+	if absf(measured - RibbonLabel.BAND_CENTER) > 0.05:
+		failures += 1
+		print("  ribbon: BAND_CENTER %.2f but the red band's centre in the picture is %.2f" % [RibbonLabel.BAND_CENTER, measured])
+
+
+## Paper panels must keep their content off the curled edges: content margin at least half the edge depth.
+func _check_paper_margins(label: String, roots: Array) -> void:
+	for r in roots:
+		for n in _all(r):
+			if not (n is PanelContainer) or not (n as Control).is_visible_in_tree():
+				continue
+			var sb := (n as PanelContainer).get_theme_stylebox("panel")
+			if sb is StyleBoxTexture:
+				var t := sb as StyleBoxTexture
+				if t.content_margin_top < t.texture_margin_top * 0.5 or t.content_margin_bottom < t.texture_margin_bottom * 0.5:
+					failures += 1
+					print("  %s: paper panel %s puts content on the curled edge (margins %.0f/%.0f, edge %.0f/%.0f)" % [
+						label, n.name, t.content_margin_top, t.content_margin_bottom, t.texture_margin_top, t.texture_margin_bottom])
+
+
 func _all(node: Node, out: Array = []) -> Array:
 	out.append(node)
 	for c in node.get_children():
@@ -84,9 +120,11 @@ func _screen(label: String, build: Callable, wait: int = 8) -> void:
 	if main.gear_button.visible:
 		roots.append(main.gear_button)
 	_check(label, roots)
+	_check_paper_margins(label, roots)
 
 
 func _run() -> void:
+	_check_ribbon_art()
 	var packs: PackScreens = main.packs
 	await _screen("menu", func() -> void: main.show_menu())
 	await _screen("how to play", func() -> void: main.show_howto())

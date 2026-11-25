@@ -153,7 +153,9 @@ func _night_banner(yb: float) -> void:
 	var font := UiKit.bold_font()
 	var w := minf(size.x - 40.0, 420.0)
 	var h := w * (float(tex.get_height()) / float(tex.get_width())) if tex != null else 90.0
-	var r := Rect2(Vector2((size.x - w) / 2.0, yb - h / 2.0), Vector2(w, h))
+	# The red band is the top part of the ribbon picture; put the band (not the picture) on the stage-51 line.
+	var band_c := h * RibbonLabel.BAND_CENTER if tex != null else h * 0.5
+	var r := Rect2(Vector2((size.x - w) / 2.0, yb - band_c), Vector2(w, h))
 	if tex != null:
 		draw_texture_rect(tex, r, false)
 	var txt := "Night Seas"
@@ -163,8 +165,8 @@ func _night_banner(yb: float) -> void:
 	draw_string(font, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, UiKit.CREAM)
 	var sub := "Stages 51 - 100"
 	var sw := ThemeDB.fallback_font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
-	draw_string_outline(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, yb - h * 0.5 - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, 5, Color(0, 0, 0, 0.7))
-	draw_string(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, yb - h * 0.5 - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("c9d6ff"))
+	draw_string_outline(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, r.position.y - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, 5, Color(0, 0, 0, 0.7))
+	draw_string(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, r.position.y - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("c9d6ff"))
 
 
 const START_BEACH_PATH: String = "res://assets/art/map_start_beach.png"

@@ -87,7 +87,8 @@ func _small_button(text: String, callback: Callable, color: Color, width: float 
 
 func _enable(b: Button, on: bool) -> void:
 	b.disabled = not on
-	b.modulate = Color.WHITE if on else Color(1, 1, 1, 0.5)
+	# A disabled plank is dimmed but stays opaque with light text: a see-through button melts into the beach behind it.
+	b.modulate = Color.WHITE if on else Color(0.78, 0.78, 0.82)
 
 
 # ---------- Treasury ----------

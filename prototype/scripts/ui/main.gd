@@ -491,6 +491,7 @@ func _set_button_color(b: Button, color: Color) -> void:
 	b.add_theme_stylebox_override("normal", UiKit.plank_style(color))
 	b.add_theme_stylebox_override("hover", UiKit.plank_style(color.lightened(0.1)))
 	b.add_theme_stylebox_override("pressed", UiKit.plank_style(color.darkened(0.1), true))
+	b.add_theme_stylebox_override("disabled", UiKit.plank_style(color.darkened(0.3)))  # the default is a flat see-through bar
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 
@@ -502,6 +503,7 @@ func _button(text: String, callback: Callable, color: Color = Color("ef476f")) -
 	b.add_theme_font_size_override("font_size", 25)
 	b.add_theme_font_override("font", UiKit.bold_font())
 	b.add_theme_color_override("font_color", Color.WHITE)
+	b.add_theme_color_override("font_disabled_color", Color(0.93, 0.93, 0.93))
 	b.add_theme_color_override("font_outline_color", Color(0.1, 0.06, 0.03, 0.8))
 	b.add_theme_constant_override("outline_size", 5)
 	_set_button_color(b, color)
@@ -831,13 +833,14 @@ func _build_battle_screen(title: String) -> void:
 	if tutorial:
 		var panel := PanelContainer.new()
 		var ps := UiKit.parchment_style()
-		ps.content_margin_top = 8
-		ps.content_margin_bottom = 8
+		# Compact, but still clear of the paper's curled edges (44 units deep): the old margin of 8 let the
+		# "Captain's tip" label and the Next button sit on top of them.
+		ps.content_margin_top = 26
+		ps.content_margin_bottom = 28
 		panel.add_theme_stylebox_override("panel", ps)
 		var pv := VBoxContainer.new()
 		pv.add_theme_constant_override("separation", 4)
 		panel.add_child(pv)
-		pv.add_child(_label("Captain's tip", 14, Color("a8743f"), HORIZONTAL_ALIGNMENT_LEFT, true, false))
 		tut_label = _label("", 18, UiKit.INK, HORIZONTAL_ALIGNMENT_LEFT, false, false)
 		tut_label.custom_minimum_size = Vector2(0, 66)
 		pv.add_child(tut_label)

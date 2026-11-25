@@ -2,7 +2,8 @@ extends SceneTree
 ## Drags a finger over every scrolling screen, starting on buttons, cards, panels and gaps, and checks that the
 ## list scrolls and that nothing was tapped by accident. Touch input is sent the way a phone sends it: touch
 ## events plus the mouse events Godot emulates from them.
-## Run: godot --headless --path prototype --script res://tests/scroll_test.gd
+## Run in a real 540x960 window (touch positions are in pixels, so other sizes or --headless give false failures):
+##   godot --path prototype --resolution 540x960 --script res://tests/scroll_test.gd
 
 var failures: int = 0
 var main: Control
