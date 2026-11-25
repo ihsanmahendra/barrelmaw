@@ -78,8 +78,43 @@ Regions
 - Indonesia is a live market for mini games, and its row in the regional table reads "None" for extra requirements,
   but the snippet was ambiguous. **[check]** Vietnam needs a G1 online game licence; South Korea needs a rating;
   the UK and France use PEGI. **[verified]**
-- Indonesia has a national game classification system run by the communications ministry. **[check]** whether it
-  applies to a mini game distributed through TikTok (this comes from my own knowledge, not from the search).
+- **Indonesia: game classification (checked 2026-11-25).** See Section 4a. Short version: the law exists and covers
+  foreign publishers, but its enforcement is paused and nothing says whether a TikTok mini game is covered.
+
+## 4a. Indonesia's game classification rules
+
+What the sources say:
+- The rule is Ministerial Regulation **Permenkominfo 2/2024 on Klasifikasi Gim**, in force since 24 January 2024, resting on
+  Presidential Regulation 19/2024. It replaced the 2016 rule. **[verified]**
+- A game **publisher** must register as a private-scope electronic system operator (**PSE Lingkup Privat**) through the
+  OSS system (Article 4), and must **classify the game by age group**, by content (Articles 8 to 13). A game with
+  pornography cannot be classified (Article 14). The ministry can apply administrative sanctions, including blocking
+  access (Article 20). **[verified]**
+- Publishers had two years to classify, so the full duty began in **January 2026**. The ministry launched the rating
+  system, **IGRS**, on 11 October 2025, and said the duty covers local and foreign studios on every platform.
+  **[verified]**
+- **Enforcement is paused.** In April 2026 the ministry suspended issuing ratings after wrong ratings appeared on Steam
+  and a reported data breach. It said it would **not block unrated games** during the pause, and in August 2026 it said
+  reactivation should finish in 2026. I found nothing newer. A draft change would let a publisher receive a
+  self-classification certificate after a self-assessment; it is not confirmed as enacted. **[verified, then unclear]**
+- A separate rule, **PP Tunas**, covers children's protection in digital services, and the ministry said game makers must
+  follow both. **[verified]**
+
+What the sources do **not** say: whether a mini game distributed through TikTok must have its own PSE registration and
+IGRS rating, or whether TikTok's own registration covers it. TikTok's regional table lists no extra Indonesian
+requirement (the snippet was ambiguous). **[check]** with TikTok developer support and the ministry.
+
+What this means for Barrelmaw:
+- The publisher is the organization (you), not TikTok. **[inferred from the rule]** Plan to register the PSE and complete the
+  self-classification when IGRS reopens, whatever TikTok says.
+- The content is mild: cartoon pirates, cannonballs and barrels, no real-money gambling. The chests are free, with odds
+  shown. Keep it that way in the first release. **Paid random chests would likely raise the age class and the
+  review risk** (my inference, not in the sources).
+- Show the age label wherever the rule or TikTok asks for one, once the rating exists.
+- The pause means no rating can be issued right now. So: do not make the Indonesian launch wait for IGRS, but **record the
+  date, the self-assessment answers and the registration** so the rating can be added when the system returns.
+- If the legal duty turns out to apply and the system is still closed, launch first in another market from TikTok's
+  list (the plan's region choice), and add Indonesia once the rating is available.
 
 ## 5. Backend (small, but required)
 
@@ -149,7 +184,7 @@ Total: about 4 to 6 months part-time; most of it is the screens in phase 3.
 | Revenue share and payout terms are not public | Decides whether ads and purchases make the project worth it | Ask TikTok or read the contracts shown during enablement |
 | An individual may not be able to register | Blocks everything | Check the Developer Portal registration flow before any porting |
 | Start-up time and frame rate limits are unpublished | Could fail the experience review | Run the DevTool pre-checks in the phase 1 spike |
-| Indonesian game classification or other regional rules | A launch blocker in one market | Ask the ministry or TikTok; pick a region with "None" first |
+| Indonesian game classification (IGRS) and PSE registration | Law exists, enforcement paused, mini-game coverage unclear (Section 4a) | Ask TikTok developer support and the ministry in writing; register the PSE; self-classify when IGRS reopens; pick the launch region with this in mind |
 | Backend and privacy duties | Login needs a server and a privacy policy | Keep the backend minimal and document the data it holds |
 | Art licence on the free SpriteCook tier | The copyright form and the review | Confirm the licence in the account; if unclear, redraw with a free route (a local FLUX model, Kenney's CC0 packs, or Claude-drawn code art) and keep the manifest |
 | Porting effort is mostly UI | The schedule slips in phase 3 | Port screens in the order of the player's first session; ship a smaller first release |
@@ -161,7 +196,9 @@ Total: about 4 to 6 months part-time; most of it is the screens in phase 3.
 2. Decide the first launch region and whether ads, purchases or both will be used.
 3. Install Cocos Creator and build the phase 1 spike (login stub, QR preview, size check). If it fails, nothing else
    matters yet.
-4. Ask SpriteCook (or check the account) about commercial rights to the generated art.
+4. Ask SpriteCook (or check the account) about commercial rights to the generated art. Also ask TikTok developer support, in writing,
+   whether a TikTok mini game needs its own Indonesian PSE registration and IGRS rating, and check the ministry's official channels for the
+   IGRS reopening date.
 5. Write the Privacy Policy and Terms drafts (they are needed even for the first review).
 6. Start the port with the logic and its tests (phase 2); it can begin while the account review runs.
 
@@ -182,4 +219,9 @@ again before acting.
 - Monetization overview: https://developers.tiktok.com/docs/en/monetization-overview
 - Game incentive creator videos: https://developers.tiktok.com/docs/en/game-incentive-creator-videos
 - Mini Games SDK overview: https://developers.tiktok.com/docs/en/mini-games-sdk-overview
+- Permenkominfo 2/2024 (Klasifikasi Gim): https://peraturan.bpk.go.id/Details/282034/permenkominfo-no-2-tahun-2024
+- IGRS launch and Jan 2026 duty: https://www.rajahtannasia.com/viewpoints/from-law-to-action-introducing-the-indonesia-game-rating-system-igrs/
+- IGRS suspended after Steam rating errors and data breach: https://www.thejakartapost.com/business/2026/04/19/indonesia-suspends-game-rating-system-after-data-breach.html
+- IGRS reactivation expected in 2026: https://www.metrotvnews.com/read/k8oCQjr0-kemkomdigi-pastikan-reaktivasi-igrs-rampung-2026
+- Game industry must follow PP Tunas and IGRS: https://investortrust.id/national/85508/kemenkomdigi-industri-gim-wajib-terapkan-pp-tunas-dan-igrs
 - Mini Games development troubleshooting: https://developers.tiktok.com/docs/en/mini-games-development-troubleshooting
