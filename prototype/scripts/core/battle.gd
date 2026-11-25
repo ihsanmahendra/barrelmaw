@@ -31,6 +31,7 @@ var scripted_hands: Array = []  # tutorial only: fixed hands, used before random
 var initial_shots: int = 0  # total cannonball hits at the start; used for the star rating
 var star2_turns: int = 99  # finish within this many turns for 2 stars (set per stage)
 var star3_turns: int = 99  # ... and for 3 stars
+var levels: Dictionary = {}  # card id -> level (missing = 1); set by Stages.new_battle from the player's collection
 
 
 ## scripted (optional, for the tutorial): {"queue": Array, "hands": Array of Array of card ids}.
@@ -191,6 +192,7 @@ func clone() -> Battle:
 	b.turns = turns
 	b.drawn_total = drawn_total
 	b.scripted_hands = scripted_hands.duplicate(true)
+	b.levels = levels
 	b.rng.seed = rng.seed
 	b.rng.state = rng.state
 	return b
@@ -211,6 +213,11 @@ func preview_card(i: int) -> Dictionary:
 	}
 
 
+## The level of a card in this battle (1 unless the player has merged it).
+func level_of(id: String) -> int:
+	return clampi(int(levels.get(id, 1)), 1, PackConfig.max_level())
+
+
 ## Plays the card at hand index i. Does not fire: the player presses fire next.
 func play_card(i: int) -> bool:
 	if over or i < 0 or i >= hand.size() or plays_left <= 0:
@@ -220,7 +227,7 @@ func play_card(i: int) -> bool:
 	var id: String = hand[i]
 	hand.remove_at(i)
 	discard.append(id)
-	for eff in GameData.cards[id]["effects"]:
+	for eff in CardLevels.effects_for(GameData.cards[id], level_of(id)):
 		_apply(eff)
 	plays_left -= 1
 	cards_played_turn += 1

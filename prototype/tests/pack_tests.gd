@@ -26,6 +26,9 @@ func run() -> void:
 	test_market()
 	test_duplicate_protection()
 	test_save_and_migration()
+	test_level_data()
+	test_level_effects()
+	test_level_parity()
 
 
 ## Real cards plus four stand-in Transcended cards (the real ones arrive in a later phase).
@@ -388,3 +391,89 @@ func test_save_and_migration() -> void:
 	check(thin.has("pity") and thin["pity"].has("vault_dry") and thin["chests"]["crate"] == 1, "normalize fills missing keys and keeps data")
 	SaveData.reset()
 	DirAccess.remove_absolute(abs_path)
+
+
+# ---------- card levels (phase 2) ----------
+
+## 8.6: every card has bonuses for levels 2 to 5 and they stay inside the power budget.
+func test_level_data() -> void:
+	for id in GameData.card_order:
+		var card: Dictionary = GameData.cards[id]
+		var levels: Array = card.get("levels", [])
+		check(levels.size() == PackConfig.max_level() - 1, "%s has a bonus for each of levels 2 to 5" % id)
+		if levels.size() != PackConfig.max_level() - 1:
+			continue
+		var powers := CardLevels.level_powers(card)
+		var total := 0.0
+		for i in powers.size():
+			var cap := CardLevels.MASTERY_CAP_PP if i == powers.size() - 1 else CardLevels.LEVEL_CAP_PP
+			check(float(powers[i]) <= cap + 0.001, "%s level %d adds %.1f power, over the %.1f cap" % [id, i + 2, powers[i], cap])
+			total += float(powers[i])
+		var total_cap := maxf(CardLevels.TOTAL_CAP_PP, 0.4 * CardLevels.base_power(card))
+		check(total <= total_cap + 0.001, "%s adds %.1f power in total, over the %.1f cap" % [id, total, total_cap])
+		for i in range(0, 3):  # levels 2 to 4 may not draw cards
+			for entry in levels[i]:
+				check(str(entry.get("kind", "")) != "draw", "%s gains no card draw before level 5" % id)
+		check(CardLevels.bonus_text(card, 1) == "" and CardLevels.bonus_text(card, 5) != "", "%s describes its level bonus" % id)
+	var ps: Dictionary = GameData.cards["power_shot"]
+	check(CardLevels.bonus_text(ps, 3) == "+1 hit" and CardLevels.bonus_text(ps, 5) == "+3 hits", "bonus text for Power Shot: %s / %s" % [CardLevels.bonus_text(ps, 3), CardLevels.bonus_text(ps, 5)])
+	check(CardLevels.bonus_text(GameData.cards["quick_draw"], 5) == "+2 hits, +1 card", "bonus text counts cards")
+
+
+func _level_battle(id: String, level: int, seed_value: int = 3) -> Battle:
+	var rows: Array = []
+	for i in 8:
+		rows.append("RRRRBBBB")
+	var deck: Array = []
+	deck.resize(10)
+	deck.fill(id)
+	var b := Battle.new(rows, deck, 1.5, 3, seed_value)
+	b.levels = {id: level}
+	return b
+
+
+func test_level_effects() -> void:
+	for id in GameData.card_order:
+		var card: Dictionary = GameData.cards[id]
+		check(CardLevels.effects_for(card, 1) == card["effects"], "level 1 keeps the base effects for " + id)
+		check(CardLevels.effects_for(card, 5).size() >= (card["effects"] as Array).size(), "higher levels only add effects for " + id)
+	var b := _level_battle("power_shot", 4)
+	b.play_card(0)
+	check(int(b.mods["ammo"]) == 4, "Power Shot level 4 gives +2 +1 +1 = 4 hits, got %d" % int(b.mods["ammo"]))
+	var b0 := _level_battle("power_shot", 3)
+	b0.play_card(0)
+	check(int(b0.mods["ammo"]) == 3, "Power Shot level 3 has the level 2 bonus only, got %d" % int(b0.mods["ammo"]))
+	var b1 := _level_battle("power_shot", 1)
+	b1.play_card(0)
+	check(int(b1.mods["ammo"]) == 2, "Power Shot level 1 is unchanged")
+	var b2 := _level_battle("reload", 4)
+	b2.play_card(0)
+	check(int(b2.queue[0]["ammo"]) == 5, "Reload level 4 adds a 5-hit ball, got %d" % int(b2.queue[0]["ammo"]))
+	var b3 := _level_battle("tidy_up", 5)
+	b3.play_card(0)
+	check(b3.removed_last.size() == 1 and int(b3.mods["ammo"]) == 4, "Tidy Up level 5 removes 1 barrel and gives +4 hits, got %d and %d" % [b3.removed_last.size(), int(b3.mods["ammo"])])
+	var b4 := _level_battle("color_bomb", 5)
+	b4.play_card(0)
+	check(b4.removed_last.size() == 7, "Color Bomb level 5 removes 5 + 1 + 1 = 7 barrels, got %d" % b4.removed_last.size())
+	var b5 := _level_battle("quick_draw", 5)
+	var before := b5.hand.size()
+	b5.play_card(0)
+	check(b5.hand.size() == before - 1 + 2, "Quick Draw level 5 draws 2 cards")
+	check(b5.clone().levels == {"quick_draw": 5}, "a cloned battle keeps the levels")
+	var sb := Stages.new_battle(0, GameData.starter_deck, 1, {"power_shot": 2})
+	check(sb.level_of("power_shot") == 2 and sb.level_of("skip") == 1, "new_battle sets the level table")
+	check(Collection.levels_for_battle({"level": {"power_shot": 9, "skip": 1}}) == {"power_shot": 5}, "levels are capped at the maximum")
+
+
+## 8.7: a preview must equal the real play for every card at every level.
+func test_level_parity() -> void:
+	for id in GameData.card_order:
+		for level in range(1, PackConfig.max_level() + 1):
+			for seed_value in [21, 22]:
+				var b := Battle.new(GameData.pictures[seed_value % 10]["rows"], [id, id, id], 0.8, 3, seed_value, {}, {"bomb": 2, "ammo": 1, "iron": 3, "curse": 2})
+				b.levels = {id: level}
+				var pv := b.preview_card(0)
+				var after: Battle = pv["battle"]
+				b.play_card(0)
+				var same := after.board.cells == b.board.cells and after.queue == b.queue and after.hand == b.hand and after.mods == b.mods
+				check(same, "preview matches play for %s at level %d" % [id, level])

@@ -82,3 +82,9 @@ Chests, merge and card levels live in `scripts/core/` (`pack_config.gd`, `collec
 `rewards.gd`) with their numbers in `data/packs.json`. The state is saved with the progress
 (`SaveData.pack_state()`). No screen uses it yet. Design: `design/gdd/card-packs.md`. Checks:
 `godot --headless --path . --script res://tests/run_pack_tests.gd` (pack checks only) or `run_tests.gd` (all).
+
+### Card levels (phase 2)
+Each card in `data/cards.json` has a `levels` list (bonus at levels 2 to 5), written by
+`tools/make_card_levels.py`. `Battle.levels` (card id to level) is filled by `Stages.new_battle`; `CardLevels`
+turns a level into effects. Debug: `--levels=N` puts every card at level N. Balance check:
+`LEVEL=3 PER_STAGE=50 godot --headless --path . --script res://tests/level_balance.gd`.

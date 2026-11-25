@@ -421,8 +421,8 @@ func _spacer() -> Control:
 	return c
 
 
-func _card_button(id: String, callback: Callable) -> Button:
-	var card_view := CardView.new().setup(id)
+func _card_button(id: String, callback: Callable, level: int = 1) -> Button:
+	var card_view := CardView.new().setup(id).set_level(level)
 	card_view.pressed.connect(callback)
 	return card_view
 
@@ -613,6 +613,18 @@ func start_tutorial() -> void:
 	_tut_show()
 
 
+## Card levels for a battle: the player's merged levels, or every card at N with the debug flag --levels=N.
+func _battle_levels() -> Dictionary:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--levels="):
+			var lv := clampi(int(a.get_slice("=", 1)), 1, PackConfig.max_level())
+			var all := {}
+			for id in GameData.card_order:
+				all[id] = lv
+			return all
+	return Collection.levels_for_battle(SaveData.pack_state())
+
+
 ## Starts a stage with the given deck (see Stages.deck_for).
 func _begin_stage(index: int, deck: Array) -> void:
 	tutorial = false
@@ -623,7 +635,7 @@ func _begin_stage(index: int, deck: Array) -> void:
 		deck.append(gift)
 	_stage_deck = deck.duplicate()
 	_prev_best = SaveData.stars(index)
-	battle = Stages.new_battle(index, deck, randi())
+	battle = Stages.new_battle(index, deck, randi(), _battle_levels())
 	_build_battle_screen(Stages.title(index))
 	if gift != "":
 		_toast("Gift card added to your deck: %s" % String(GameData.cards[gift]["name"]), 3.5)
@@ -726,7 +738,7 @@ func _refresh() -> void:
 	var fresh: Array = []
 	var can_play := battle.plays_left > 0 and not battle.over
 	for i in battle.hand.size():
-		var cb := _card_button(battle.hand[i], _on_card_pressed.bind(i))
+		var cb := _card_button(battle.hand[i], _on_card_pressed.bind(i), battle.level_of(battle.hand[i]))
 		cb.disabled = not can_play
 		hand_box.add_child(cb)
 		if i >= battle.hand.size() - new_count:

@@ -98,14 +98,15 @@ cleared stage 50.
 
 ### 3.5 What a level does (power budget)
 
-Each card in `cards.json` gets a `levels` list with the bonus at levels 2, 3, 4 and 5. Bonuses are small
-numeric gains, never new rules, except the level 5 **Mastery** bonus, which may be one extra small effect.
+Each card in `cards.json` has a `levels` list with the bonus at levels 2, 3, 4 and 5 (a level may have no
+numeric bonus). Bonuses are small numeric gains, never new rules. The code is `scripts/core/card_levels.gd`;
+`tools/make_card_levels.py` writes the table, so one edit there changes every card.
 
-Power points (PP), used only to keep cards balanced:
+Power points (PP) keep the cards comparable:
 
 | Gain | PP |
 |---|---|
-| +1 hit on the next cannonball | 1.0 |
+| +1 hit on the next cannonball | 1.0 (2.0 on a card that doubles its hits) |
 | +1 barrel removed (random or color removal) | 0.8 |
 | +1 card drawn | 2.0 |
 
@@ -115,20 +116,42 @@ Rules (enforced by a test, Section 8):
 2. The total bonus at level 5 is at most **5 PP**, or 40% of the card's base PP if that is larger.
 3. A card may not gain a draw before level 5.
 
-Family templates (a designer fills the exact numbers per card; cards not listed follow the nearest family):
+**The schedule is staggered on purpose.** The 100 stages are tuned with almost no slack, so one extra hit on
+every card played moves the bot's win rate by 24 points. Measured with `tests/level_balance.gd` (all cards at
+one level, 10,000 games): "+2 hits on every shape card" alone took the win rate from 52% to 77%, because a hit
+on a Row or Blast clears a whole line or area; every other family moved it 0 to 5 points. So shapes get no
+extra hits, and the rest get their bonuses at different levels instead of every level:
 
 | Family | Cards | Lv2 | Lv3 | Lv4 | Lv5 Mastery |
 |---|---|---|---|---|---|
-| Hit boost | Power Shot, Heavy Round, Overclock, Tidy Up | +1 hit | +1 hit | +1 hit | +1 hit and +1 barrel (1.8 PP) |
-| Shape | Row, Column, Cross, Diagonal, Blast, Wild variants, Prism | +1 hit | +1 hit | +1 hit | +2 hits |
-| Multiplier | Rapid Fire, Echo, Double Blast | +1 hit | +1 hit | +1 hit | +2 hits |
-| Removal | Scatter, Pick Off, Color Bomb, Color Storm, Pixel Rain | +1 barrel | +1 barrel | +1 barrel | +2 barrels |
-| Draw | Quick Draw, Sniper, Triple Draw | +1 hit | +1 hit | +1 hit | +1 card drawn |
-| Utility | Skip, Wildcard, Focus, Clone, Second Wind, Roulette, Reload, Arsenal | +1 hit | +1 hit | +1 hit (Reload and Arsenal: +1 hit on the added ball) | +1 hit and +1 barrel (1.8 PP) |
+| Hit boost | Power Shot, Heavy Round, Overclock, Tidy Up | +1 hit | no bonus | +1 hit | +1 hit |
+| Utility | Skip, Wildcard, Focus, Clone, Second Wind, Roulette | +1 hit | no bonus | +1 hit | +1 hit |
+| Draw | Quick Draw, Sniper, Triple Draw | +1 hit | no bonus | +1 hit | +1 card drawn |
+| Added ball | Reload, Arsenal | +1 hit on the added ball | no bonus | +1 hit on the added ball | +1 hit on the added ball |
+| Shape | Row, Column, Cross, Diagonal, Blast, the Wild variants, Heavy Blast, Prism | no bonus | no bonus | +1 barrel | +1 barrel |
+| Multiplier | Rapid Fire, Echo, Double Blast | no bonus | +1 barrel | no bonus | +1 barrel |
+| Small removal | Scatter, Pick Off, Pixel Rain | no bonus | +1 barrel | no bonus | +1 barrel |
+| Color removal | Color Bomb, Color Storm | no bonus | +1 | no bonus | +1 |
 
-Example, Power Shot ("+2 hits for the next cannonball", base 2 PP): Lv2 +3 hits, Lv3 +4, Lv4 +5, Lv5 +6 hits
-and one barrel removed. The bonus is 4 hits (4 PP) plus one barrel (0.8 PP), which is 4.8 PP: inside the 5 PP
-cap. Adding a second barrel at level 5 would break rule 2, and the budget test (Section 8) catches that.
+In the game, a card above level 1 shows a gold level badge in its corner and a line such as "Lv 4: +2 hits".
+A level with no numeric bonus is still a visible step (the badge changes and the Cargo Hold shows the level
+reached); a cosmetic frame tint for those levels is a polish item for phase 5.
+
+Example, Power Shot ("+2 hits for the next cannonball"): level 2 and 3 give +3 hits, level 4 gives +4 and
+level 5 gives +5.
+
+Measured result (bot, 5,000 games per level, every unlocked card at that level; level 1 is today's game):
+
+| Level of every card | Win rate | 3-star rate |
+|---|---|---|
+| 1 (baseline) | 52.6% | 47.2% |
+| 2 | 55.2% | 51.3% |
+| 3 | 60.8% | 57.4% |
+| 4 | 66.9% | 64.7% |
+| 5 | 77.5% | 76.4% |
+
+This meets acceptance 8.10: level 3 is 8 points above the baseline (limit 12) and level 5 stays under 80%.
+The first draft (+1 hit every level on every card) reached 85% at level 3 and 94% at level 5.
 
 ### 3.6 Transcended cards (new, pack-only)
 
@@ -334,7 +357,7 @@ Testable in `tests/run_tests.gd` (headless) unless marked manual.
    and a pending reveal cannot be rerolled.
 9. **Migration.** An old save loads with every unlocked card at level 1 with 1 copy and receives the
    Welcome Aboard crates exactly once.
-10. **Balance.** The bot (`run_tests.gd` bot report and `tune_slack.gd`) with every unlocked card at level 3
+10. **Balance.** The bot (`tests/level_balance.gd`, run by hand because it plays 10,000 games) with every unlocked card at level 3
     wins at most 12 percentage points more than the level 1 baseline (currently 52%), and its average
     3-star rate is at most 15 points higher. With every card at level 5, win rate stays under 80%.
 11. **Economy.** The simulation (`tools/pack_sim.py`) shows, for the casual profile, average level between
@@ -387,8 +410,10 @@ Suggested order. Each phase ships and tests on its own, behind a feature flag un
 1. **Data and rules (no UI). Done.** `data/packs.json`; `scripts/core/collection.gd` (copies, levels, merge,
    Pearls); `scripts/core/packs.gd` (rolling with pity, pending reveal); save format with a version number and
    migration; the new tests (8.1 to 8.9). Add `tools/pack_sim.py` to the repo.
-2. **Leveled cards in battle.** `levels` in `cards.json` for all 33 cards, `Battle` reads a `levels`
-   dictionary, preview parity test, card view shows pips. Run the bot balance checks (8.10) and adjust budgets.
+2. **Leveled cards in battle. Done.** `levels` in `cards.json` for all 33 cards (`tools/make_card_levels.py`),
+   `CardLevels` and `Battle.levels`, preview parity test at levels 1 to 5, a level badge and bonus line on the
+   card, the `--levels=N` debug flag, and `tests/level_balance.gd` (bot win rate with every card at one level).
+   The first schedule was far too strong and was rebalanced (Section 3.5).
 3. **Transcended.** Four new cards and effect kinds (remove biggest color with a cap, add wild balls,
    free turn, repeat last card), the Captain's Slot, deck integration.
 4. **Screens.** Treasury, chest opening, Cargo Hold, Port Market, results and map rewards, menu red dots,

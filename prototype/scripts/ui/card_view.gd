@@ -11,6 +11,9 @@ var selected: bool = false:
 		selected = value
 		queue_redraw()
 
+## Card level (1 to 5). Above level 1 the card shows a level badge and what the level adds.
+var level: int = 1
+
 var _card: Dictionary = {}
 var _body := StyleBoxFlat.new()
 var _ribbon := StyleBoxFlat.new()
@@ -29,6 +32,34 @@ func setup(id: String) -> CardView:
 	mouse_entered.connect(queue_redraw)
 	mouse_exited.connect(queue_redraw)
 	return self
+
+
+func set_level(value: int) -> CardView:
+	level = value
+	queue_redraw()
+	return self
+
+
+## Level badge in the top right corner, and the bonus text under the description.
+func _draw_level(dsz: Vector2, text_y: float, text_width: float) -> void:
+	if level < 2:
+		return
+	var font := UiKit.bold_font()
+	var c := Vector2(dsz.x - 22.0, 22.0)
+	draw_circle(c, 13.0, Color(0.16, 0.1, 0.05, 0.95))
+	draw_circle(c, 11.0, UiKit.GOLD)
+	var label := str(level)
+	var tw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, 15).x
+	draw_string(font, c + Vector2(-tw / 2.0, 5.5), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.25, 0.14, 0.04))
+	var bonus := CardLevels.bonus_text(_card, level)
+	if bonus != "":
+		draw_multiline_string(font, Vector2(20.0, text_y), "Lv %d: %s" % [level, bonus], HORIZONTAL_ALIGNMENT_CENTER, text_width, 12, 2, Color("2d6a34"))
+
+
+## Y position just under the description, where the level bonus text goes.
+func _bonus_y(desc_y: float, width: float, max_lines: int) -> float:
+	var size_px := ThemeDB.fallback_font.get_multiline_string_size(_card["desc"], HORIZONTAL_ALIGNMENT_CENTER, width, 13, max_lines)
+	return desc_y + size_px.y + 2.0
 
 
 func _draw() -> void:
@@ -78,6 +109,7 @@ func _draw() -> void:
 	UiKit.draw_card_icon(self, Rect2(r.position + Vector2(8, 42 + extra * 0.28), Vector2(r.size.x - 16, 56)), _card)
 	draw_multiline_string(ThemeDB.fallback_font, Vector2(r.position.x + 8, r.position.y + 116.0 + extra * 0.6), _card["desc"],
 		HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 16.0, 14, 3 if k > 0.95 else 5, UiKit.INK)
+	_draw_level(dsz, r.position.y + 116.0 + extra * 0.6 + 44.0, r.size.x - 16.0)
 	if disabled:
 		_body.bg_color = Color(0.05, 0.03, 0.02, 0.5)
 		_body.set_border_width_all(0)
@@ -126,6 +158,8 @@ func _draw_textured(rc: Color, hovered: bool, dsz: Vector2, frame_tex: Texture2D
 	UiKit.draw_card_icon(self, Rect2(Vector2(20, 54 + extra * 0.28), Vector2(dsz.x - 40, 52)), _card)
 	draw_multiline_string(ThemeDB.fallback_font, Vector2(20, 126.0 + extra * 0.6), _card["desc"],
 		HORIZONTAL_ALIGNMENT_CENTER, dsz.x - 40.0, 13, 3 if dsz.x < 175.0 and dsz.y < 205.0 else 5, UiKit.INK)
+	var max_lines := 3 if dsz.x < 175.0 and dsz.y < 205.0 else 5
+	_draw_level(dsz, _bonus_y(126.0 + extra * 0.6, dsz.x - 40.0, max_lines), dsz.x - 40.0)
 	if disabled:
 		_body.bg_color = Color(0.05, 0.03, 0.02, 0.5)
 		_body.shadow_size = 0

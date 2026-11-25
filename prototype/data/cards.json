@@ -11,6 +11,27 @@
      "kind": "ammo",
      "n": 2
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -23,6 +44,27 @@
      "kind": "ammo",
      "n": 3
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -35,6 +77,22 @@
      "kind": "shape",
      "shape": "row"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -47,6 +105,22 @@
      "kind": "shape",
      "shape": "col"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -58,6 +132,27 @@
     {
      "kind": "wild"
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -69,6 +164,27 @@
     {
      "kind": "skip"
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -81,6 +197,22 @@
      "kind": "clear_random",
      "n": 3
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -93,6 +225,22 @@
      "kind": "clear_random",
      "n": 2
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -105,6 +253,27 @@
      "kind": "draw",
      "n": 1
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "draw",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -116,6 +285,27 @@
     {
      "kind": "recolor_next"
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -128,6 +318,27 @@
      "kind": "add_shooter",
      "n": 3
     }
+   ],
+   "levels": [
+    [
+     {
+      "bump": "add_shooter",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "bump": "add_shooter",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "bump": "add_shooter",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -139,6 +350,22 @@
     {
      "kind": "double"
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -155,6 +382,27 @@
      "kind": "ammo",
      "n": 1
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -171,6 +419,27 @@
      "kind": "draw",
      "n": 1
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "draw",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -183,6 +452,22 @@
      "kind": "shape",
      "shape": "cross"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -195,6 +480,22 @@
      "kind": "shape",
      "shape": "diag"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -207,6 +508,22 @@
      "kind": "clear_color",
      "n": 5
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_color",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_color",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -218,6 +535,27 @@
     {
      "kind": "dup"
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -234,6 +572,27 @@
      "kind": "draw",
      "n": 1
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -246,6 +605,27 @@
      "kind": "extra_play",
      "n": 1
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -261,6 +641,22 @@
      "kind": "shape",
      "shape": "row"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -276,6 +672,22 @@
      "kind": "shape",
      "shape": "col"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -288,6 +700,27 @@
      "kind": "add_shooter",
      "n": 5
     }
+   ],
+   "levels": [
+    [
+     {
+      "bump": "add_shooter",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "bump": "add_shooter",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "bump": "add_shooter",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -300,6 +733,27 @@
      "kind": "draw",
      "n": 2
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "draw",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -315,6 +769,22 @@
      "kind": "shape",
      "shape": "row"
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -327,6 +797,22 @@
      "kind": "shape",
      "shape": "blast"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -342,6 +828,22 @@
      "kind": "shape",
      "shape": "cross"
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -354,6 +856,22 @@
      "kind": "clear_color",
      "n": 8
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_color",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_color",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -370,6 +888,22 @@
      "kind": "ammo",
      "n": 2
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -385,6 +919,22 @@
      "kind": "shape",
      "shape": "blast"
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -396,6 +946,27 @@
     {
      "kind": "chaos"
     }
+   ],
+   "levels": [
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "ammo",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -415,6 +986,22 @@
      "kind": "ammo",
      "n": 3
     }
+   ],
+   "levels": [
+    [],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   },
   {
@@ -427,6 +1014,22 @@
      "kind": "clear_random",
      "n": 10
     }
+   ],
+   "levels": [
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ],
+    [],
+    [
+     {
+      "kind": "clear_random",
+      "n": 1
+     }
+    ]
    ]
   }
  ],

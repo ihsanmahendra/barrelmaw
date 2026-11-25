@@ -114,8 +114,9 @@ static func title(index: int) -> String:
 	return "Stage %d  -  %s%s" % [index + 1, picture(index)["name"], tag]
 
 
-static func new_battle(index: int, deck: Array, seed_value: int) -> Battle:
+static func new_battle(index: int, deck: Array, seed_value: int, levels: Dictionary = {}) -> Battle:
 	var b := Battle.new(picture(index)["rows"], deck, slack(index), GameData.hand_size, seed_value, {}, specials_for(index))
+	b.levels = levels
 	b.star2_turns = star2_turns(index)
 	b.star3_turns = star3_turns(index)
 	return b

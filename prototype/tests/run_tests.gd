@@ -116,25 +116,7 @@ func test_tutorial_script() -> void:
 
 ## Simple bot: scores each card by rough power, fires with the best one.
 func bot_pick(b: Battle) -> int:
-	var best := -1
-	var best_score := -1.0
-	for i in b.hand.size():
-		var score := randf() * 0.5
-		var id: String = b.hand[i]
-		for eff in GameData.cards[id]["effects"]:
-			match eff["kind"]:
-				"ammo", "clear_random", "clear_color", "add_shooter":
-					score += float(eff.get("n", 1))
-				"shape", "wild", "double":
-					score += 3.0
-				"skip":
-					score += 0.5
-				_:
-					score += 1.0
-		if score > best_score:
-			best_score = score
-			best = i
-	return best
+	return Bot.pick(b)
 
 
 ## Every card is available exactly once through the starter deck or an unlock, and new cards come
