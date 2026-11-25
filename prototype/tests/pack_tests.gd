@@ -29,13 +29,22 @@ func run() -> void:
 	test_level_data()
 	test_level_effects()
 	test_level_parity()
+	test_transcended_cards()
+	test_transcended_effects()
+	test_echo_parity()
+	test_captain_slots()
 
 
-## Real cards plus four stand-in Transcended cards (the real ones arrive in a later phase).
 func _catalog() -> Dictionary:
-	var c := GameData.cards.duplicate()
-	for i in 4:
-		c["t%d" % i] = {"id": "t%d" % i, "name": "T%d" % i, "rarity": "transcended"}
+	return GameData.cards.duplicate()
+
+
+## The cards without any Transcended card (what the game had before phase 3).
+func _catalog_without_top() -> Dictionary:
+	var c := {}
+	for id in GameData.cards:
+		if GameData.cards[id]["rarity"] != "transcended":
+			c[id] = GameData.cards[id]
 	return c
 
 
@@ -151,7 +160,7 @@ func test_pity() -> void:
 	var st2 := Collection.new_state()
 	var rng2 := _rng(9)
 	for i in 20:
-		Packs.roll_chest(PackConfig.chest("vault"), st2, 100, GameData.cards, rng2)
+		Packs.roll_chest(PackConfig.chest("vault"), st2, 100, _catalog_without_top(), rng2)
 	check(int(st2["pity"]["vault_dry"]) == 0, "vault pity waits until a Transcended card exists")
 
 
@@ -185,7 +194,7 @@ func test_no_impossible_pulls() -> void:
 ## 8.5: the exact number of copies reaches level 5, one fewer stops at level 4, extras become Pearls.
 func test_merge_math() -> void:
 	var catalog := _catalog()
-	var samples := {"common": "power_shot", "rare": "cross_strike", "epic": "blast", "legendary": "prism", "transcended": "t0"}
+	var samples := {"common": "power_shot", "rare": "cross_strike", "epic": "blast", "legendary": "prism", "transcended": "maelstrom"}
 	for rarity in samples:
 		var id: String = samples[rarity]
 		var need := PackConfig.total_to_max(rarity)
@@ -354,7 +363,7 @@ func test_save_and_migration() -> void:
 	Collection.add_copy(st, "power_shot", catalog)
 	Collection.add_copy(st, "power_shot", catalog)
 	Collection.merge(st, "power_shot", catalog)
-	Collection.add_copy(st, "t1", catalog)
+	Collection.add_copy(st, "ghost_compass", catalog)
 	st["pity"]["since_epic"] = 12
 	Rewards.daily_claim(st, "2026-11-25")
 	var opened := Packs.open_chest(st, "crate", 0, catalog, _rng(3), GameData.starter_deck)
@@ -363,7 +372,7 @@ func test_save_and_migration() -> void:
 	SaveData.reload_from_disk()
 	var after := SaveData.pack_state()
 	check(_same(after, before), "pack state survives a save and load")
-	check(Packs.count(after, "crate") == 2 and Collection.level_of(after, "power_shot") == 2 and Collection.level_of(after, "t1") == 1, "copies, levels and chests are kept")
+	check(Packs.count(after, "crate") == 2 and Collection.level_of(after, "power_shot") == 2 and Collection.level_of(after, "ghost_compass") == 1, "copies, levels and chests are kept")
 	check((after["pending"] as Array).size() == 1 and _same(after["pending"][0]["cards"], opened["cards"]), "the pending reveal is saved with the same cards")
 	var again := Packs.open_chest(after, "crate", 0, catalog, _rng(99), GameData.starter_deck)
 	check(bool(again["ok"]) and (after["pending"] as Array).size() == 2, "the next chest opens and queues its own reveal")
@@ -477,3 +486,168 @@ func test_level_parity() -> void:
 				b.play_card(0)
 				var same := after.board.cells == b.board.cells and after.queue == b.queue and after.hand == b.hand and after.mods == b.mods
 				check(same, "preview matches play for %s at level %d" % [id, level])
+
+
+# ---------- Transcended cards (phase 3) ----------
+
+func test_transcended_cards() -> void:
+	var top: Array = []
+	for id in GameData.card_order:
+		if GameData.cards[id]["rarity"] == "transcended":
+			top.append(id)
+	check(top.size() == 4, "four Transcended cards, got %d" % top.size())
+	for id in ["maelstrom", "davy_ledger", "ghost_compass", "phantom_echo"]:
+		check(top.has(id), "Transcended card exists: " + id)
+	check(UiKit.RARITY_COLORS.has("transcended"), "Transcended has a rarity color")
+	# With real cards in the game, a vault can finally pay out a Transcended card.
+	var st := Collection.new_state()
+	var rng := _rng(4)
+	var seen := {}
+	for i in 30:
+		for c in Packs.roll_chest(PackConfig.chest("vault"), st, 100, _catalog(), rng):
+			if c["rarity"] == "transcended":
+				seen[c["id"]] = true
+	check(seen.size() == 4, "30 vaults give all four Transcended cards, got %d" % seen.size())
+
+
+func _board_battle(rows: Array, id: String, level: int = 1) -> Battle:
+	var deck: Array = []
+	deck.resize(10)
+	deck.fill(id)
+	var b := Battle.new(rows, deck, 1.5, 3, 5)
+	b.levels = {id: level}
+	return b
+
+
+func test_transcended_effects() -> void:
+	# Maelstrom: every barrel of the biggest color, but at most 20.
+	var rows: Array = []
+	for i in 8:
+		rows.append("RRRRRRRB")  # 56 red, 8 blue
+	var m := _board_battle(rows, "maelstrom")
+	m.play_card(0)
+	check(m.removed_last.size() == 20, "Maelstrom removes 20 of the biggest color, got %d" % m.removed_last.size())
+	var m2 := _board_battle(["RRRRBB", "RRRRBB"], "maelstrom")
+	m2.play_card(0)
+	check(m2.removed_last.size() == 8 and m2.board.color_counts().has("B") and not m2.board.color_counts().has("R"), "Maelstrom takes the whole color when it has fewer than 20")
+	# Jones' Ledger: two wild 5-hit balls at the front.
+	var l := _board_battle(["BBBBBBBB", "BBBBBBBB"], "davy_ledger")
+	l.queue = [{"color": "R", "ammo": 3}]
+	l.play_card(0)
+	check(l.queue.size() == 3 and bool(l.queue[0].get("wild", false)) and int(l.queue[0]["ammo"]) == 3 and int(l.queue[1]["ammo"]) == 3, "Ledger adds two 3-hit wild balls")
+	check(l.shots_left() == 6, "the two wild balls count as usable shots and the red one does not, got %d" % l.shots_left())
+	var before := l.board.cells.duplicate()
+	l.fire()
+	check(l.board.cells != before and l.removed_last.size() == 3, "a wild ball hits a color it does not match, removed %d" % l.removed_last.size())
+	# A wild ball is not thrown out when its own color is gone; a normal one is.
+	var l2 := _board_battle(["BBBB"], "skip")
+	l2.queue = [{"color": "R", "ammo": 2, "wild": true}, {"color": "R", "ammo": 2}]
+	l2._prune_dead_shooters()
+	check(l2.queue.size() == 1 and bool(l2.queue[0].get("wild", false)), "only the wild ball survives pruning")
+	# Level bonus reaches both balls.
+	var l3 := _board_battle(["BBBBBBBB", "BBBBBBBB"], "davy_ledger", 5)
+	l3.queue = []
+	l3.play_card(0)
+	check(l3.queue.size() == 2 and int(l3.queue[0]["ammo"]) == 3 and l3.removed_last.size() == 2, "Ledger level 5 adds 2 barrels instead of hits, removed %d" % l3.removed_last.size())
+	# Ghost Compass: a free turn and 2 cards.
+	var g := _board_battle(["RRRRRRRR", "RRRRRRRR", "RRRRRRRR"], "ghost_compass")
+	g.queue = [{"color": "R", "ammo": 1}, {"color": "R", "ammo": 1}, {"color": "R", "ammo": 1}]
+	var turns_before := g.turns
+	var hand_before := g.hand.size()
+	g.play_card(0)
+	check(g.hand.size() == hand_before - 1 + 2, "Ghost Compass draws 2 cards")
+	check(int(g.mods["ammo"]) == 3 and g.plays_left == 1, "Ghost Compass gives +3 hits and leaves one more card to play")
+	g.fire()
+	check(g.turns == turns_before, "a free turn does not use up a turn: %d then %d" % [turns_before, g.turns])
+	var g2 := _board_battle(["RRRRRRRR", "RRRRRRRR", "RRRRRRRR"], "skip")
+	g2.queue = [{"color": "R", "ammo": 1}, {"color": "R", "ammo": 1}]
+	var t2 := g2.turns
+	g2.fire()
+	check(g2.turns == t2 + 1, "a normal turn counts")
+	# A free winning turn does not count either.
+	var g3 := _board_battle(["R"], "ghost_compass")
+	g3.star3_turns = 1
+	g3.star2_turns = 2
+	g3.hand = ["ghost_compass"]
+	g3.queue = [{"color": "R", "ammo": 1}, {"color": "R", "ammo": 1}]
+	g3.turns = 1
+	g3.play_card(0)
+	g3.fire()
+	check(g3.won and g3.turns == 0, "winning on a free turn: turns %d" % g3.turns)
+	# Phantom Echo: repeats the last card at +1 level, or draws 1 card.
+	var e := _board_battle(["RRRRRRRR", "RRRRRRRR"], "phantom_echo")
+	e.hand = ["phantom_echo", "phantom_echo", "phantom_echo"]
+	var hand_e := e.hand.size()
+	e.play_card(0)
+	check(e.hand.size() == hand_e - 1 + 1 and e.last_played == "", "with no last card Phantom Echo draws 1 and records nothing")
+	var e2 := _board_battle(["RRRRRRRR", "RRRRRRRR"], "phantom_echo")
+	e2.hand = ["power_shot", "phantom_echo", "phantom_echo"]
+	e2.play_card(0)
+	check(int(e2.mods["ammo"]) == 2 and e2.last_played == "power_shot", "Power Shot adds 2 hits")
+	e2.plays_left = 3
+	e2.play_card(0)  # Phantom Echo (the hand is now phantom_echo, phantom_echo)
+	check(int(e2.mods["ammo"]) == 2 + 3 + 1 and e2.last_played == "power_shot", "Echo repeats Power Shot at level 2 (+3) and adds 1 hit, got %d" % int(e2.mods["ammo"]))
+	e2.play_card(0)
+	check(int(e2.mods["ammo"]) == 2 + 4 + 4, "a second Echo repeats it again, got %d" % int(e2.mods["ammo"]))
+	# The repeat uses the level above the card's level, up to 5.
+	var e3 := _board_battle(["RRRRRRRR", "RRRRRRRR"], "phantom_echo")
+	e3.levels = {"power_shot": 4, "phantom_echo": 1}
+	e3.hand = ["power_shot", "phantom_echo", "phantom_echo"]
+	e3.plays_left = 3
+	e3.play_card(0)
+	var after_ps := int(e3.mods["ammo"])
+	e3.play_card(0)
+	check(int(e3.mods["ammo"]) - after_ps == 6, "Echo repeats a level 4 card at level 5 (+5 hits) and adds 1, got +%d" % (int(e3.mods["ammo"]) - after_ps))
+	e3.levels["power_shot"] = 5
+	var b5 := int(e3.mods["ammo"])
+	e3.play_card(0)
+	check(int(e3.mods["ammo"]) - b5 == 6, "and never above level 5")
+
+
+## Previews must equal the real play for the new cards too, including Phantom Echo after another card.
+func test_echo_parity() -> void:
+	for id in ["maelstrom", "davy_ledger", "ghost_compass", "phantom_echo"]:
+		for level in range(1, PackConfig.max_level() + 1):
+			for seed_value in [31, 32]:
+				var b := Battle.new(GameData.pictures[seed_value % 10]["rows"], [id, "power_shot", "reload", id, "color_bomb", id], 0.8, 3, seed_value, {}, {"bomb": 2, "ammo": 1, "iron": 3, "curse": 2})
+				b.levels = {id: level, "power_shot": level, "reload": level, "color_bomb": level}
+				b.hand = ["power_shot", id, "reload"]
+				b.play_card(0)
+				var pv := b.preview_card(0)  # the next card (the Transcended one) after a first card
+				var after: Battle = pv["battle"]
+				b.play_card(0)
+				var same := after.board.cells == b.board.cells and after.queue == b.queue and after.hand == b.hand and after.mods == b.mods and after.turns == b.turns and after.last_played == b.last_played
+				check(same, "preview matches play for %s at level %d" % [id, level])
+				check(after.clone().last_played == b.last_played, "a clone keeps the last played card")
+
+
+func test_captain_slots() -> void:
+	var catalog := _catalog()
+	check(Collection.captain_slots(0) == 0 and Collection.captain_slots(49) == 0, "no Captain's Slot before stage 50")
+	check(Collection.captain_slots(50) == 1 and Collection.captain_slots(99) == 1, "one slot after stage 50")
+	check(Collection.captain_slots(100) == 2, "two slots after stage 100")
+	var st := Collection.new_state()
+	check(not Collection.equip(st, "maelstrom", 60, catalog), "cannot equip a card you do not own")
+	Collection.add_copy(st, "maelstrom", catalog)
+	Collection.add_copy(st, "ghost_compass", catalog)
+	Collection.add_copy(st, "phantom_echo", catalog)
+	check(not Collection.equip(st, "maelstrom", 10, catalog), "no slot before stage 50")
+	check(Collection.equip(st, "maelstrom", 60, catalog) and not Collection.equip(st, "maelstrom", 60, catalog), "equip once")
+	check(not Collection.equip(st, "ghost_compass", 60, catalog), "one slot is full")
+	check(Collection.equip(st, "ghost_compass", 100, catalog) and not Collection.equip(st, "phantom_echo", 100, catalog), "two slots after stage 100")
+	check(Collection.equipped_cards(st, 60, catalog) == ["maelstrom"], "only as many as there are slots count")
+	check(Collection.equipped_cards(st, 100, catalog) == ["maelstrom", "ghost_compass"], "both count at stage 100")
+	check(not Collection.equip(st, "power_shot", 100, catalog), "only Transcended cards go in the slots")
+	Collection.unequip(st, "maelstrom")
+	check(Collection.equipped_cards(st, 100, catalog) == ["ghost_compass"], "unequip frees a slot")
+	# The stage deck: no Transcended card unless equipped, and never twice.
+	var base: Array = Stages.deck_for(59)
+	var deck := Collection.deck_with_equipped(base, st, 100, catalog)
+	check(deck.size() == base.size() + 1 and deck.has("ghost_compass") and not deck.has("maelstrom"), "stage deck gets the equipped card")
+	var again := Collection.deck_with_equipped(deck, st, 100, catalog)
+	check(again.size() == deck.size(), "building the deck twice does not duplicate (Try again)")
+	check(Collection.deck_with_equipped(base, Collection.new_state(), 100, catalog).size() == base.size(), "nothing equipped, nothing added")
+	# A stale equipped id (not owned any more) is ignored.
+	st["equipped"] = ["maelstrom"]
+	st["owned"].erase("maelstrom")
+	check(Collection.equipped_cards(st, 100, catalog).is_empty(), "an equipped card that is not owned is ignored")

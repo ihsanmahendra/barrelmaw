@@ -14,6 +14,7 @@ static func new_state() -> Dictionary:
 		"spare": {},      # card id -> spare copies
 		"level": {},      # card id -> level (missing = 1)
 		"owned": {},      # card id -> true for cards owned through chests only (Transcended)
+		"equipped": [],   # Transcended card ids placed in the Captain's Slots
 		"chests": {},     # chest id -> count in the inventory
 		"doubloons": 0,
 		"pearls": 0,
@@ -164,4 +165,53 @@ static func levels_for_battle(st: Dictionary) -> Dictionary:
 		var lv := level_of(st, str(id))
 		if lv > 1:
 			out[str(id)] = lv
+	return out
+
+
+# ---------- Captain's Slots (Transcended cards in the deck) ----------
+
+## Slots for Transcended cards: 1 once stage 50 is cleared, 2 once stage 100 is cleared.
+static func captain_slots(progress: int) -> int:
+	if progress >= Stages.TOTAL:
+		return 2
+	if progress >= PackConfig.transcended_unlock_cleared():
+		return 1
+	return 0
+
+
+## Transcended cards that join every deck: the equipped ones the player still owns, up to the slot count.
+static func equipped_cards(st: Dictionary, progress: int, catalog: Dictionary) -> Array:
+	var out: Array = []
+	for id in st["equipped"]:
+		if out.size() >= captain_slots(progress):
+			break
+		if catalog.has(str(id)) and st["owned"].has(str(id)) and not out.has(str(id)):
+			out.append(str(id))
+	return out
+
+
+## Puts an owned Transcended card in a free slot. Returns false when it is not owned, already equipped
+## or every slot is taken.
+static func equip(st: Dictionary, id: String, progress: int, catalog: Dictionary) -> bool:
+	if not catalog.has(id) or rarity_of(catalog, id) != "transcended" or not st["owned"].has(id):
+		return false
+	var now := equipped_cards(st, progress, catalog)
+	if now.has(id) or now.size() >= captain_slots(progress):
+		return false
+	now.append(id)
+	st["equipped"] = now
+	return true
+
+
+static func unequip(st: Dictionary, id: String) -> void:
+	(st["equipped"] as Array).erase(id)
+
+
+## The deck for a stage: the stage deck without any Transcended card, plus the equipped ones.
+static func deck_with_equipped(deck: Array, st: Dictionary, progress: int, catalog: Dictionary) -> Array:
+	var out: Array = []
+	for id in deck:
+		if not (catalog.has(str(id)) and rarity_of(catalog, str(id)) == "transcended"):
+			out.append(id)
+	out.append_array(equipped_cards(st, progress, catalog))
 	return out

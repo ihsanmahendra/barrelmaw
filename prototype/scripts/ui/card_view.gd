@@ -28,10 +28,15 @@ func setup(id: String) -> CardView:
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 		add_theme_stylebox_override(state, empty)
 	custom_minimum_size = Vector2(0, 188)
+	set_process(_card["rarity"] == "transcended")  # only the shimmering cards redraw every frame
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mouse_entered.connect(queue_redraw)
 	mouse_exited.connect(queue_redraw)
 	return self
+
+
+func _process(_delta: float) -> void:
+	queue_redraw()
 
 
 func set_level(value: int) -> CardView:
@@ -66,6 +71,8 @@ func _draw() -> void:
 	if _card.is_empty():
 		return
 	var rc: Color = UiKit.RARITY_COLORS[_card["rarity"]]
+	if _card["rarity"] == "transcended":
+		rc = UiKit.aurora(float(Time.get_ticks_msec()) / 1000.0)  # shimmering frame
 	var hovered := is_hovered() and not disabled
 	# The card is designed for a width of DESIGN_W. Narrower cards (a hand of 4 or more) draw the
 	# whole design scaled down, so names, icons and text never spill onto the neighbors.
@@ -156,10 +163,12 @@ func _draw_textured(rc: Color, hovered: bool, dsz: Vector2, frame_tex: Texture2D
 	# Icon and description, spread out when the scaled card is taller than designed.
 	var extra := maxf(0.0, dsz.y - 188.0)
 	UiKit.draw_card_icon(self, Rect2(Vector2(20, 54 + extra * 0.28), Vector2(dsz.x - 40, 52)), _card)
-	draw_multiline_string(ThemeDB.fallback_font, Vector2(20, 126.0 + extra * 0.6), _card["desc"],
-		HORIZONTAL_ALIGNMENT_CENTER, dsz.x - 40.0, 13, 3 if dsz.x < 175.0 and dsz.y < 205.0 else 5, UiKit.INK)
+	# A card with a level bonus line lifts its description a little so both fit above the frame.
+	var desc_y := 126.0 + extra * 0.6 - (12.0 if level > 1 else 0.0)
 	var max_lines := 3 if dsz.x < 175.0 and dsz.y < 205.0 else 5
-	_draw_level(dsz, _bonus_y(126.0 + extra * 0.6, dsz.x - 40.0, max_lines), dsz.x - 40.0)
+	draw_multiline_string(ThemeDB.fallback_font, Vector2(20, desc_y), _card["desc"],
+		HORIZONTAL_ALIGNMENT_CENTER, dsz.x - 40.0, 13, max_lines, UiKit.INK)
+	_draw_level(dsz, _bonus_y(desc_y, dsz.x - 40.0, max_lines), dsz.x - 40.0)
 	if disabled:
 		_body.bg_color = Color(0.05, 0.03, 0.02, 0.5)
 		_body.shadow_size = 0

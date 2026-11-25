@@ -31,8 +31,11 @@ FAMILIES = {
                    [NONE, [RAND(1)], NONE, [RAND(1)]]),
     "small_removal": (["scatter", "pick_off", "pixel_rain"],
                       [NONE, [RAND(1)], NONE, [RAND(1)]]),
-    "color_removal": (["color_bomb", "color_storm"],
+    "color_removal": (["color_bomb", "color_storm", "maelstrom"],
                       [NONE, [COLOR(1)], NONE, [COLOR(1)]]),
+    # Transcended cards: a ball bump on a two-ball card is worth 2, so they gain barrels or hits instead.
+    "transcended_balls": (["davy_ledger"], [NONE, [RAND(1)], NONE, [RAND(1)]]),
+    "transcended_turn": (["ghost_compass", "phantom_echo"], [[AMMO(1)], NONE, [AMMO(1)], [AMMO(1)]]),
 }
 
 d = json.load(open("data/cards.json"))

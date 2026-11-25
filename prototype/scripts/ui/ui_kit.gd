@@ -15,7 +15,13 @@ const RARITY_COLORS := {
 	"rare": Color("2f9fd0"),
 	"epic": Color("8e54d9"),
 	"legendary": Color("e0a020"),
+	"transcended": Color("3de0c8"),
 }
+
+
+## Slowly shifting aurora color (teal, violet, gold) for Transcended cards. t is time in seconds.
+static func aurora(t: float) -> Color:
+	return Color.from_hsv(fposmod(0.52 + 0.22 * sin(t * 0.8) + 0.08 * sin(t * 1.9), 1.0), 0.5, 1.0)
 
 static var _bold: FontVariation
 static var _ui_tex: Dictionary = {}
@@ -150,8 +156,13 @@ static func draw_card_icon(c: CanvasItem, rect: Rect2, card: Dictionary) -> void
 	var shape := ""
 	var ammo := 0
 	var count := 0
+	var ball_count := 1
+	var wild_ball := false
 	for e in effects:
 		kinds[e["kind"]] = true
+		if e["kind"] == "add_shooter":
+			ball_count = int(e.get("count", 1))
+			wild_ball = bool(e.get("wild", false))
 		if e["kind"] == "shape":
 			shape = e["shape"]
 		if e["kind"] == "ammo":
@@ -171,7 +182,13 @@ static func draw_card_icon(c: CanvasItem, rect: Rect2, card: Dictionary) -> void
 		if kinds.has("double"):
 			_outlined(c, font, Vector2(badge_x - 34.0, mid.y + 22.0), "x2", 20, GOLD)
 		return
-	if kinds.has("clear_color") or kinds.has("clear_random"):
+	if kinds.has("free_turn"):
+		_icon_compass(c, mid + Vector2(-14, 0), 25.0)
+		_card_backs(c, mid + Vector2(34, -2), 2, 0.75)
+		_outlined(c, font, mid + Vector2(24, 20), "+2", 20, GOLD)
+	elif kinds.has("repeat_last"):
+		_icon_echo(c, mid)
+	elif kinds.has("clear_color") or kinds.has("clear_random"):
 		PirateArt.draw_barrel(c, mid + Vector2(-14, 0), 40.0, 48.0, Color("ef476f"))
 		c.draw_line(mid + Vector2(-26, -12), mid + Vector2(-2, 12), Color("ffffff"), 4.0)
 		c.draw_line(mid + Vector2(-2, -12), mid + Vector2(-26, 12), Color("ffffff"), 4.0)
@@ -198,6 +215,11 @@ static func draw_card_icon(c: CanvasItem, rect: Rect2, card: Dictionary) -> void
 	elif kinds.has("dup"):
 		PirateArt.draw_cannonball(c, mid + Vector2(-8, 4), 20.0, Color("ef476f").darkened(0.15))
 		PirateArt.draw_cannonball(c, mid + Vector2(12, -4), 20.0, Color("ef476f"))
+	elif kinds.has("add_shooter") and ball_count > 1:
+		var ball_col := Color("f6ead0") if wild_ball else Color("ef476f")  # pale balls are wild
+		PirateArt.draw_cannonball(c, mid + Vector2(-16, 6), 20.0, ball_col, str(count), 20)
+		PirateArt.draw_cannonball(c, mid + Vector2(18, -4), 20.0, ball_col, str(count), 20)
+		_outlined(c, font, mid + Vector2(-44, -10), "x%d" % ball_count, 22, GOLD)
 	elif kinds.has("add_shooter"):
 		PirateArt.draw_cannonball(c, mid + Vector2(-10, 4), 22.0, Color("ef476f"), str(count), 22)
 		_outlined(c, font, mid + Vector2(14, -6), "+", 34, GOLD)
@@ -222,6 +244,30 @@ static func draw_card_icon(c: CanvasItem, rect: Rect2, card: Dictionary) -> void
 	elif kinds.has("extra_play"):
 		_card_backs(c, mid + Vector2(-8, 0), 2, 1.0)
 		_outlined(c, font, mid + Vector2(20, 12), "+1", 28, GOLD)
+
+
+## A compass: a ring, tick marks and a needle (Ghost Compass).
+static func _icon_compass(c: CanvasItem, center: Vector2, r: float) -> void:
+	c.draw_circle(center, r, Color(0.96, 0.89, 0.7))
+	c.draw_arc(center, r, 0.0, TAU, 28, Color("5a3a22"), 3.0)
+	for k in 8:
+		var a := TAU * float(k) / 8.0
+		c.draw_line(center + Vector2(cos(a), sin(a)) * (r - 5.0), center + Vector2(cos(a), sin(a)) * (r - 1.0), Color("5a3a22"), 2.0)
+	c.draw_colored_polygon(PackedVector2Array([center + Vector2(0, -r + 6.0), center + Vector2(-5, 0), center + Vector2(5, 0)]), Color("3de0c8"))
+	c.draw_colored_polygon(PackedVector2Array([center + Vector2(0, r - 6.0), center + Vector2(-5, 0), center + Vector2(5, 0)]), Color("5a3a22"))
+	c.draw_circle(center, 3.0, Color("fff4dc"))
+
+
+## Two overlapping cards with a loop arrow (Phantom Echo repeats the last card).
+static func _icon_echo(c: CanvasItem, mid: Vector2) -> void:
+	_card_backs(c, mid + Vector2(-6, 0), 2, 1.0)
+	var arc := PackedVector2Array()
+	for i in 12:
+		var a := -PI * 0.15 + PI * 1.3 * float(i) / 11.0
+		arc.append(mid + Vector2(26.0, 0.0) + Vector2(cos(a) * 15.0, sin(a) * 15.0))
+	c.draw_polyline(arc, Color("3de0c8"), 4.0)
+	var tip := arc[arc.size() - 1]
+	c.draw_colored_polygon(PackedVector2Array([tip + Vector2(-7, -3), tip + Vector2(5, 1), tip + Vector2(-3, 9)]), Color("3de0c8"))
 
 
 static func _outlined(c: CanvasItem, font: Font, pos: Vector2, text: String, size: int, col: Color) -> void:

@@ -14,6 +14,7 @@ const RARITY_COLORS := {
 	"rare": Color("4cc9f0"),
 	"epic": Color("9b5de5"),
 	"legendary": Color("ffd166"),
+	"transcended": Color("3de0c8"),
 }
 const COLOR_NAMES := {"R": "Red", "O": "Orange", "Y": "Yellow", "G": "Green", "B": "Blue",
 	"P": "Purple", "K": "Dark", "W": "White", "N": "Brown", "S": "Pink"}
@@ -250,7 +251,11 @@ func _ready() -> void:
 		for a in args:  # debug: --hand=N forces a hand of N cards to check card layout
 			if a.begins_with("--hand="):
 				var forced: Array = ["column_strike", "color_bomb", "wild_cross", "overclock", "pierce_blast", "double_blast"]
-				battle.hand = forced.slice(0, int(a.get_slice("=", 1)))
+				var spec := a.get_slice("=", 1)
+				if spec.is_valid_int():
+					battle.hand = forced.slice(0, int(spec))
+				else:  # --hand=card_a,card_b names the cards
+					battle.hand = Array(spec.split(",", false))
 				_seen_drawn = battle.drawn_total
 				_refresh()
 		if args.has("--autoplay"):
@@ -629,7 +634,12 @@ func _battle_levels() -> Dictionary:
 func _begin_stage(index: int, deck: Array) -> void:
 	tutorial = false
 	stage = index
-	deck = deck.duplicate()
+	deck = Collection.deck_with_equipped(deck, SaveData.pack_state(), SaveData.highest_unlocked(), GameData.cards)
+	for a in OS.get_cmdline_user_args():
+		if a == "--tcards":  # debug: all four Transcended cards in the deck
+			for id in GameData.card_order:
+				if GameData.cards[id]["rarity"] == "transcended":
+					deck.append(id)
 	var gift := SaveData.take_pending_gift()
 	if gift != "":
 		deck.append(gift)
@@ -905,8 +915,8 @@ func _confirm_card() -> void:
 	_play_ghost(i, played)
 	battle.play_card(i)
 	var rarity: String = GameData.cards[played]["rarity"]
-	sfx.play("card", 1.0 + 0.08 * ["common", "rare", "epic", "legendary"].find(rarity))
-	if rarity == "epic" or rarity == "legendary":
+	sfx.play("card", 1.0 + 0.08 * ["common", "rare", "epic", "legendary", "transcended"].find(rarity))
+	if rarity == "epic" or rarity == "legendary" or rarity == "transcended":
 		_flash(RARITY_COLORS[rarity])
 		sfx.play("sparkle", 1.0, 0.05)
 	_after_action("card")

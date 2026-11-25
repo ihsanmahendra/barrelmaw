@@ -3,7 +3,7 @@ extends SceneTree
 ## bot while every card in the deck is at one level, and prints the win rate and 3-star rate.
 ## Run: LEVEL=3 PER_STAGE=30 godot --headless --path . --script res://tests/level_balance.gd
 ## LEVEL: level of every card (1 = today's balance). PER_STAGE: games per stage. FROM / TO: stage range.
-## CARDS: optional comma list; only these cards get the level.
+## CARDS: optional comma list; only these cards get the level. EXTRA: optional comma list of cards added to every deck. MULTI=1: the bot spends extra plays.
 
 func _init() -> void:
 	GameData.ensure_loaded()
@@ -12,6 +12,8 @@ func _init() -> void:
 	var from_stage := int(OS.get_environment("FROM")) if OS.get_environment("FROM") != "" else 0
 	var to_stage := int(OS.get_environment("TO")) if OS.get_environment("TO") != "" else Stages.TOTAL - 1
 	var only := OS.get_environment("CARDS").split(",", false)  # optional: level only these cards
+	var multi := OS.get_environment("MULTI") == "1"  # the bot also spends extra plays
+	var extra := OS.get_environment("EXTRA").split(",", false)  # optional: cards added to every deck (Transcended cards)
 	var levels := {}
 	for id in GameData.card_order:
 		if only.is_empty() or only.has(id):
@@ -27,8 +29,10 @@ func _init() -> void:
 			var rng := RandomNumberGenerator.new()
 			rng.seed = 7000 + stage * 1000 + r
 			seed(rng.randi())
-			var b := Stages.new_battle(stage, Stages.deck_for(stage), rng.randi(), levels)
-			Bot.play(b)
+			var deck: Array = Stages.deck_for(stage)
+			deck.append_array(extra)
+			var b := Stages.new_battle(stage, deck, rng.randi(), levels)
+			Bot.play(b, multi)
 			var k := stage / 10
 			bucket_games[k] = int(bucket_games.get(k, 0)) + 1
 			games += 1

@@ -64,6 +64,14 @@ static func bonus_text(card: Dictionary, level: int) -> String:
 	return ", ".join(parts)
 
 
+## Cannonballs the card adds (Jones' Ledger adds two); a bump on the ball applies to each.
+static func _ball_count(card: Dictionary) -> float:
+	for eff in card["effects"]:
+		if eff["kind"] == "add_shooter":
+			return float(eff.get("count", 1))
+	return 1.0
+
+
 static func _has_double(card: Dictionary) -> bool:
 	for eff in card["effects"]:
 		if eff["kind"] == "double":
@@ -79,7 +87,7 @@ static func entry_power(entry: Dictionary, card: Dictionary) -> float:
 		"ammo":
 			return n * PP_HIT * (2.0 if _has_double(card) else 1.0)
 		"add_shooter":
-			return n * PP_HIT
+			return n * PP_HIT * _ball_count(card)
 		"clear_random", "clear_color":
 			return n * PP_BARREL
 		"draw":
@@ -96,7 +104,7 @@ static func base_power(card: Dictionary) -> float:
 			"ammo":
 				p += n * PP_HIT * (2.0 if _has_double(card) else 1.0)
 			"add_shooter":
-				p += n * PP_HIT
+				p += n * PP_HIT * float(eff.get("count", 1))
 			"clear_random", "clear_color":
 				p += n * PP_BARREL
 			"draw":

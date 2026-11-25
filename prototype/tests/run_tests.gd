@@ -198,7 +198,13 @@ func test_unlocks() -> void:
 			check(GameData.cards.has(id), "unlock card exists: " + str(id))
 			check(not seen.has(id), "card unlocked only once: " + str(id))
 			seen[id] = true
-	check(seen.size() == GameData.cards.size(), "starter deck plus unlocks cover all %d cards, got %d" % [GameData.cards.size(), seen.size()])
+	var stage_cards := 0
+	for id in GameData.card_order:
+		if GameData.cards[id]["rarity"] == "transcended":
+			check(not seen.has(id), "Transcended cards are chest-only, not unlocked by stages: " + str(id))
+		else:
+			stage_cards += 1
+	check(seen.size() == stage_cards, "starter deck plus unlocks cover all %d stage cards, got %d" % [stage_cards, seen.size()])
 	check(Stages.deck_for(0).size() == GameData.starter_deck.size(), "stage 1 uses the starter deck")
 	check(Stages.deck_for(10).size() == GameData.starter_deck.size() + 6, "stage 11 adds six cards")
 	check(Stages.deck_for(49).size() == GameData.starter_deck.size() + 24, "stage 50 has every card")

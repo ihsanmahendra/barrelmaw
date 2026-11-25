@@ -155,19 +155,38 @@ The first draft (+1 hit every level on every card) reached 85% at level 3 and 94
 
 ### 3.6 Transcended cards (new, pack-only)
 
-Four new cards. They are not in `Stages.UNLOCKS` and are not in the default deck. The player equips them in
-the **Captain's Slot** (1 slot after clearing stage 50, 2 slots after clearing stage 100). An equipped
-Transcended card is added to the deck for every stage, one copy per card.
+Four new cards (`tools/make_transcended_cards.py`). They are not in `Stages.UNLOCKS` and not in the default
+deck. The player equips them in the **Captain's Slot** (1 slot once stage 50 is cleared, 2 once stage 100 is
+cleared). Equipped Transcended cards join the deck of every stage, one copy each. They have a shimmering
+aurora frame and follow the level rules of Section 3.5.
 
-| Card | Base effect (level 1) | Notes |
+| Card | Effect at level 1 | New rule it needed |
 |---|---|---|
-| Maelstrom | Remove every barrel of the biggest color, up to 20 | cap keeps big boards from being deleted |
-| Davy Jones' Ledger | Add two 5-hit cannonballs to the front; they can hit any color | needs the "add ball" and "wild" effects already in the game |
-| Ghost Compass | Free turn: this turn does not count toward the star turn count; draw 2 cards | helps stars, not wins; new effect |
-| Phantom Echo | Repeat the last card you played at +1 level (max 5). With no last card, draw 1 card | the merge-system synergy card; new effect |
+| Maelstrom | Remove every barrel of the biggest color, up to 20 | none (the same effect as Color Storm with a bigger number) |
+| Jones' Ledger (`davy_ledger`) | Add two 3-hit cannonballs that can hit any color | a **wild** cannonball: it hits any color and is not thrown out when its own color is gone |
+| Ghost Compass | Free turn (does not count for the star turn limit), +3 hits, draw 2 cards, play 1 more card | a **free turn**: firing this turn gives the turn number back |
+| Phantom Echo | Repeat your last card at +1 level (up to 5), plus +1 hit. With no last card it draws 1 card instead | the battle remembers the **last card played**; Echo never counts as the last card |
 
-Transcended cards follow the same level rules (Section 3.5) with their own budget, tuned by the bot.
-They are intentionally game-changing but each is a **single use per draw**, so the puzzle still decides the stage.
+Level bonuses: Maelstrom +1 barrel at levels 3 and 5; Jones' Ledger +1 barrel at levels 3 and 5 (a ball bump
+would be worth two hits on a two-ball card); Ghost Compass and Phantom Echo +1 hit at levels 2, 4 and 5.
+
+Balance, measured with `tests/level_balance.gd` on stages 51 to 100 (5,000 bot games, every card at level 1,
+one Transcended card added to the deck; the baseline is 40.4% wins and 37.1% 3-stars):
+
+| Added to the deck | Win rate | 3-star rate |
+|---|---|---|
+| nothing | 40.4% | 37.1% |
+| Maelstrom | 43.3% (+2.9) | 40.8% (+3.7) |
+| Jones' Ledger | 53.3% (+12.9) | 45.1% (+8.0) |
+| Ghost Compass | 46.9% (+6.5) | 45.5% (+8.4) |
+| Phantom Echo | 42.6% (+2.2) | 39.6% (+2.5) |
+| all four | 60.8% (+20.4) | 57.1% (+20.0) |
+
+Two lessons from tuning. A Ledger of two 5-hit balls gave +21.6 points, so it became two 3-hit balls. And a card
+that only adds hits is worth *less* than an average card: extra Heavy Rounds in the deck lowered the win rate,
+because they replace stronger cards. Ghost Compass needed the extra play and cards on top of its hits before it
+beat the deck's average. The bot plays one best-scored card at a time, so Phantom Echo (whose value depends on
+what was played before) is probably worth more to a person than these numbers say.
 
 ### 3.7 Where chests come from
 
@@ -299,8 +318,9 @@ Doubloons by 15% before touching merge costs.
 6. **Preview and play must match.** Both read the same leveled card data; the existing test that compares
    `preview_card` with the real play is extended to levels 1 to 5.
 7. **Transcended slot with no cards owned.** The slot is empty and hidden until the first Transcended card.
-8. **Phantom Echo with a Transcended or Echo-type last card.** It repeats it at +1 level, capped at level 5,
-   and cannot repeat itself (it would fizzle into "draw 1 card").
+8. **Phantom Echo.** It repeats the last card played in this battle at +1 level, capped at level 5. It is
+   never recorded as the last card, so two Echos in a row repeat the same card twice. With no last card it
+   draws 1 card instead.
 9. **Existing saves.** Every card unlocked by stage progress becomes 1 copy, level 1. No one loses anything.
 10. **Debug mode.** `debug_unlock` shows all cards in the Cargo Hold but does **not** grant chests or levels.
     A separate debug flag `--packs=N` grants chests for testing.
@@ -364,7 +384,11 @@ Testable in `tests/run_tests.gd` (headless) unless marked manual.
     2.0 and 2.5 at day 14 and below 4.2 at day 100.
 12. **Performance (manual).** Chest opening stays at 60 fps in the web build on a mid-range phone; the
     Cargo Hold with 37 cards scrolls without hitches.
-13. **UX (manual).** A new player can open the first crate and merge their first card without any help text
+13. **Transcended balance.** On stages 51 to 100, adding any one Transcended card to the deck changes the bot's
+    win rate by between +2 and +14 points, and all four together by at most +22 (measured: +2.2 to +12.9
+    and +20.4). A wild ball is never thrown out while any barrel is left, and a free turn never makes the
+    turn count negative.
+14. **UX (manual).** A new player can open the first crate and merge their first card without any help text
     other than the on-screen prompts (target: first merge within the first session).
 
 ## 9. Flaw Review: What This Design Fixes
@@ -414,8 +438,9 @@ Suggested order. Each phase ships and tests on its own, behind a feature flag un
    `CardLevels` and `Battle.levels`, preview parity test at levels 1 to 5, a level badge and bonus line on the
    card, the `--levels=N` debug flag, and `tests/level_balance.gd` (bot win rate with every card at one level).
    The first schedule was far too strong and was rebalanced (Section 3.5).
-3. **Transcended.** Four new cards and effect kinds (remove biggest color with a cap, add wild balls,
-   free turn, repeat last card), the Captain's Slot, deck integration.
+3. **Transcended. Done.** Four new cards, the wild ball, free turn and repeat-last rules, the aurora frame and
+   new icons, the Captain's Slots (`Collection.equip`, `deck_with_equipped`), `--tcards` debug flag, tests and
+   balance numbers (Section 3.6). Equipping has no screen yet; that is phase 4.
 4. **Screens.** Treasury, chest opening, Cargo Hold, Port Market, results and map rewards, menu red dots,
    daily crate replacing the daily gift. Skip the polish until the flow works.
 5. **Polish and release.** Chest art and sounds, reveal animation, odds panel, performance pass on the web

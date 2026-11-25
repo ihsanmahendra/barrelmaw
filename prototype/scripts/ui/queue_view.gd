@@ -145,8 +145,8 @@ func _draw() -> void:
 		if front:
 			first_center = center
 		var col := GameData.color_of(s["color"])
-		if front and battle.mods["wild"]:
-			col = Color("f6ead0")
+		if (front and battle.mods["wild"]) or bool(s.get("wild", false)):
+			col = Color("f6ead0")  # pale balls hit any color
 		var ammo: int = int(s["ammo"])
 		if front:
 			ammo += int(battle.mods["ammo"])

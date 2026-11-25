@@ -88,3 +88,9 @@ Each card in `data/cards.json` has a `levels` list (bonus at levels 2 to 5), wri
 `tools/make_card_levels.py`. `Battle.levels` (card id to level) is filled by `Stages.new_battle`; `CardLevels`
 turns a level into effects. Debug: `--levels=N` puts every card at level N. Balance check:
 `LEVEL=3 PER_STAGE=50 godot --headless --path . --script res://tests/level_balance.gd`.
+
+### Transcended cards (phase 3)
+Four chest-only cards (`tools/make_transcended_cards.py`): Maelstrom, Jones' Ledger, Ghost Compass, Phantom Echo.
+Equipped ones join every deck (`Collection.equip`, `Collection.deck_with_equipped`; 1 slot after stage 50, 2
+after stage 100). Debug: `--tcards` adds all four to the deck. Balance check:
+`EXTRA=maelstrom FROM=50 TO=99 MULTI=1 godot --headless --path . --script res://tests/level_balance.gd`.

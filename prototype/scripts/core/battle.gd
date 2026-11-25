@@ -31,6 +31,7 @@ var scripted_hands: Array = []  # tutorial only: fixed hands, used before random
 var initial_shots: int = 0  # total cannonball hits at the start; used for the star rating
 var star2_turns: int = 99  # finish within this many turns for 2 stars (set per stage)
 var star3_turns: int = 99  # ... and for 3 stars
+var last_played: String = ""  # id of the last card played in this battle (Phantom Echo repeats it)
 var levels: Dictionary = {}  # card id -> level (missing = 1); set by Stages.new_battle from the player's collection
 
 
@@ -74,7 +75,7 @@ func _begin_action() -> void:
 
 
 func _reset_mods() -> void:
-	mods = {"ammo": 0, "wild": false, "double": false, "shape": ""}
+	mods = {"ammo": 0, "wild": false, "double": false, "shape": "", "free": false}
 
 
 func _build_queue(slack: float) -> void:
@@ -124,9 +125,14 @@ func shots_left() -> int:
 	var counts := board.color_counts()
 	var n := 0
 	for s in queue:
-		if counts.has(s["color"]):
+		if _usable(s, counts):
 			n += int(s["ammo"])
 	return n
+
+
+## A cannonball is usable while its color is on the board; a wild one while any barrel is left.
+func _usable(s: Dictionary, counts: Dictionary) -> bool:
+	return counts.has(s["color"]) or (bool(s.get("wild", false)) and not counts.is_empty())
 
 
 func _draw_cards(n: int) -> void:
@@ -145,11 +151,11 @@ func _prune_dead_shooters() -> void:
 	var counts := board.color_counts()
 	var alive: Array = []
 	for s in queue:
-		if counts.has(s["color"]):
+		if _usable(s, counts):
 			alive.append(s)
 	pruned_balls_last = []
 	for s in queue:
-		if not counts.has(s["color"]):
+		if not _usable(s, counts):
 			pruned_balls_last.append(s.duplicate())
 	pruned_last = queue.size() - alive.size()
 	queue = alive
@@ -193,6 +199,7 @@ func clone() -> Battle:
 	b.drawn_total = drawn_total
 	b.scripted_hands = scripted_hands.duplicate(true)
 	b.levels = levels
+	b.last_played = last_played
 	b.rng.seed = rng.seed
 	b.rng.state = rng.state
 	return b
@@ -229,6 +236,8 @@ func play_card(i: int) -> bool:
 	discard.append(id)
 	for eff in CardLevels.effects_for(GameData.cards[id], level_of(id)):
 		_apply(eff)
+	if id != "phantom_echo":  # Phantom Echo never repeats itself
+		last_played = id
 	plays_left -= 1
 	cards_played_turn += 1
 	_check_end()
@@ -255,7 +264,20 @@ func _apply(eff: Dictionary) -> void:
 		"add_shooter":
 			var c := board.most_common()
 			if c != "":
-				queue.insert(0, {"color": c, "ammo": n})
+				for k in int(eff.get("count", 1)):
+					var ball := {"color": c, "ammo": n}
+					if bool(eff.get("wild", false)):
+						ball["wild"] = true  # hits any color
+					queue.insert(0, ball)
+		"free_turn":
+			mods["free"] = true  # firing this turn does not count toward the star turn limit
+		"repeat_last":
+			if last_played == "" or not GameData.cards.has(last_played):
+				_draw_cards(1)
+			else:
+				var lv := mini(level_of(last_played) + 1, PackConfig.max_level())
+				for e in CardLevels.effects_for(GameData.cards[last_played], lv):
+					_apply(e)
 		"recolor_next":
 			var c2 := board.most_common()
 			if c2 != "" and not queue.is_empty():
@@ -388,6 +410,14 @@ func preview_targets() -> Array:
 
 
 func _resolve_shots(s: Dictionary) -> void:
+	var was_wild: bool = mods["wild"]
+	if bool(s.get("wild", false)):
+		mods["wild"] = true
+	_fire_hits(s)
+	mods["wild"] = was_wild
+
+
+func _fire_hits(s: Dictionary) -> void:
 	var ammo: int = int(s["ammo"]) + int(mods["ammo"])
 	if mods["double"]:
 		ammo *= 2
@@ -415,6 +445,8 @@ func fire() -> void:
 	var s: Dictionary = queue.pop_front()
 	_resolve_shots(s)
 	last_shot_wasted = removed_last.is_empty() and damaged_last.is_empty()
+	if mods["free"]:
+		turns = maxi(turns - 1, 0)  # Ghost Compass: the next turn takes this one's number again
 	_reset_mods()
 	discard.append_array(hand)
 	hand.clear()
