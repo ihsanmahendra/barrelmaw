@@ -155,6 +155,35 @@ func _ready() -> void:
 		packs.show_market()
 	elif args.has("--claim-crate"):  # debug: claim the daily crate and open it
 		_claim_daily_crate()
+	elif args.has("--chest-gallery"):  # debug: every chest shut and open, to check the art
+		var gbox := _new_screen(6)
+		var closed_row := HBoxContainer.new()
+		var open_row := HBoxContainer.new()
+		for id in ["crate", "iron", "coffer", "gilded", "vault"]:
+			var cv1 := ChestView.new(id, true)
+			cv1.custom_minimum_size = Vector2(98, 120)
+			cv1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			closed_row.add_child(cv1)
+			var cv2 := ChestView.new(id, true)
+			cv2.custom_minimum_size = Vector2(98, 120)
+			cv2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			cv2.open_t = 1.0
+			open_row.add_child(cv2)
+		gbox.add_child(closed_row)
+		gbox.add_child(open_row)
+		for step in [0.3, 0.6]:
+			var mid_row := HBoxContainer.new()
+			for id in ["crate", "iron", "coffer", "gilded", "vault"]:
+				var cv3 := ChestView.new(id, true)
+				cv3.custom_minimum_size = Vector2(98, 120)
+				cv3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				cv3.open_t = step
+				mid_row.add_child(cv3)
+			gbox.add_child(mid_row)
+		for row_big in ["crate", "vault"]:
+			var big := ChestView.new(row_big, true)
+			big.custom_minimum_size = Vector2(0, 230)
+			gbox.add_child(big)
 	elif args.has("--opening"):
 		for a in args:
 			if a.begins_with("--open-chest="):
@@ -648,6 +677,7 @@ func _add_howto_rows(inner: VBoxContainer) -> void:
 		["3", "Preview a card", "Tap a card to see what it does. Press Play to use it, or tap it again to cancel."],
 		["4", "Press FIRE", "White outlines show what will smash. Finish within the turn limit to earn 3 stars."],
 		["5", "Special barrels", "Bombs blow up neighbors and crates give a cannonball. Iron takes two hits and skulls weaken your next cannonball."],
+		["6", "Chests and merging", "Win stages and claim the daily crate to get chests. Open them in the Treasury. Extra copies of a card level it up in the Cargo Hold."],
 	]
 	var step_index := 0
 	for s in steps:
@@ -676,14 +706,18 @@ func show_howto() -> void:
 	var how_ribbon := RibbonLabel.new("How to play", 40)
 	how_ribbon.custom_minimum_size = Vector2(0, 110)
 	box.add_child(how_ribbon)
+	var how_scroll := ScrollContainer.new()  # six steps are more than fits above the buttons on a small screen
+	how_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	how_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(how_scroll)
 	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override("panel", UiKit.parchment_style())
-	box.add_child(panel)
+	how_scroll.add_child(panel)
 	var inner := VBoxContainer.new()
 	inner.add_theme_constant_override("separation", 14)
 	panel.add_child(inner)
 	_add_howto_rows(inner)
-	box.add_child(_spacer())
 	box.add_child(_button("Play the guided practice", start_tutorial))
 	box.add_child(_button("Back", show_menu, WOOD))
 
@@ -722,9 +756,14 @@ func _debug_packs(n: int) -> void:
 		st["spare"][id] = 2
 	st["level"]["power_shot"] = 2
 	st["level"]["blast"] = 3
-	for id in GameData.card_order:
-		if GameData.cards[id]["rarity"] == "transcended":
-			Collection.add_copy(st, id, GameData.cards)
+	st["level"]["cross_strike"] = 4
+	st["level"]["scatter"] = 5
+	if OS.get_cmdline_user_args().has("--no-top"):  # debug: no Transcended card yet, and the next vault is sure to give one
+		st["pity"]["vault_dry"] = 5
+	else:
+		for id in GameData.card_order:
+			if GameData.cards[id]["rarity"] == "transcended":
+				Collection.add_copy(st, id, GameData.cards)
 	st["welcome_given"] = true
 	SaveData.save()
 

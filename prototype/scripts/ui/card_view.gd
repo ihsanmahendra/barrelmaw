@@ -4,6 +4,7 @@ extends Button
 ## Draws itself; the Button base class supplies taps, hover and the disabled state.
 
 const DESIGN_W: float = 160.0
+const LEVEL_COLORS: Dictionary = {2: Color("d08a4a"), 3: Color("d7dfec"), 4: Color("ffd166"), 5: Color("a8f0ff")}
 
 var card_id: String = ""
 var selected: bool = false:
@@ -15,6 +16,7 @@ var selected: bool = false:
 var level: int = 1
 
 var _card: Dictionary = {}
+var _shimmer_wait: float = 0.0
 var _body := StyleBoxFlat.new()
 var _ribbon := StyleBoxFlat.new()
 
@@ -35,7 +37,17 @@ func setup(id: String) -> CardView:
 	return self
 
 
-func _process(_delta: float) -> void:
+## The shimmer of a Transcended card: redrawn at 30 fps, and only while the card is on screen (a Cargo Hold
+## full of cards scrolled out of view should cost nothing).
+func _process(delta: float) -> void:
+	_shimmer_wait += delta
+	if _shimmer_wait < 1.0 / 30.0 or not is_visible_in_tree():
+		return
+	var vp := get_viewport_rect()
+	var r := get_global_rect()
+	if r.end.y < 0.0 or r.position.y > vp.size.y:
+		return
+	_shimmer_wait = 0.0
 	queue_redraw()
 
 
@@ -51,8 +63,11 @@ func _draw_level(dsz: Vector2, text_y: float, text_width: float) -> void:
 		return
 	var font := UiKit.bold_font()
 	var c := Vector2(dsz.x - 22.0, 22.0)
+	var badge_col: Color = LEVEL_COLORS[clampi(level, 2, 5)]  # bronze, silver, gold, then a prismatic ice-blue
 	draw_circle(c, 13.0, Color(0.16, 0.1, 0.05, 0.95))
-	draw_circle(c, 11.0, UiKit.GOLD)
+	draw_circle(c, 11.0, badge_col)
+	if level >= 5:
+		draw_arc(c, 15.5, 0.0, TAU, 20, Color(1, 1, 1, 0.8), 2.0)
 	var label := str(level)
 	var tw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, 15).x
 	draw_string(font, c + Vector2(-tw / 2.0, 5.5), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.25, 0.14, 0.04))

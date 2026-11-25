@@ -2,7 +2,8 @@ class_name Sfx
 extends Node
 ## Plays short sound effects from res://audio through a small pool of players.
 
-const NAMES: Array = ["click", "card", "deal", "sparkle", "fire", "hit", "big", "boom", "miss", "win", "lose", "reward", "cannon"]
+const NAMES: Array = ["click", "card", "deal", "sparkle", "fire", "hit", "big", "boom", "miss", "win", "lose", "reward", "cannon",
+	"chest_shake", "chest_open", "flip", "sting_common", "sting_rare", "sting_epic", "sting_legendary", "sting_transcended", "merge", "pearl"]
 const POOL_SIZE: int = 8
 
 static var muted: bool = false

@@ -450,8 +450,15 @@ Suggested order. Each phase ships and tests on its own, behind a feature flag un
    `pack_tests.gd` and `tests/screens_smoke.gd`, which opens every screen in a real Main scene. Checked in a
    web build served locally: claim, open, reveal and merge all work, no console errors. Not in this phase:
    an "Open all" button (each chest has "Open another" instead) and a one-tap skip for the first-ever reveal.
-5. **Polish and release.** Chest art and sounds, reveal animation, odds panel, performance pass on the web
-   build, update README and the in-game "How to play", then turn the flag on.
+5. **Polish and release. Done, with one gap.** Chests are redrawn in code with much more detail (wood, metal,
+   a lock and ornament per tier, a raised lid and a treasure heap when open); the generated chest art in
+   Section 10 could not be made because the SpriteCook account had 1 credit left. New synthesized sounds (chest
+   shake and open, card flip, five rarity stings, merge, pearls), a burst of light on every flip, level badges that
+   change color (bronze, silver, gold, ice-blue) so levels without a numeric bonus still look like progress, a
+   full-screen reveal for the first copy of a Transcended card, a gold flash on merge, a sixth how-to step with its
+   own picture (the how-to screen now scrolls), and Transcended shimmer that only redraws while visible. Measured in
+   a web build on desktop: menu, Treasury, Cargo Hold (scrolling) and the chest idle all hold 60 fps; the reveal
+   holds about 50 fps with a worst frame of 34 ms. Not measured on a phone.
 
 Phase 1 as built: `data/packs.json`, `scripts/core/pack_config.gd`, `collection.gd`, `packs.gd`, `rewards.gd`,
 pack state in `SaveData` (`pack_state()`, migration, `record()` now returns the previous best stars), and

@@ -101,3 +101,8 @@ Treasury and Cargo Hold buttons (red dot when something waits) and the daily cra
 Doubloons and chests; the map shows the chest of elite and boss stages. Debug (use with `--progress=N` so the
 real save is not touched): `--packs=N`, `--treasury`, `--cargo`, `--market`, `--opening --open-chest=gilded
 --auto-tap`, `--claim-crate`. Smoke test: `godot --headless --path . --script res://tests/screens_smoke.gd`.
+
+### Card pack polish (phase 5)
+Chest art is drawn in `scripts/ui/chest_art.gd` (see the gallery with `--chest-gallery`); `burst_fx.gd` is the
+burst of light on flips and merges; new sounds come from `tools/make_sfx.py`. The how-to has a sixth step about
+chests and merging. Real generated chest art can replace `ChestArt` later (keep `ChestArt.draw`'s signature).

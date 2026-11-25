@@ -5,7 +5,7 @@ extends Control
 
 const SIZE := Vector2(112, 82)
 
-var kind: int = 0  # 0 smash barrels, 1 cannonball queue, 2 card preview, 3 fire and stars
+var kind: int = 0  # 0 smash barrels, 1 cannonball queue, 2 card preview, 3 fire and stars, 4 specials, 5 chests
 
 
 func _init(p_kind: int = 0) -> void:
@@ -31,6 +31,8 @@ func _draw() -> void:
 			_draw_preview()
 		4:
 			_draw_specials()
+		5:
+			_draw_chests()
 		_:
 			_draw_fire()
 
@@ -120,6 +122,27 @@ func _draw_fire() -> void:
 		UiKit.draw_star(self, Vector2(26.0 + i * 17.0, 62.0), 7.0, UiKit.GOLD, Color("a8651a"))
 	draw_string_outline(font, Vector2(78.0, 68.0), "4/8", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 4, Color(0, 0, 0, 0.7))
 	draw_string(font, Vector2(78.0, 68.0), "4/8", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, UiKit.CREAM)
+
+
+## A chest, an arrow, and a card that has just gone up a level.
+func _draw_chests() -> void:
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	ChestArt.draw(self, Vector2(34.0, 40.0), 52.0, "iron", 0.55 + 0.45 * sin(now * 2.0) * 0.5, now)
+	draw_line(Vector2(60.0, 41.0), Vector2(72.0, 41.0), UiKit.CREAM, 3.0)
+	draw_colored_polygon(PackedVector2Array([Vector2(70.0, 34.0), Vector2(80.0, 41.0), Vector2(70.0, 48.0)]), UiKit.CREAM)
+	var card := Rect2(Vector2(82.0, 14.0), Vector2(24.0, 54.0))
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("f3e2bb")
+	sb.set_corner_radius_all(4)
+	sb.set_border_width_all(2)
+	sb.border_color = Color("8d93b5")
+	draw_style_box(sb, card)
+	draw_circle(card.get_center() + Vector2(0, -8.0), 6.0, Color("ef476f"))
+	var c := card.position + Vector2(card.size.x - 1.0, 3.0)
+	draw_circle(c, 9.0, Color(0.16, 0.1, 0.05))
+	draw_circle(c, 7.5, Color("d7dfec"))
+	var f := UiKit.bold_font()
+	draw_string(f, c + Vector2(-3.5, 4.5), "2", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.25, 0.14, 0.04))
 
 
 func _draw_specials() -> void:

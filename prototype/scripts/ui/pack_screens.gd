@@ -18,6 +18,7 @@ var _cargo_filter: String = "all"
 var _cargo_back: Callable = Callable()
 var _cargo_merge_btn: Button = null
 var _treasury_back: Callable = Callable()
+var _burst_next: bool = false  # play a burst on the card the next time the detail view opens (after a merge)
 
 
 func _init(main) -> void:
@@ -266,6 +267,14 @@ func open_and_show(chest_id: String, back: Callable = Callable()) -> void:
 	show_opening(back)
 
 
+## A burst of light centered on a control (a card, a button).
+func spawn_burst(target: Control, color: Color, power: float = 1.0, aurora: bool = false) -> void:
+	var fx := BurstFx.new(color, power, aurora)
+	m._overlay_layer.add_child(fx)
+	var r := target.get_global_rect()
+	fx.global_position = r.get_center() - fx.size / 2.0
+
+
 func _flip(holder: Control, card_view: Control, back_face: Control, rarity: String) -> void:
 	var tw: Tween = m.create_tween()
 	holder.pivot_offset = holder.size / 2.0
@@ -275,14 +284,65 @@ func _flip(holder: Control, card_view: Control, back_face: Control, rarity: Stri
 		card_view.visible = true)
 	tw.tween_property(holder, "scale:x", 1.0, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	var tier: int = PackConfig.rank(rarity)
-	m.sfx.play("card", 1.0 + 0.1 * float(tier))
-	if tier >= 2:
-		m.sfx.play("sparkle", 1.0, 0.1)
+	m.sfx.play("flip")
+	m.sfx.play("sting_" + rarity, 1.0, 0.12)
 	if tier >= 3:
-		m.sfx.play("reward", 1.0, 0.15)
 		m._flash(UiKit.RARITY_COLORS[rarity])
-	if tier >= 4:
-		m.sfx.play("win", 1.1, 0.2)
+	if tier >= 1:
+		var power: float = [0.5, 0.7, 1.0, 1.5, 2.2][tier]
+		spawn_burst(holder, UiKit.RARITY_COLORS[rarity], power, tier >= 4)
+
+
+## Full-screen reveal for a Transcended card the player owns for the first time. A tap continues.
+func _transcended_splash(id: String) -> void:
+	var layer := Control.new()
+	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	m._overlay_layer.add_child(layer)
+	var dim := ColorRect.new()
+	dim.color = Color(0.02, 0.04, 0.08, 0.86)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(dim)
+	var holder := CenterContainer.new()
+	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(holder)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 12)
+	col.custom_minimum_size = Vector2(440, 0)
+	holder.add_child(col)
+	var title: Label = m._label("TRANSCENDED!", 44, UiKit.RARITY_COLORS["transcended"], HORIZONTAL_ALIGNMENT_CENTER, true)
+	col.add_child(title)
+	var card: Button = m._card_button(id, func() -> void: pass, 1)
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.custom_minimum_size = Vector2(250, 300)
+	card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	card.pivot_offset = Vector2(125, 150)
+	col.add_child(card)
+	col.add_child(m._label(_card_name(id), 28, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	var slots := Collection.captain_slots(_progress())
+	var note := "Equip it in the Cargo Hold to add it to your deck." if slots > 0 else "Clear stage %d to open a Captain's Slot for it." % PackConfig.transcended_unlock_cleared()
+	col.add_child(m._label(note, 17, Color("c9f5ee"), HORIZONTAL_ALIGNMENT_CENTER, false))
+	var hint: Label = m._label("Tap to continue", 16, Color(1, 1, 1, 0.7), HORIZONTAL_ALIGNMENT_CENTER, false)
+	col.add_child(hint)
+	var tap := Button.new()
+	tap.flat = true
+	tap.focus_mode = Control.FOCUS_NONE
+	tap.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(tap)
+	card.scale = Vector2(0.6, 0.6)
+	card.modulate.a = 0.0
+	var tw: Tween = m.create_tween().set_parallel(true)
+	tw.tween_property(card, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card, "modulate:a", 1.0, 0.25)
+	m.sfx.play("sting_transcended")
+	await m.get_tree().process_frame
+	spawn_burst(card, UiKit.RARITY_COLORS["transcended"], 2.6, true)
+	var auto := OS.get_cmdline_user_args().has("--auto-tap")
+	if auto:
+		await m.get_tree().create_timer(1.2).timeout
+	else:
+		await tap.pressed
+	layer.queue_free()
 
 
 func _card_info_text(entry: Dictionary) -> Array:
@@ -347,7 +407,7 @@ func show_opening(back: Callable = Callable()) -> void:
 	prompt.visible = false
 	tap.queue_free()
 	# Shake, then the lid opens and the light pours out.
-	m.sfx.play("boom", 0.8)
+	m.sfx.play("chest_shake")
 	var shake_tw: Tween = m.create_tween()
 	shake_tw.tween_property(chest_view, "shake", 9.0, 0.55)
 	shake_tw.tween_property(chest_view, "shake", 0.0, 0.05)
@@ -355,7 +415,7 @@ func show_opening(back: Callable = Callable()) -> void:
 	await shake_tw.finished
 	if gen != _gen:
 		return
-	m.sfx.play("sparkle")
+	m.sfx.play("chest_open")
 	m._flash(ChestArt.glow_color(chest_id))
 	var fade: Tween = m.create_tween().set_parallel(true)
 	fade.tween_property(chest_view, "modulate:a", 0.0, 0.5).set_delay(0.25)
@@ -424,7 +484,12 @@ func show_opening(back: Callable = Callable()) -> void:
 		infos[i].text = str(txt[0])
 		infos[i].add_theme_color_override("font_color", txt[1])
 		infos[i].modulate.a = 1.0
-		if not skipped[0]:
+		if bool(cards[i]["new"]):  # the first copy of a Transcended card is a moment of its own
+			await m.get_tree().create_timer(0.5).timeout
+			await _transcended_splash(str(cards[i]["id"]))
+			if gen != _gen:
+				return
+		elif not skipped[0]:
 			await m.get_tree().create_timer(0.55).timeout
 	if gen != _gen:
 		return
@@ -455,7 +520,7 @@ func _opening_summary(box: VBoxContainer, chest_id: String, cards: Array, back: 
 		var do_merge := func() -> void:
 			Collection.merge_all(st, GameData.cards)
 			SaveData.save()
-			m.sfx.play("reward")
+			m.sfx.play("merge")
 			m._toast("Merged! Your cards are stronger.", 1.4)
 			show_cargo(func() -> void: show_treasury(back))
 		var merge_btn: Button = m._button("Merge all (%d)" % ready, do_merge, Color("2a9d8f"))
@@ -509,7 +574,8 @@ func show_cargo(back: Callable = Callable(), filter: String = "all") -> void:
 		var n := Collection.merge_all(st2, GameData.cards)
 		SaveData.save()
 		if n > 0:
-			m.sfx.play("reward")
+			m.sfx.play("merge")
+			m._flash(UiKit.GOLD)
 		_fill_cargo()
 	_cargo_merge_btn = m._button("", merge_all_cb, Color("2a9d8f"))
 	_cargo_merge_btn.custom_minimum_size = Vector2(0, 50)
@@ -692,9 +758,10 @@ func _show_detail(id: String) -> void:
 		var do_merge := func() -> void:
 			Collection.merge(st, id, GameData.cards)
 			SaveData.save()
-			m.sfx.play("reward")
-			m.sfx.play("sparkle", 1.0, 0.1)
+			m.sfx.play("merge")
+			m._flash(UiKit.GOLD)
 			_fill_cargo()
+			_burst_next = true
 			_show_detail(id)
 		inner.add_child(m._button("MERGE to level %d" % (level + 1), do_merge, Color("2a9d8f")))
 	if has and rarity == "transcended":
@@ -723,6 +790,11 @@ func _show_detail(id: String) -> void:
 	var tw: Tween = m.create_tween().set_parallel(true)
 	tw.tween_property(panel, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(panel, "modulate:a", 1.0, 0.12)
+	if _burst_next:
+		_burst_next = false
+		await m.get_tree().process_frame
+		if is_instance_valid(cv):
+			spawn_burst(cv, UiKit.RARITY_COLORS[rarity], 1.4, rarity == "transcended")
 
 
 # ---------- Port Market ----------
@@ -778,7 +850,7 @@ func show_market(back: Callable = Callable()) -> void:
 		var do_buy := func() -> void:
 			if Rewards.market_buy(st, id, progress, GameData.cards, today):
 				SaveData.save()
-				m.sfx.play("reward")
+				m.sfx.play("pearl")
 				show_market(back)
 			else:
 				m.sfx.play("miss")
