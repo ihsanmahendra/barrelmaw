@@ -1,0 +1,297 @@
+{
+ "_note": "Card packs, merge and levels. Numbers mirror design/gdd/card-packs.md. Odds are percents per card slot and must sum to 100.",
+ "max_level": 5,
+ "rarities": [
+  "common",
+  "rare",
+  "epic",
+  "legendary",
+  "transcended"
+ ],
+ "merge_steps": {
+  "common": [
+   2,
+   3,
+   5,
+   8
+  ],
+  "rare": [
+   2,
+   3,
+   5,
+   7
+  ],
+  "epic": [
+   2,
+   3,
+   5,
+   6
+  ],
+  "legendary": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "transcended": [
+   2,
+   3,
+   3,
+   4
+  ]
+ },
+ "pearls": {
+  "common": 1,
+  "rare": 3,
+  "epic": 10,
+  "legendary": 30,
+  "transcended": 100
+ },
+ "market": {
+  "price_multiplier": 8,
+  "weekly_limit": 5,
+  "weekly_limit_transcended": 1
+ },
+ "pity": {
+  "epic": 30,
+  "legendary": 60,
+  "vault_dry": 6,
+  "duplicate_protection": 0.6
+ },
+ "transcended_unlock_cleared": 50,
+ "chests": [
+  {
+   "id": "crate",
+   "name": "Driftwood Crate",
+   "rarity": "common",
+   "cards": 3,
+   "unlock_cleared": 0,
+   "price": 150,
+   "pity": [],
+   "slots": [
+    {
+     "count": 3,
+     "odds": {
+      "common": 88,
+      "rare": 11,
+      "epic": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "iron",
+   "name": "Ironbound Chest",
+   "rarity": "rare",
+   "cards": 4,
+   "unlock_cleared": 10,
+   "price": 600,
+   "pity": [
+    "epic"
+   ],
+   "slots": [
+    {
+     "count": 3,
+     "odds": {
+      "common": 70,
+      "rare": 27,
+      "epic": 3
+     }
+    },
+    {
+     "count": 1,
+     "odds": {
+      "rare": 85,
+      "epic": 14,
+      "legendary": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "coffer",
+   "name": "Captain's Coffer",
+   "rarity": "epic",
+   "cards": 4,
+   "unlock_cleared": 30,
+   "price": 2000,
+   "pity": [
+    "epic",
+    "legendary"
+   ],
+   "slots": [
+    {
+     "count": 3,
+     "odds": {
+      "common": 45,
+      "rare": 40,
+      "epic": 14,
+      "legendary": 1
+     }
+    },
+    {
+     "count": 1,
+     "odds": {
+      "epic": 90,
+      "legendary": 10
+     }
+    }
+   ]
+  },
+  {
+   "id": "gilded",
+   "name": "Gilded Hoard",
+   "rarity": "legendary",
+   "cards": 5,
+   "unlock_cleared": 40,
+   "price": 6000,
+   "pity": [
+    "epic",
+    "legendary"
+   ],
+   "slots": [
+    {
+     "count": 4,
+     "odds": {
+      "rare": 55,
+      "epic": 40,
+      "legendary": 5
+     }
+    },
+    {
+     "count": 1,
+     "odds": {
+      "epic": 80,
+      "legendary": 18,
+      "transcended": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "vault",
+   "name": "Abyssal Vault",
+   "rarity": "transcended",
+   "cards": 5,
+   "unlock_cleared": 50,
+   "price": 9000,
+   "pity": [
+    "epic",
+    "legendary",
+    "transcended"
+   ],
+   "slots": [
+    {
+     "count": 4,
+     "odds": {
+      "epic": 72,
+      "legendary": 28
+     }
+    },
+    {
+     "count": 1,
+     "odds": {
+      "legendary": 62,
+      "transcended": 38
+     }
+    }
+   ]
+  }
+ ],
+ "doubloons": {
+  "first_clear": 40,
+  "per_star": 20,
+  "replay": 10,
+  "replays_per_day": 5
+ },
+ "daily": {
+  "chest": "crate",
+  "stack_cap": 3,
+  "streak_days": 7,
+  "streak_chest": "iron"
+ },
+ "elite_reward": {
+  "chest": "crate",
+  "count": 2
+ },
+ "boss_rewards": {
+  "10": [
+   [
+    "iron",
+    2
+   ]
+  ],
+  "20": [
+   [
+    "iron",
+    2
+   ]
+  ],
+  "30": [
+   [
+    "coffer",
+    1
+   ]
+  ],
+  "40": [
+   [
+    "coffer",
+    2
+   ]
+  ],
+  "50": [
+   [
+    "gilded",
+    1
+   ]
+  ],
+  "60": [
+   [
+    "vault",
+    1
+   ]
+  ],
+  "70": [
+   [
+    "gilded",
+    1
+   ]
+  ],
+  "80": [
+   [
+    "vault",
+    1
+   ]
+  ],
+  "90": [
+   [
+    "gilded",
+    1
+   ]
+  ],
+  "100": [
+   [
+    "vault",
+    2
+   ]
+  ]
+ },
+ "night_milestones": {
+  "stages": [
+   55,
+   65,
+   75,
+   85,
+   95
+  ],
+  "chest": "vault",
+  "block": 10
+ },
+ "welcome": {
+  "chest": "crate",
+  "count": 3
+ },
+ "first_crate": {
+  "copies_of_most_common_starter": 2
+ }
+}

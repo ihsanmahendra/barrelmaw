@@ -13,14 +13,18 @@ static var _specials_seen: Dictionary = {}  # kind -> true once the first-time e
 static var _gift_date: String = ""  # date (YYYY-MM-DD) the daily gift was last claimed
 static var _gift_card: String = ""  # claimed gift card waiting for the next stage
 static var _intros: Dictionary = {}  # stage index -> true once its New cards screen was shown
+static var _packs: Dictionary = {}  # collection, chests, Doubloons, Pearls, pity (see Collection.new_state)
 
 
 static func _ensure_loaded() -> void:
 	if _loaded:
 		return
 	_loaded = true
+	PackConfig.ensure_loaded()
+	_packs = Collection.normalize({})
 	var cfg := ConfigFile.new()
 	if cfg.load(path) != OK:
+		Rewards.migrate(_packs, false)  # a brand new player gets no welcome gift, the daily crate starts it
 		return
 	tutorial_done = bool(cfg.get_value("progress", "tutorial_done", false))
 	debug_unlock = bool(cfg.get_value("progress", "debug_unlock", false))
@@ -38,6 +42,13 @@ static func _ensure_loaded() -> void:
 	if saved is Dictionary:
 		for k in saved:
 			_stars[int(k)] = clampi(int(saved[k]), 0, 3)
+	var stored: Variant = cfg.get_value("packs", "state", {}) if cfg.has_section_key("packs", "state") else null
+	if stored is Dictionary:
+		_packs = Collection.normalize(stored)
+	else:
+		# Save from before card packs: existing players get the Welcome Aboard crates once.
+		Rewards.migrate(_packs, tutorial_done or not _stars.is_empty())
+		save()
 
 
 static func save() -> void:
@@ -55,6 +66,7 @@ static func save() -> void:
 	for k in _intros:
 		seen_out[str(k)] = true
 	cfg.set_value("progress", "intros", seen_out)
+	cfg.set_value("packs", "state", _packs)
 	cfg.save(path)
 
 
@@ -64,11 +76,28 @@ static func stars(index: int) -> int:
 	return int(_stars.get(index, 0))
 
 
-## Records a cleared stage; keeps the best rating.
-static func record(index: int, stars_earned: int) -> void:
+## Records a cleared stage; keeps the best rating. Returns the best rating before this win (0 = first clear).
+static func record(index: int, stars_earned: int) -> int:
 	_ensure_loaded()
-	_stars[index] = maxi(stars(index), clampi(stars_earned, 1, 3))
+	var before := stars(index)
+	_stars[index] = maxi(before, clampi(stars_earned, 1, 3))
 	save()
+	return before
+
+
+## The card pack state (a Dictionary shared with Collection, Packs and Rewards). Call save() after changing it.
+static func pack_state() -> Dictionary:
+	_ensure_loaded()
+	return _packs
+
+
+## Best stars of every stage as an array indexed by stage (0 = not cleared).
+static func best_stars() -> Array:
+	_ensure_loaded()
+	var out: Array = []
+	for i in Stages.TOTAL:
+		out.append(stars(i))
+	return out
 
 
 ## True once the New cards screen for this stage has been shown.
@@ -171,6 +200,20 @@ static func cleared_count() -> int:
 	return n
 
 
+## Drops everything held in memory and loads the file again (used by the tests to check what was saved).
+static func reload_from_disk() -> void:
+	_stars.clear()
+	_intros.clear()
+	_specials_seen.clear()
+	_gift_date = ""
+	_gift_card = ""
+	tutorial_done = false
+	debug_unlock = false
+	_packs = {}
+	_loaded = false
+	_ensure_loaded()
+
+
 ## Forgets all progress (used by the tests and a future "reset" option).
 static func reset() -> void:
 	_stars.clear()
@@ -181,4 +224,7 @@ static func reset() -> void:
 	tutorial_done = false
 	debug_unlock = false
 	_loaded = true
+	PackConfig.ensure_loaded()
+	_packs = Collection.normalize({})
+	Rewards.migrate(_packs, false)
 	save()

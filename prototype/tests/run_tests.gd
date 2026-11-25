@@ -21,6 +21,9 @@ func _init() -> void:
 	test_specials()
 	test_menu_data()
 	test_save_data()
+	var packs := PackTests.new()
+	packs.run()
+	failures += packs.failures
 	bot_report(60)
 	print("Failures: ", failures)
 	quit(1 if failures > 0 else 0)

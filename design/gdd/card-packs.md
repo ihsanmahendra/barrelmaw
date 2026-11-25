@@ -64,20 +64,21 @@ the **pool of cards the player has unlocked**. If the rolled rarity has no unloc
 one rarity until it finds one, so no slot is ever empty. Transcended cards are in the pool once the player has
 cleared stage 50.
 
-- The first Driftwood Crate a new player opens is **scripted**: it contains two copies of a starter card they
-  have already played, so their first merge happens in the first session.
+- The first Driftwood Crate a new player opens is **scripted**: two copies of the most common starter card
+  (Power Shot) plus one more starter card, so a merge is ready in the first session.
 - Opening reveals cards one at a time, lowest rarity first, so the best card comes last.
-- A chest result is **decided and saved before the animation starts**. Closing the app mid-opening cannot
-  reroll it (see 5.4).
+- A chest result is **decided, applied to the collection and saved before the animation starts**; the reveal
+  is a queued replay of that saved result. Closing the app mid-opening cannot reroll it (see 5.2).
 
 ### 3.4 Merge and card levels
 
-- Owning a card (unlocked by stage, or first pulled) gives **1 copy** and level 1.
-- Every extra copy goes into that card's copy counter. When the counter has enough copies for the next
-  level, the card shows a glowing **MERGE** button. Tapping it spends the copies and raises the level.
+- A card is **owned** at level 1 when it is unlocked by stage progress, or when it is first pulled from a chest
+  (Transcended cards). The card itself is never spent. Every further copy is a **spare**.
+- Spares collect on that card. When it has enough spares for the next level, the card shows a glowing
+  **MERGE** button. Tapping it spends the spares and raises the level.
   A **Merge All** button does every ready merge. Merge is never automatic, so the player gets the moment,
   but it also never costs choice or resources: copies are only ever spent on that card's own next level.
-- Max level is 5. Copies needed per level step (the card itself counts as the first copy):
+- Max level is 5. **Spare copies** needed per level step:
 
 | Rarity | Lv1 to 2 | 2 to 3 | 3 to 4 | 4 to 5 | Total spare copies to Lv5 |
 |---|---|---|---|---|---|
@@ -87,8 +88,8 @@ cleared stage 50.
 | Legendary | 2 | 3 | 4 | 5 | 14 |
 | Transcended | 2 | 3 | 3 | 4 | 12 |
 
-  (Each step consumes the listed number of copies from the counter, including the one that starts the step,
-  so reaching level 2 uses 2 copies and leaves the counter at its remainder.)
+  (Each step spends exactly that many spares. A common card reaches level 2 with 2 spares, which is 3 copies
+  in total counting the card itself.)
 
 - A card at level 5 turns every further copy into Pearls: Common 1, Rare 3, Epic 10, Legendary 30,
   Transcended 100.
@@ -154,7 +155,7 @@ They are intentionally game-changing but each is a **single use per draw**, so t
 | Replaying a cleared stage | 10 Doubloons per win, up to 5 paid wins per day |
 | Elite stage (every 5th, first clear) | 2 Driftwood Crates |
 | Boss stage (every 10th, first clear) | stages 10 and 20: 2 Ironbound; 30: Coffer; 40: 2 Coffers; 50: Gilded Hoard; 60 and 80: Abyssal Vault; 70 and 90: Gilded Hoard; 100: 2 Vaults |
-| Night-world star milestones | stages 55, 65, 75, 85, 95: an Abyssal Vault when 3 stars were earned on every stage of that block of 10 |
+| Night-world star milestones | at stages 55, 65, 75, 85 and 95: an Abyssal Vault when the ten stages ending there all have 3 stars (paid once each, whenever the last missing star is earned) |
 | Shop | any unlocked chest for Doubloons |
 | Port Market | one specific card copy for Pearls (Section 4.5) |
 
@@ -218,12 +219,12 @@ The displayed meter says "Epic or better guaranteed within N more cards".
 
 ```
 need(rarity, level)      = STEP[rarity][level - 1]          # level 1..4
-ready(card)              = copies[card] >= need(rarity, level[card])
-merge(card):  copies    -= need ; level += 1
-overflow(card at Lv5):   pearls += PEARLS[rarity]
+ready(card)              = spare[card] >= need(rarity, level[card])
+merge(card):  spare     -= need ; level += 1
+at level 5:   leftover spares at merge time, and every later copy, give PEARLS[rarity] each
 ```
 
-`copies[card]` counts spare copies plus the card itself, exactly as in the Section 3.4 table.
+The first copy of a Transcended card only owns it (no spare). Section 3.4's table lists spares.
 
 ### 4.4 Doubloons
 
@@ -264,7 +265,7 @@ Doubloons by 15% before touching merge costs.
 ## 5. Edge Cases
 
 1. **Empty pool.** A rolled rarity with no unlocked card steps down one rarity. Never an empty slot.
-2. **Quit during opening.** Rolls are made, written to `save.cfg` as a pending reveal, then animated. On
+2. **Quit during opening.** The roll is applied and written to `save.cfg` with a queued reveal, then animated. On
    restart the player sees the same reveal. This also stops "close the app to reroll."
 3. **Time rollback (device clock).** The daily crate is keyed to the local date, as the daily gift is today.
    Moving the clock back cannot claim twice because `last_claim_date` only moves forward; moving it forward
@@ -383,7 +384,7 @@ this design does about it.
 
 Suggested order. Each phase ships and tests on its own, behind a feature flag until phase 5.
 
-1. **Data and rules (no UI).** `data/packs.json`; `scripts/core/collection.gd` (copies, levels, merge,
+1. **Data and rules (no UI). Done.** `data/packs.json`; `scripts/core/collection.gd` (copies, levels, merge,
    Pearls); `scripts/core/packs.gd` (rolling with pity, pending reveal); save format with a version number and
    migration; the new tests (8.1 to 8.9). Add `tools/pack_sim.py` to the repo.
 2. **Leveled cards in battle.** `levels` in `cards.json` for all 33 cards, `Battle` reads a `levels`
@@ -394,6 +395,11 @@ Suggested order. Each phase ships and tests on its own, behind a feature flag un
    daily crate replacing the daily gift. Skip the polish until the flow works.
 5. **Polish and release.** Chest art and sounds, reveal animation, odds panel, performance pass on the web
    build, update README and the in-game "How to play", then turn the flag on.
+
+Phase 1 as built: `data/packs.json`, `scripts/core/pack_config.gd`, `collection.gd`, `packs.gd`, `rewards.gd`,
+pack state in `SaveData` (`pack_state()`, migration, `record()` now returns the previous best stars), and
+`tests/pack_tests.gd` (run alone with `tests/run_pack_tests.gd`). Not wired to any screen yet, so the game
+plays exactly as before. Real Transcended cards do not exist yet; the tests use four stand-in cards.
 
 Rough size: phases 1 and 2 are the core; phase 4 is the largest by amount of UI. About two to three weeks of
 focused work for one developer, plus art time for phase 5.

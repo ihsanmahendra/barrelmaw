@@ -76,3 +76,9 @@ Run `bash tools/export_web.sh` (exports and copies the loading-screen pictures).
 
 Needs Godot export templates (Editor > Manage Export Templates). Use the Web preset with
 threads off so it runs on plain static hosting.
+
+## Card packs (phase 1, rules only)
+Chests, merge and card levels live in `scripts/core/` (`pack_config.gd`, `collection.gd`, `packs.gd`,
+`rewards.gd`) with their numbers in `data/packs.json`. The state is saved with the progress
+(`SaveData.pack_state()`). No screen uses it yet. Design: `design/gdd/card-packs.md`. Checks:
+`godot --headless --path . --script res://tests/run_pack_tests.gd` (pack checks only) or `run_tests.gd` (all).
