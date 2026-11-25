@@ -17,6 +17,7 @@ var _cargo_list: VBoxContainer = null
 var _cargo_filter: String = "all"
 var _cargo_back: Callable = Callable()
 var _cargo_merge_btn: Button = null
+var _cargo_scroll: DragScroll = null
 var _treasury_back: Callable = Callable()
 var _burst_next: bool = false  # play a burst on the card the next time the detail view opens (after a merge)
 
@@ -145,7 +146,7 @@ func show_treasury(back: Callable = Callable()) -> void:
 	money.add_child(_currency_chip("doubloons", int(st["doubloons"])))
 	money.add_child(_currency_chip("pearls", int(st["pearls"])))
 	box.add_child(money)
-	var scroll := ScrollContainer.new()
+	var scroll := DragScroll.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
@@ -165,6 +166,7 @@ func show_treasury(back: Callable = Callable()) -> void:
 	for line in pity_lines():
 		pv.add_child(m._label(str(line), 14, UiKit.CREAM, HORIZONTAL_ALIGNMENT_LEFT, false, false))
 	list.add_child(panel)
+	scroll.wire(list)
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 8)
 	var to_market := func() -> void: show_market(func() -> void: show_treasury(back))
@@ -581,10 +583,10 @@ func show_cargo(back: Callable = Callable(), filter: String = "all") -> void:
 	_cargo_merge_btn.custom_minimum_size = Vector2(0, 50)
 	_cargo_merge_btn.add_theme_font_size_override("font_size", 20)
 	box.add_child(_cargo_merge_btn)
-	var scroll := ScrollContainer.new()
+	var scroll := DragScroll.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
+	_cargo_scroll = scroll
 	_cargo_list = VBoxContainer.new()
 	_cargo_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_cargo_list.add_theme_constant_override("separation", 8)
@@ -647,6 +649,8 @@ func _fill_cargo() -> void:
 		var pad := Control.new()
 		pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(pad)
+	if _cargo_scroll != null and is_instance_valid(_cargo_scroll):
+		_cargo_scroll.wire(_cargo_list)  # cards and bars take touches, so the list must listen to them
 
 
 ## Copy progress under a card: spare/needed, MERGE when ready, MAX at level 5, or how to unlock it.
@@ -814,7 +818,7 @@ func show_market(back: Callable = Callable()) -> void:
 	var top_left := Rewards.market_left(st, GameData.cards, today, true)
 	box.add_child(m._label("Pearls come from copies of cards that are already at the top level. Each week you can buy %d card copies, and %d Transcended copy." % [int(PackConfig.data["market"]["weekly_limit"]), int(PackConfig.data["market"]["weekly_limit_transcended"])], 14, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, false, false))
 	box.add_child(m._label("Left this week: %d card copies, %d Transcended" % [normal_left, top_left], 16, UiKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER, true))
-	var scroll := ScrollContainer.new()
+	var scroll := DragScroll.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
@@ -858,3 +862,4 @@ func show_market(back: Callable = Callable()) -> void:
 		var can := int(st["pearls"]) >= price and (top_left if is_top else normal_left) > 0
 		_enable(buy, can)
 		row.add_child(buy)
+	scroll.wire(list)

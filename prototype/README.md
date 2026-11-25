@@ -106,3 +106,10 @@ real save is not touched): `--packs=N`, `--treasury`, `--cargo`, `--market`, `--
 Chest art is drawn in `scripts/ui/chest_art.gd` (see the gallery with `--chest-gallery`); `burst_fx.gd` is the
 burst of light on flips and merges; new sounds come from `tools/make_sfx.py`. The how-to has a sixth step about
 chests and merging. Real generated chest art can replace `ChestArt` later (keep `ChestArt.draw`'s signature).
+
+### Scrolling
+Lists that hold buttons, cards or panels (Treasury, Cargo Hold, Port Market, How to play) use `DragScroll`
+(`scripts/ui/drag_scroll.gd`): you can drag from anywhere, a button being dragged is not tapped, and the list coasts
+after a flick. Call `scroll.wire(content)` after building the content. The treasure map uses a plain ScrollContainer
+(its stage nodes handle taps themselves). Test: `godot --path . --script res://tests/scroll_test.gd` (needs a window,
+not `--headless`); it drags over every scrolling screen from buttons, cards, panels and gaps.

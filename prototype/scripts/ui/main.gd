@@ -714,9 +714,8 @@ func show_howto() -> void:
 	var how_ribbon := RibbonLabel.new("How to play", 40)
 	how_ribbon.custom_minimum_size = Vector2(0, 110)
 	box.add_child(how_ribbon)
-	var how_scroll := ScrollContainer.new()  # six steps are more than fits above the buttons on a small screen
+	var how_scroll := DragScroll.new()  # six steps are more than fits above the buttons on a small screen
 	how_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	how_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(how_scroll)
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -726,6 +725,7 @@ func show_howto() -> void:
 	inner.add_theme_constant_override("separation", 14)
 	panel.add_child(inner)
 	_add_howto_rows(inner)
+	how_scroll.wire(panel)
 	box.add_child(_button("Play the guided practice", start_tutorial))
 	box.add_child(_button("Back", show_menu, WOOD))
 
@@ -1667,16 +1667,15 @@ func _options_show(view: String) -> void:
 	panel.add_child(inner)
 	if view == "howto":
 		inner.add_child(_label("How to play", 36, UiKit.INK, HORIZONTAL_ALIGNMENT_CENTER, true, false))
-		var scroll := ScrollContainer.new()
+		var scroll := DragScroll.new()  # drag to scroll; no bar eating width
 		scroll.custom_minimum_size = Vector2(0, 470)
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER  # drag to scroll; no bar eating width
 		inner.add_child(scroll)
 		var rows := VBoxContainer.new()
 		rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rows.add_theme_constant_override("separation", 12)
 		scroll.add_child(rows)
 		_add_howto_rows(rows)
+		scroll.wire(rows)
 		inner.add_child(_button("Back", func() -> void: _options_show("main"), WOOD))
 		return
 	if view == "settings":
