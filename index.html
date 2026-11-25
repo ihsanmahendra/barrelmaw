@@ -73,6 +73,15 @@ body { color: white; background-color: #2a9fd0; overflow: hidden; touch-action: 
 
 	</head>
 	<body>
+		<!-- Measures the phone's notch / status bar / home bar so the game can keep content clear of them. -->
+		<div id="safe-probe" style="position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);"></div>
+		<script>
+			window.barrelmawSafe = function () {
+				var s = getComputedStyle(document.getElementById('safe-probe'));
+				return [parseFloat(s.paddingLeft) || 0, parseFloat(s.paddingTop) || 0, parseFloat(s.paddingRight) || 0,
+					parseFloat(s.paddingBottom) || 0, window.innerWidth, window.innerHeight].join(',');
+			};
+		</script>
 		<canvas id="canvas">Your browser does not support the canvas tag.</canvas>
 		<noscript>Your browser does not support JavaScript.</noscript>
 
@@ -87,7 +96,7 @@ body { color: white; background-color: #2a9fd0; overflow: hidden; touch-action: 
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":5082284,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":5084676,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
