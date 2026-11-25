@@ -816,8 +816,14 @@ func show_market(back: Callable = Callable()) -> void:
 	box.add_child(money)
 	var normal_left := Rewards.market_left(st, GameData.cards, today, false)
 	var top_left := Rewards.market_left(st, GameData.cards, today, true)
-	box.add_child(m._label("Pearls come from copies of cards that are already at the top level. Each week you can buy %d card copies, and %d Transcended copy." % [int(PackConfig.data["market"]["weekly_limit"]), int(PackConfig.data["market"]["weekly_limit_transcended"])], 14, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, false, false))
-	box.add_child(m._label("Left this week: %d card copies, %d Transcended" % [normal_left, top_left], 16, UiKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER, true))
+	var info_panel := PanelContainer.new()  # on a dark plate, so the small text reads against the beach
+	info_panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.2, 0.12, 0.07, 0.9), Color("a8743f"), 3, 14))
+	var info_box := VBoxContainer.new()
+	info_box.add_theme_constant_override("separation", 4)
+	info_panel.add_child(info_box)
+	info_box.add_child(m._label("Pearls come from copies of cards that are already at the top level. Each week you can buy %d card copies, and %d Transcended copy." % [int(PackConfig.data["market"]["weekly_limit"]), int(PackConfig.data["market"]["weekly_limit_transcended"])], 14, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, false, false))
+	info_box.add_child(m._label("Left this week: %d card copies, %d Transcended" % [normal_left, top_left], 16, UiKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER, true, false))
+	box.add_child(info_panel)
 	var scroll := DragScroll.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

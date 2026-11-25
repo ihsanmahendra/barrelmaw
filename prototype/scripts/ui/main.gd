@@ -107,6 +107,12 @@ func _ready() -> void:
 	_make_mute_button()
 	packs = PackScreens.new(self)
 	var args := OS.get_cmdline_user_args()
+	for a in args:  # debug: --safe=left,top,right,bottom pretends the phone keeps that space (viewport units)
+		if a.begins_with("--safe="):
+			var v := a.get_slice("=", 1).split(",")
+			if v.size() == 4:
+				SafeArea.debug_insets = Vector4(float(v[0]), float(v[1]), float(v[2]), float(v[3]))
+	get_viewport().size_changed.connect(_apply_safe_area)
 	var debug_stage := 0
 	for a in args:  # debug flags: --progress=N (fake clears), --stage=N (1-based)
 		if a.begins_with("--progress="):
@@ -380,6 +386,24 @@ func _make_mute_button() -> void:
 	add_child(_overlay_layer)
 
 
+## Moves content in from the phone's notch, status bar and home bar. Called for every new screen and whenever
+## the window changes shape (turning the phone).
+func _apply_safe_area() -> void:
+	var ins := SafeArea.insets(get_viewport_rect().size)
+	if screen is MarginContainer:
+		screen.add_theme_constant_override("margin_left", 16 + int(ins.x))
+		screen.add_theme_constant_override("margin_right", 16 + int(ins.z))
+		screen.add_theme_constant_override("margin_top", 30 + int(ins.y))  # 30 leaves room for the sound toggle
+		screen.add_theme_constant_override("margin_bottom", 16 + int(ins.w))
+	if mute_button != null:
+		mute_button.position = Vector2(8.0 + ins.x, 4.0 + ins.y)
+	if gear_button != null:
+		gear_button.offset_right = -10.0 - ins.z
+		gear_button.offset_left = -58.0 - ins.z
+		gear_button.offset_top = 3.0 + ins.y
+		gear_button.offset_bottom = 51.0 + ins.y
+
+
 func _toggle_mute() -> void:
 	Sfx.muted = not Sfx.muted
 	mute_button.text = "Sound off" if Sfx.muted else "Sound on"
@@ -423,12 +447,10 @@ func _new_screen(separation: int = 12) -> VBoxContainer:
 		screen.queue_free()
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 16)
-	margin.add_theme_constant_override("margin_top", 30)  # room for the sound toggle
 	add_child(margin)
 	move_child(highlight, get_child_count() - 1)  # keep outlines above the screen
 	screen = margin
+	_apply_safe_area()
 	margin.modulate.a = 0.0
 	create_tween().tween_property(margin, "modulate:a", 1.0, 0.22)
 	var box := VBoxContainer.new()
@@ -622,8 +644,9 @@ func show_menu() -> void:
 	ver.anchor_bottom = 1.0
 	ver.offset_left = -70.0
 	ver.offset_right = -10.0
-	ver.offset_top = -22.0
-	ver.offset_bottom = -4.0
+	var ver_inset := SafeArea.insets(get_viewport_rect().size)
+	ver.offset_top = -22.0 - ver_inset.w
+	ver.offset_bottom = -4.0 - ver_inset.w
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_menu_extras.append(ver)
 	_sync_menu_deck()
@@ -827,7 +850,7 @@ func _build_battle_screen(title: String) -> void:
 	box.add_child(hud)
 
 	board_view = BoardView.new()
-	board_view.custom_minimum_size = Vector2(0, 150 if tutorial else 220)
+	board_view.custom_minimum_size = Vector2(0, 80 if tutorial else 150)  # the board takes whatever room is left; this is only the floor
 	board_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board_view.set_battle(battle)
 	board_view.shot_launched.connect(_on_shot_launched)
@@ -1555,8 +1578,11 @@ func show_unlock(index: int) -> void:
 	stage = index
 	var box := _new_screen(10)
 	box.add_child(RibbonLabel.new("New cards!", 44))
-	var note := _label("Stage %d: these %d cards join your deck from now on." % [index + 1, Stages.unlocks_at(index).size()], 18, UiKit.CREAM)
-	box.add_child(note)
+	var note := _label("Stage %d: these %d cards join your deck from now on." % [index + 1, Stages.unlocks_at(index).size()], 18, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, true, false)
+	var note_panel := PanelContainer.new()  # on a dark plate, so it reads against the busy beach
+	note_panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.2, 0.12, 0.07, 0.88), Color("a8743f"), 3, 14))
+	note_panel.add_child(note)
+	box.add_child(note_panel)
 	var ids: Array = Stages.unlocks_at(index)
 	for r in 2:
 		var row := HBoxContainer.new()
@@ -1843,7 +1869,7 @@ func _add_reward_rows(inner: VBoxContainer) -> void:
 	row.add_theme_constant_override("separation", 14)
 	for id in chests:
 		var cell := VBoxContainer.new()
-		cell.add_theme_constant_override("separation", 0)
+		cell.add_theme_constant_override("separation", 6)
 		cell.custom_minimum_size = Vector2(150, 0)
 		var icon := ChestView.new(str(id), false)
 		icon.custom_minimum_size = Vector2(80, 64)

@@ -108,8 +108,8 @@ static func parchment_style() -> StyleBox:
 		st.texture_margin_bottom = 44.0
 		st.content_margin_left = 30.0
 		st.content_margin_right = 30.0
-		st.content_margin_top = 26.0
-		st.content_margin_bottom = 26.0
+		st.content_margin_top = 34.0  # the curled edges are 44 units deep; keep text off them
+		st.content_margin_bottom = 40.0
 		return st
 	var s := panel_style(PARCHMENT, PARCHMENT_EDGE, 5, 22)
 	s.content_margin_left = 18

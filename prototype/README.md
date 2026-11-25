@@ -113,3 +113,11 @@ Lists that hold buttons, cards or panels (Treasury, Cargo Hold, Port Market, How
 after a flick. Call `scroll.wire(content)` after building the content. The treasure map uses a plain ScrollContainer
 (its stage nodes handle taps themselves). Test: `godot --path . --script res://tests/scroll_test.gd` (needs a window,
 not `--headless`); it drags over every scrolling screen from buttons, cards, panels and gaps.
+
+### Layout and phone safe area
+`SafeArea` (`scripts/ui/safe_area.gd`) keeps titles, buttons and text clear of a phone's notch, status bar and home
+bar. The web shell (`web/shell.html`) measures `env(safe-area-inset-*)` and Godot reads it for every new screen and
+when the window changes shape; the background still fills the whole screen. Debug: `--safe=left,top,right,bottom`
+fakes the insets. Test: `godot --path . --resolution 390x844 --script res://tests/layout_test.gd` builds every screen
+with a fake notch and fails if any label, button or panel is outside the safe area (try 540x960, 360x800, 320x568,
+768x1024, 800x600). It needs a window, not `--headless`.
