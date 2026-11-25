@@ -180,9 +180,17 @@ func _ready() -> void:
 				cv3.open_t = step
 				mid_row.add_child(cv3)
 			gbox.add_child(mid_row)
-		for row_big in ["crate", "vault"]:
+		var compare := Control.new()  # a barrel and a cannonball beside a chest, to compare the painting style
+		compare.custom_minimum_size = Vector2(0, 220)
+		compare.draw.connect(func() -> void:
+			PirateArt.draw_barrel(compare, Vector2(70, 120), 110.0, 130.0, Color("ef476f"))
+			PirateArt.draw_cannonball(compare, Vector2(170, 140), 40.0, Color("4cc9f0"), "3", 34)
+			ChestArt.draw(compare, Vector2(330, 120), 200.0, "crate", 0.0, 0.0)
+			ChestArt.draw(compare, Vector2(480, 130), 90.0, "iron", 0.0, 0.0))
+		gbox.add_child(compare)
+		for row_big in ["gilded", "vault"]:
 			var big := ChestView.new(row_big, true)
-			big.custom_minimum_size = Vector2(0, 230)
+			big.custom_minimum_size = Vector2(0, 200)
 			gbox.add_child(big)
 	elif args.has("--opening"):
 		for a in args:

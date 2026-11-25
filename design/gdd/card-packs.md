@@ -450,8 +450,10 @@ Suggested order. Each phase ships and tests on its own, behind a feature flag un
    `pack_tests.gd` and `tests/screens_smoke.gd`, which opens every screen in a real Main scene. Checked in a
    web build served locally: claim, open, reveal and merge all work, no console errors. Not in this phase:
    an "Open all" button (each chest has "Open another" instead) and a one-tap skip for the first-ever reveal.
-5. **Polish and release. Done, with one gap.** Chests are redrawn in code with much more detail (wood, metal,
-   a lock and ornament per tier, a raised lid and a treasure heap when open); the generated chest art in
+5. **Polish and release. Done, with one gap.** Chests are redrawn in code to match the pirate and barrel art (smooth
+   shading from the top left, outlines in a darker shade of each color, glossy highlights, dark steel hoops with
+   domed rivets like the barrels', a gold padlock like the map chest's, an ornament per tier, a raised lid and a
+   treasure heap when open); the generated chest art in
    Section 10 could not be made because the SpriteCook account had 1 credit left. New synthesized sounds (chest
    shake and open, card flip, five rarity stings, merge, pearls), a burst of light on every flip, level badges that
    change color (bronze, silver, gold, ice-blue) so levels without a numeric bonus still look like progress, a
