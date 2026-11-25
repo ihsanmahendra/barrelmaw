@@ -10,6 +10,8 @@ const TOP_PAD: float = 250.0
 const BOTTOM_PAD: float = 270.0
 const NIGHT_GAP: float = 190.0  # extra space between stage 50 and 51 for the "Night Seas" ribbon
 
+## Stage index to chest id: elite and boss stages whose first-clear chest is still waiting. Set by the screen.
+var reward_chests: Dictionary = {}
 var _press: Vector2 = Vector2.ZERO
 var _view_top: float = 0.0  # visible part of the map (set from the parent scroller each frame)
 var _view_bottom: float = 1000.0
@@ -409,6 +411,8 @@ func _draw_node(i: int, highest: int, t: float) -> void:
 		draw_rect(Rect2(b + Vector2(-3, 4), Vector2(6, 4)), Color("3a261a"))
 	elif Stages.is_elite(i):
 		UiKit.draw_star(self, p + Vector2(r * 0.8, -r * 0.8), 13.0, Color("e08a1e"), Color("5a3a22"))
+	if reward_chests.has(i):  # the chest this stage pays the first time
+		ChestArt.draw(self, p + Vector2(-r - 18.0, -r * 0.5), 42.0, str(reward_chests[i]), 0.0, t)
 	if cleared:
 		for k in 3:
 			var sc := p + Vector2((k - 1) * 19.0, r + 20.0 - (6.0 if k != 1 else 0.0))

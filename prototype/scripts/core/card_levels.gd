@@ -72,6 +72,25 @@ static func _ball_count(card: Dictionary) -> float:
 	return 1.0
 
 
+## What reaching one level adds, on its own (not the running total), e.g. "+1 hit". "No bonus" when empty.
+static func step_text(card: Dictionary, level: int) -> String:
+	if level < 2:
+		return ""
+	var now := bonus_totals(card, level)
+	var before := bonus_totals(card, level - 1)
+	var parts: Array = []
+	var hits := int(now["hits"]) - int(before["hits"])
+	var barrels := int(now["barrels"]) - int(before["barrels"])
+	var cards := int(now["cards"]) - int(before["cards"])
+	if hits > 0:
+		parts.append("+%d hit%s" % [hits, "" if hits == 1 else "s"])
+	if barrels > 0:
+		parts.append("+%d barrel%s" % [barrels, "" if barrels == 1 else "s"])
+	if cards > 0:
+		parts.append("+%d card%s" % [cards, "" if cards == 1 else "s"])
+	return ", ".join(parts) if not parts.is_empty() else "No bonus"
+
+
 static func _has_double(card: Dictionary) -> bool:
 	for eff in card["effects"]:
 		if eff["kind"] == "double":

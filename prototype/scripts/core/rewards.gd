@@ -53,6 +53,21 @@ static func _grant_list(st: Dictionary, out: Dictionary, chest_id: String, n: in
 	out[chest_id] = int(out.get(chest_id, 0)) + n
 
 
+## Chests a first clear of this stage gives, as [[chest id, count], ...] (empty for ordinary stages).
+## The map shows them on elite and boss stages that are not cleared yet.
+static func first_clear_chests(index: int) -> Array:
+	PackConfig.ensure_loaded()
+	if Stages.is_boss(index):
+		var out: Array = []
+		for pair in PackConfig.data["boss_rewards"].get(str(index + 1), []):
+			out.append([str(pair[0]), int(pair[1])])
+		return out
+	if Stages.is_elite(index):
+		var el: Dictionary = PackConfig.data["elite_reward"]
+		return [[str(el["chest"]), int(el["count"])]]
+	return []
+
+
 ## Pays out a won stage. `old_stars` is the best rating before this win (0 = first clear), `new_stars` the
 ## rating of this win and `best_stars` the best ratings of all stages after recording it (index = stage).
 ## Returns {doubloons, chests: {chest id: count}} for the results screen.
@@ -117,6 +132,18 @@ static func week_of(date_str: String) -> int:
 static func market_limit(rarity: String) -> int:
 	var m: Dictionary = PackConfig.data["market"]
 	return int(m["weekly_limit_transcended"]) if rarity == "transcended" else int(m["weekly_limit"])
+
+
+## Market purchases still allowed this week: for Transcended copies (top = true) or for all other cards.
+static func market_left(st: Dictionary, catalog: Dictionary, today: String, top: bool) -> int:
+	var mk: Dictionary = st["market"]
+	var bought := 0
+	if int(mk["week"]) == week_of(today):
+		for k in mk["buys"]:
+			if catalog.has(str(k)) and (str(catalog[str(k)]["rarity"]) == "transcended") == top:
+				bought += int(mk["buys"][k])
+	var limit := int(PackConfig.data["market"]["weekly_limit_transcended"]) if top else int(PackConfig.data["market"]["weekly_limit"])
+	return maxi(limit - bought, 0)
 
 
 ## Buys one copy of a card with Pearls. Returns false when the card is not available to the player,

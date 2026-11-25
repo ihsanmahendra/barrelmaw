@@ -65,6 +65,8 @@ var _intro_open: Control
 signal _intro_closed
 var _overlay_layer: CanvasLayer
 var _menu_stage: PirateStage
+var packs: PackScreens  # Treasury, chest opening, Cargo Hold, Port Market
+var _last_rewards: Dictionary = {}  # what the latest win paid (Doubloons and chests), for the results screen
 var screen: Control
 var board_view: BoardView
 var queue_view: QueueView
@@ -103,6 +105,7 @@ func _ready() -> void:
 	highlight = Highlight.new()
 	add_child(highlight)
 	_make_mute_button()
+	packs = PackScreens.new(self)
 	var args := OS.get_cmdline_user_args()
 	var debug_stage := 0
 	for a in args:  # debug flags: --progress=N (fake clears), --stage=N (1-based)
@@ -117,6 +120,13 @@ func _ready() -> void:
 					SaveData.mark_special_seen(kind)
 		if a.begins_with("--stage="):
 			debug_stage = int(a.get_slice("=", 1)) - 1
+	for a in args:  # debug: --packs=N gives N of every chest, Doubloons, Pearls, some spare copies and the Transcended cards
+		if a.begins_with("--packs="):
+			if not args.has("--progress=" + str(a.get_slice("=", 1))) and SaveData.path != "user://debug_save.cfg":
+				SaveData.path = "user://debug_save.cfg"
+				SaveData.reset()
+				SaveData.tutorial_done = true
+			_debug_packs(int(a.get_slice("=", 1)))
 	if args.has("--gift"):
 		SaveData.reset()
 		SaveData.tutorial_done = true
@@ -130,7 +140,26 @@ func _ready() -> void:
 		_begin_stage(1, Stages.deck_for(1))
 		print("GIFTPLAY second stage deck=", _stage_deck.size(), " base=", Stages.deck_for(1).size())
 		return
-	if args.has("--howto"):
+	if args.has("--treasury"):
+		packs.show_treasury()
+	elif args.has("--cargo"):
+		var filter := "all"
+		for a in args:
+			if a.begins_with("--filter="):
+				filter = a.get_slice("=", 1)
+		packs.show_cargo(Callable(), filter)
+		for a in args:
+			if a.begins_with("--detail="):
+				packs._show_detail(a.get_slice("=", 1))
+	elif args.has("--market"):
+		packs.show_market()
+	elif args.has("--claim-crate"):  # debug: claim the daily crate and open it
+		_claim_daily_crate()
+	elif args.has("--opening"):
+		for a in args:
+			if a.begins_with("--open-chest="):
+				packs.open_and_show(a.get_slice("=", 1))
+	elif args.has("--howto"):
 		show_howto()
 	elif args.has("--settings"):
 		show_menu()
@@ -159,6 +188,8 @@ func _ready() -> void:
 		battle.over = true
 		battle.won = args.has("--result")
 		_prev_best = 1
+		if args.has("--rewards"):  # debug: show what a win can pay
+			_last_rewards = {"doubloons": 100, "chests": {"iron": 2, "crate": 1}}
 		show_stage_result(battle.won)
 	elif args.has("--tutorial"):
 		start_tutorial()
@@ -493,12 +524,31 @@ func show_menu() -> void:
 	var plaque := MenuPlaque.new()
 	plaque.set_info(next_index, String(Stages.picture(next_index)["name"]), SaveData.total_stars(), Stages.TOTAL * 3, all_done, SaveData.pending_gift())
 	box.add_child(plaque)
-	# Daily gift, shown only while it is waiting to be claimed.
-	if SaveData.daily_available():
-		var gift_btn := _button("Claim your daily gift", _claim_daily_gift, Color("e0a020"))
+	# Daily crate, shown only while it is waiting to be claimed.
+	if Rewards.daily_available(SaveData.pack_state(), SaveData.today()):
+		var gift_btn := _button("Claim your daily crate", _claim_daily_crate, Color("e0a020"))
 		gift_btn.custom_minimum_size = Vector2(0, 52)
 		gift_btn.add_theme_font_size_override("font_size", 21)
 		box.add_child(gift_btn)
+	# Treasury and Cargo Hold, with a red dot when something is waiting.
+	var pack_row := HBoxContainer.new()
+	pack_row.add_theme_constant_override("separation", 8)
+	var st_packs := SaveData.pack_state()
+	var treasury_btn := _button("Treasury", func() -> void: packs.show_treasury(), Color("2a9d8f"))
+	treasury_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	treasury_btn.custom_minimum_size = Vector2(0, 52)
+	treasury_btn.add_theme_font_size_override("font_size", 21)
+	if packs.openable_count() > 0 or not (st_packs["pending"] as Array).is_empty():
+		_add_red_dot(treasury_btn)
+	pack_row.add_child(treasury_btn)
+	var cargo_btn := _button("Cargo Hold", func() -> void: packs.show_cargo(), Color("6a4c93"))
+	cargo_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cargo_btn.custom_minimum_size = Vector2(0, 52)
+	cargo_btn.add_theme_font_size_override("font_size", 21)
+	if Collection.ready_count(st_packs, GameData.cards) > 0:
+		_add_red_dot(cargo_btn)
+	pack_row.add_child(cargo_btn)
+	box.add_child(pack_row)
 	var play := _button("Play" if SaveData.cleared_count() == 0 else "Continue", _on_play_pressed)
 	play.custom_minimum_size = Vector2(0, 84)
 	play.add_theme_font_size_override("font_size", 34)
@@ -540,6 +590,37 @@ func show_menu() -> void:
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_menu_extras.append(ver)
 	_sync_menu_deck()
+
+
+## A small red dot on the top right of a button: something is waiting there.
+func _add_red_dot(b: Button) -> void:
+	var dot := Panel.new()
+	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dot.add_theme_stylebox_override("panel", UiKit.panel_style(Color("e63946"), Color.WHITE, 3, 12))
+	dot.custom_minimum_size = Vector2(24, 24)
+	dot.size = Vector2(24, 24)
+	dot.anchor_left = 1.0
+	dot.anchor_right = 1.0
+	dot.offset_left = -26.0
+	dot.offset_right = -2.0
+	dot.offset_top = -6.0
+	dot.offset_bottom = 18.0
+	b.add_child(dot)
+
+
+## Claims today's crate and opens it at once (or tells the player where it is waiting if it cannot be opened yet).
+func _claim_daily_crate() -> void:
+	var st := SaveData.pack_state()
+	var chest := Rewards.daily_claim(st, SaveData.today())
+	if chest == "":
+		return
+	SaveData.save()
+	sfx.play("sparkle")
+	if Packs.is_unlocked(chest, SaveData.highest_unlocked()):
+		packs.open_and_show(chest)
+	else:
+		_toast("%s saved in the Treasury. It opens after stage %d." % [PackConfig.chest(chest)["name"], int(PackConfig.chest(chest)["unlock_cleared"])], 2.6)
+		show_menu()
 
 
 ## Lines the menu's deck up with the pirate once the layout is known.
@@ -628,6 +709,24 @@ func _battle_levels() -> Dictionary:
 				all[id] = lv
 			return all
 	return Collection.levels_for_battle(SaveData.pack_state())
+
+
+## Debug: fills the pack state so every screen has something to show (--packs=N).
+func _debug_packs(n: int) -> void:
+	var st := SaveData.pack_state()
+	for c in PackConfig.chests:
+		Packs.grant(st, str(c["id"]), n)
+	st["doubloons"] = 4000
+	st["pearls"] = 120
+	for id in ["power_shot", "row_strike", "scatter", "cross_strike", "blast", "prism"]:
+		st["spare"][id] = 2
+	st["level"]["power_shot"] = 2
+	st["level"]["blast"] = 3
+	for id in GameData.card_order:
+		if GameData.cards[id]["rarity"] == "transcended":
+			Collection.add_copy(st, id, GameData.cards)
+	st["welcome_given"] = true
+	SaveData.save()
 
 
 ## Starts a stage with the given deck (see Stages.deck_for).
@@ -1174,8 +1273,12 @@ func _on_battle_over() -> void:
 	if tutorial:
 		_on_tutorial_over()
 		return
+	_last_rewards = {}
 	if battle.won:
-		SaveData.record(stage, battle.star_rating())
+		var stars_earned := battle.star_rating()
+		var before_stars := SaveData.record(stage, stars_earned)
+		_last_rewards = Rewards.stage_clear(SaveData.pack_state(), stage, before_stars, stars_earned, SaveData.best_stars(), SaveData.today())
+		SaveData.save()
 	show_stage_result(battle.won)
 
 
@@ -1216,6 +1319,7 @@ func show_map(focus: int = -1) -> void:
 	map_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	holder.add_child(map_scroll)
 	map_view = MapView.new()
+	map_view.reward_chests = _map_reward_chests()
 	map_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_view.stage_tapped.connect(_on_stage_tapped)
 	map_scroll.add_child(map_view)
@@ -1258,7 +1362,20 @@ func show_map(focus: int = -1) -> void:
 	_scroll_map_to(target_stage)
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if not is_instance_valid(jump):  # the player left the map already
+		return
 	update_jump.call()
+
+
+## Elite and boss stages that have not been cleared yet, with the chest their first clear gives.
+func _map_reward_chests() -> Dictionary:
+	var out := {}
+	for i in Stages.TOTAL:
+		if SaveData.stars(i) == 0:
+			var list: Array = Rewards.first_clear_chests(i)
+			if not list.is_empty():
+				out[i] = str(list[0][0])
+	return out
 
 
 ## Scrolls so the given stage is a little below the middle of the map view.
@@ -1436,9 +1553,12 @@ func show_stage_result(won: bool) -> void:
 		var extra := "New best!" if earned > _prev_best else ("Best so far: %d star%s" % [_prev_best, "" if _prev_best == 1 else "s"])
 		inner.add_child(_label(extra, 18, Color("d62839") if earned > _prev_best else Color("8a5a30"), HORIZONTAL_ALIGNMENT_CENTER, true, false))
 		inner.add_child(_label("3 stars: %d turns or fewer.   2 stars: %d turns or fewer." % [battle.star3_turns, battle.star2_turns], 15, Color("8a5a30"), HORIZONTAL_ALIGNMENT_CENTER, false, false))
+		_add_reward_rows(inner)
 	else:
 		sfx.play("lose")
 		inner.add_child(_label("The barrels survived this time. Use the card preview and try a different plan.", 19, Color("6b4a2f"), HORIZONTAL_ALIGNMENT_CENTER, false, false))
+	if won and not _last_rewards.is_empty() and not (_last_rewards["chests"] as Dictionary).is_empty():
+		box.add_child(_button("Open your chests", func() -> void: packs.show_treasury(func() -> void: show_map(stage)), Color("2a9d8f")))
 	if won and not final_stage:
 		box.add_child(_button("Next stage", func() -> void: _start_stage(stage + 1)))
 		box.add_child(_button("Replay", func() -> void: _start_stage(stage), WOOD))
@@ -1660,6 +1780,32 @@ func _build_settings(inner: VBoxContainer) -> void:
 			show_menu())
 	inner.add_child(reset)
 	inner.add_child(_button("Close", _close_options))
+
+
+## Doubloons and chests the stage just paid, as rows on the results panel.
+func _add_reward_rows(inner: VBoxContainer) -> void:
+	if _last_rewards.is_empty():
+		return
+	var gold := int(_last_rewards["doubloons"])
+	if gold > 0:
+		inner.add_child(_label("+%d Doubloons" % gold, 22, Color("a8651a"), HORIZONTAL_ALIGNMENT_CENTER, true, false))
+	var chests: Dictionary = _last_rewards["chests"]
+	if chests.is_empty():
+		return
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 14)
+	for id in chests:
+		var cell := VBoxContainer.new()
+		cell.add_theme_constant_override("separation", 0)
+		cell.custom_minimum_size = Vector2(150, 0)
+		var icon := ChestView.new(str(id), false)
+		icon.custom_minimum_size = Vector2(80, 64)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		cell.add_child(icon)
+		cell.add_child(_label("%s x%d" % [PackConfig.chest(str(id))["name"], int(chests[id])], 14, Color("6b4a2f"), HORIZONTAL_ALIGNMENT_CENTER, true, false))
+		row.add_child(cell)
+	inner.add_child(row)
 
 
 # ---------- daily gift ----------

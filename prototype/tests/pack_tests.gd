@@ -33,6 +33,8 @@ func run() -> void:
 	test_transcended_effects()
 	test_echo_parity()
 	test_captain_slots()
+	test_screen_helpers()
+	test_saved_flow()
 
 
 func _catalog() -> Dictionary:
@@ -651,3 +653,52 @@ func test_captain_slots() -> void:
 	st["equipped"] = ["maelstrom"]
 	st["owned"].erase("maelstrom")
 	check(Collection.equipped_cards(st, 100, catalog).is_empty(), "an equipped card that is not owned is ignored")
+
+
+# ---------- screens (phase 4): the logic behind them ----------
+
+func test_screen_helpers() -> void:
+	check(CardLevels.step_text(GameData.cards["power_shot"], 1) == "" and CardLevels.step_text(GameData.cards["power_shot"], 2) == "+1 hit", "step text for Power Shot level 2")
+	check(CardLevels.step_text(GameData.cards["power_shot"], 3) == "No bonus", "a level with no bonus says so")
+	check(CardLevels.step_text(GameData.cards["quick_draw"], 5) == "+1 card" and CardLevels.step_text(GameData.cards["quick_draw"], 4) == "+1 hit", "step text for Quick Draw levels 4 and 5")
+	check(Collection.unlock_stage("power_shot") == 1 and Collection.unlock_stage("heavy_round") == 11 and Collection.unlock_stage("prism") == 41, "unlock stages: starter 1, Heavy Round 11, Prism 41")
+	check(Collection.unlock_stage("maelstrom") == 0, "Transcended cards are chest only")
+	check(Rewards.first_clear_chests(3).is_empty(), "an ordinary stage pays no chest")
+	check(Rewards.first_clear_chests(4) == [["crate", 2]], "stage 5 (elite) pays 2 crates")
+	check(Rewards.first_clear_chests(9) == [["iron", 2]] and Rewards.first_clear_chests(99) == [["vault", 2]], "boss stages pay their chests")
+	var st := Collection.new_state()
+	var catalog := _catalog()
+	check(Rewards.market_left(st, catalog, "2026-11-25", false) == 5 and Rewards.market_left(st, catalog, "2026-11-25", true) == 1, "a fresh week has the full market limits")
+	st["pearls"] = 100
+	Rewards.market_buy(st, "power_shot", 0, catalog, "2026-11-25")
+	check(Rewards.market_left(st, catalog, "2026-11-25", false) == 4 and Rewards.market_left(st, catalog, "2026-11-25", true) == 1, "a purchase uses up one weekly buy")
+	check(Rewards.market_left(st, catalog, "2026-12-04", false) == 5, "the limit is back the next week")
+	var screens := PackScreens.new(null)
+	var odds := screens.odds_text(PackConfig.chest("iron"))
+	check(odds.contains("Cards 1-3: Common 70%, Rare 27%, Epic 3%") and odds.contains("Card 4: Rare 85%"), "the odds panel text comes from the data: " + odds)
+
+
+## The whole flow the screens drive, through the real save: daily crate, open, reveal queue, merge.
+func test_saved_flow() -> void:
+	var abs_path := ProjectSettings.globalize_path(TEST_SAVE)
+	SaveData.path = TEST_SAVE
+	if FileAccess.file_exists(TEST_SAVE):
+		DirAccess.remove_absolute(abs_path)
+	SaveData.reset()
+	var st := SaveData.pack_state()
+	check(Rewards.daily_available(st, "2026-11-25"), "the daily crate is waiting on a new save")
+	check(Rewards.daily_claim(st, "2026-11-25") == "crate" and Packs.count(st, "crate") == 1, "claiming adds a crate to the inventory")
+	SaveData.save()
+	var res := Packs.open_saved("crate")
+	check(bool(res["ok"]) and res["cards"].size() == 3, "open_saved opens the crate")
+	SaveData.reload_from_disk()
+	var after := SaveData.pack_state()
+	check(Packs.count(after, "crate") == 0 and (after["pending"] as Array).size() == 1, "after a restart the chest is gone and its reveal is waiting")
+	check(Collection.is_ready(after, "power_shot", GameData.cards) and Collection.ready_count(after, GameData.cards) == 1, "the scripted first crate makes Power Shot ready")
+	var reveal := Packs.take_pending(after)
+	check(reveal["chest"] == "crate" and (after["pending"] as Array).is_empty(), "seeing the reveal takes it off the queue")
+	SaveData.save()
+	check(Collection.merge_all(after, GameData.cards) == 1 and Collection.level_of(after, "power_shot") == 2, "merge all levels Power Shot up")
+	check(Collection.levels_for_battle(after) == {"power_shot": 2}, "the battle sees the new level")
+	SaveData.reset()
+	DirAccess.remove_absolute(abs_path)

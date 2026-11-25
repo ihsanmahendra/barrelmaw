@@ -94,3 +94,10 @@ Four chest-only cards (`tools/make_transcended_cards.py`): Maelstrom, Jones' Led
 Equipped ones join every deck (`Collection.equip`, `Collection.deck_with_equipped`; 1 slot after stage 50, 2
 after stage 100). Debug: `--tcards` adds all four to the deck. Balance check:
 `EXTRA=maelstrom FROM=50 TO=99 MULTI=1 godot --headless --path . --script res://tests/level_balance.gd`.
+
+### Card pack screens (phase 4)
+`scripts/ui/pack_screens.gd` holds the Treasury, chest opening, Cargo Hold and Port Market; the menu has
+Treasury and Cargo Hold buttons (red dot when something waits) and the daily crate; the results screen shows
+Doubloons and chests; the map shows the chest of elite and boss stages. Debug (use with `--progress=N` so the
+real save is not touched): `--packs=N`, `--treasury`, `--cargo`, `--market`, `--opening --open-chest=gilded
+--auto-tap`, `--claim-crate`. Smoke test: `godot --headless --path . --script res://tests/screens_smoke.gd`.

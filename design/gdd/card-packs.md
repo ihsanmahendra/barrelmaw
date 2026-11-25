@@ -404,7 +404,7 @@ this design does about it.
 | Long bad-luck streaks | Three saved pity counters plus a visible meter (4.2) |
 | Hidden odds | Odds panel in the app, generated from the same data the game rolls from (4.1) |
 | Rolling again by closing the app | Result is saved before the animation (5.2) |
-| Opening fatigue | Skippable, lowest rarity first, common chests fast, Open All with one summary, no forced animation after the first chest |
+| Opening fatigue | Tap to skip the reveal, lowest rarity first, short reveal for small chests, an "Open another" button after each chest (an Open All button is a later idea) |
 | Daily gift expires or is wasted | Daily crate stacks up to 3, never resets; the old one-stage-only gift card goes away |
 | Streak anxiety | The 7-day bonus counts claimed days and never resets |
 | Merge regret ("did I level the wrong card?") | Merge only spends copies of that same card, never other resources, and can never be wasted or undone wrongly |
@@ -441,8 +441,15 @@ Suggested order. Each phase ships and tests on its own, behind a feature flag un
 3. **Transcended. Done.** Four new cards, the wild ball, free turn and repeat-last rules, the aurora frame and
    new icons, the Captain's Slots (`Collection.equip`, `deck_with_equipped`), `--tcards` debug flag, tests and
    balance numbers (Section 3.6). Equipping has no screen yet; that is phase 4.
-4. **Screens.** Treasury, chest opening, Cargo Hold, Port Market, results and map rewards, menu red dots,
-   daily crate replacing the daily gift. Skip the polish until the flow works.
+4. **Screens. Done.** `scripts/ui/pack_screens.gd` (Treasury with odds and luck meters, chest opening, Cargo Hold
+   with filters, card detail, MERGE and Captain's Slot equip, Port Market), `chest_art.gd` and `chest_view.gd`
+   (chests drawn in code for now), the daily crate on the menu replacing the daily gift, red dots on the Treasury
+   and Cargo Hold buttons, rewards on the results screen, and chest icons on elite and boss stages of the map.
+   Debug flags: `--packs=N`, `--treasury`, `--cargo [--filter=ready] [--detail=id]`, `--market`,
+   `--opening --open-chest=id`, `--claim-crate`, `--auto-tap`, `--rewards`. Tests: the screen logic in
+   `pack_tests.gd` and `tests/screens_smoke.gd`, which opens every screen in a real Main scene. Checked in a
+   web build served locally: claim, open, reveal and merge all work, no console errors. Not in this phase:
+   an "Open all" button (each chest has "Open another" instead) and a one-tap skip for the first-ever reveal.
 5. **Polish and release.** Chest art and sounds, reveal animation, odds panel, performance pass on the web
    build, update README and the in-game "How to play", then turn the flag on.
 

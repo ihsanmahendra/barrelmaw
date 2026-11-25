@@ -215,3 +215,14 @@ static func deck_with_equipped(deck: Array, st: Dictionary, progress: int, catal
 			out.append(id)
 	out.append_array(equipped_cards(st, progress, catalog))
 	return out
+
+
+## The stage that unlocks a card: 1 for the starter deck, the stage number of a stage unlock, and 0 for
+## cards that only chests give (Transcended).
+static func unlock_stage(id: String) -> int:
+	if GameData.starter_deck.has(id):
+		return 1
+	for k in Stages.UNLOCKS:
+		if (Stages.UNLOCKS[k] as Array).has(id):
+			return int(k) + 1
+	return 0
