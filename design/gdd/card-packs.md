@@ -1,0 +1,417 @@
+# Card Packs, Merge and Card Levels
+
+Status: draft v1 for review. Target: next update after the current build (100 stages, day and night worlds).
+Owner system: collection and progression. Touches: cards, daily gift, results screen, map rewards, save data, battle.
+
+> Numbers in this document come from a first-pass Monte Carlo simulation (`prototype/tools/pack_sim.py`).
+> They are starting values, not final. Section 7 lists every tuning knob and Section 8 the tests that guard them.
+
+## 1. Overview
+
+Players earn and buy **chests** (card packs) in five tiers: Common, Rare, Epic, Legendary and **Transcended**.
+Opening a chest gives cards. Cards the player already owns become **copies**, and enough copies **merge** the
+card up a level (max level 5), which makes that card stronger in every battle. Transcended is a new top
+rarity: four pack-only cards that cannot be unlocked by playing stages.
+
+The unlock path stays as it is: a card is *discovered* by reaching the stage that unlocks it (every 10 stages).
+Chests never unlock a stage card early. They make cards you already have **stronger**, and they are the only
+source of Transcended cards.
+
+Why this design (summary of the choices made, with the flaw each one avoids, is in Section 9):
+
+- Chests roll only from cards the player has unlocked, so no pull is ever a card they cannot use.
+- Duplicates are never dead: they merge, and copies beyond max level turn into Pearls.
+- Bad-luck streaks are capped by visible pity counters.
+- Level bonuses are small and checked against a power budget, so the 100 tuned stages stay fair.
+- No real-money purchase in this update. Chests come from play and from in-game Doubloons.
+
+## 2. Player Fantasy
+
+A pirate captain hauling in loot. Chests feel like finding treasure after a hard stage, not like a casino.
+The player should feel: "my favorite cannon card is getting better," "that boss paid off," and, rarely,
+"a ghost-ship relic joined my crew." The merge moment is a small forge-like ceremony the player triggers
+themselves. Nothing is lost, hidden or taken away.
+
+## 3. Detailed Rules
+
+### 3.1 Currencies and items
+
+| Item | Source | Use |
+|---|---|---|
+| Chests (5 tiers) | daily crate, stage rewards, boss rewards, shop | open for cards |
+| Doubloons (soft currency) | first clears, stars, replays | buy chests |
+| Pearls | copies beyond max level | Port Market: buy single card copies |
+| Copies | chests, Market | merge into levels |
+
+### 3.2 Chest tiers
+
+| Chest | Card rarity | Cards | Unlocked at | Price (Doubloons) | Visual |
+|---|---|---|---|---|---|
+| Driftwood Crate | Common | 3 | start | 150 | rope-bound plain wood |
+| Ironbound Chest | Rare | 4 | stage 10 cleared | 600 | blue steel bands |
+| Captain's Coffer | Epic | 4 | stage 30 cleared | 2,000 | purple velvet, silver trim |
+| Gilded Hoard | Legendary | 5 | stage 40 cleared | 6,000 | gold overflowing |
+| Abyssal Vault | Transcended | 5 | stage 50 cleared | 9,000 | ghostly teal, chains, glowing lock |
+
+A locked chest shows its unlock stage. Chests already in the inventory never expire.
+"Cleared" means the stage was won at least once. The unlock stages match the stages where that rarity first
+becomes available in `Stages.UNLOCKS` (stage 11 rare, 31 epic, 41 legendary) and the night world (stage 51+).
+
+### 3.3 What a chest rolls
+
+Each card slot has a rarity table (Section 4.1). The rolled rarity picks a random card of that rarity from
+the **pool of cards the player has unlocked**. If the rolled rarity has no unlocked card, the roll steps down
+one rarity until it finds one, so no slot is ever empty. Transcended cards are in the pool once the player has
+cleared stage 50.
+
+- The first Driftwood Crate a new player opens is **scripted**: it contains two copies of a starter card they
+  have already played, so their first merge happens in the first session.
+- Opening reveals cards one at a time, lowest rarity first, so the best card comes last.
+- A chest result is **decided and saved before the animation starts**. Closing the app mid-opening cannot
+  reroll it (see 5.4).
+
+### 3.4 Merge and card levels
+
+- Owning a card (unlocked by stage, or first pulled) gives **1 copy** and level 1.
+- Every extra copy goes into that card's copy counter. When the counter has enough copies for the next
+  level, the card shows a glowing **MERGE** button. Tapping it spends the copies and raises the level.
+  A **Merge All** button does every ready merge. Merge is never automatic, so the player gets the moment,
+  but it also never costs choice or resources: copies are only ever spent on that card's own next level.
+- Max level is 5. Copies needed per level step (the card itself counts as the first copy):
+
+| Rarity | Lv1 to 2 | 2 to 3 | 3 to 4 | 4 to 5 | Total spare copies to Lv5 |
+|---|---|---|---|---|---|
+| Common | 2 | 3 | 5 | 8 | 18 |
+| Rare | 2 | 3 | 5 | 7 | 17 |
+| Epic | 2 | 3 | 5 | 6 | 16 |
+| Legendary | 2 | 3 | 4 | 5 | 14 |
+| Transcended | 2 | 3 | 3 | 4 | 12 |
+
+  (Each step consumes the listed number of copies from the counter, including the one that starts the step,
+  so reaching level 2 uses 2 copies and leaves the counter at its remainder.)
+
+- A card at level 5 turns every further copy into Pearls: Common 1, Rare 3, Epic 10, Legendary 30,
+  Transcended 100.
+- A card's level applies to **every copy of it in the deck** (the deck still holds the same cards as today).
+  The level is shown as 1 to 5 anchor pips on the card in hand, in the collection, and in the pack reveal.
+
+### 3.5 What a level does (power budget)
+
+Each card in `cards.json` gets a `levels` list with the bonus at levels 2, 3, 4 and 5. Bonuses are small
+numeric gains, never new rules, except the level 5 **Mastery** bonus, which may be one extra small effect.
+
+Power points (PP), used only to keep cards balanced:
+
+| Gain | PP |
+|---|---|
+| +1 hit on the next cannonball | 1.0 |
+| +1 barrel removed (random or color removal) | 0.8 |
+| +1 card drawn | 2.0 |
+
+Rules (enforced by a test, Section 8):
+
+1. Each of levels 2, 3 and 4 adds at most **1.0 PP**. Level 5 (Mastery) adds at most **2.0 PP**.
+2. The total bonus at level 5 is at most **5 PP**, or 40% of the card's base PP if that is larger.
+3. A card may not gain a draw before level 5.
+
+Family templates (a designer fills the exact numbers per card; cards not listed follow the nearest family):
+
+| Family | Cards | Lv2 | Lv3 | Lv4 | Lv5 Mastery |
+|---|---|---|---|---|---|
+| Hit boost | Power Shot, Heavy Round, Overclock, Tidy Up | +1 hit | +1 hit | +1 hit | +1 hit and +1 barrel (1.8 PP) |
+| Shape | Row, Column, Cross, Diagonal, Blast, Wild variants, Prism | +1 hit | +1 hit | +1 hit | +2 hits |
+| Multiplier | Rapid Fire, Echo, Double Blast | +1 hit | +1 hit | +1 hit | +2 hits |
+| Removal | Scatter, Pick Off, Color Bomb, Color Storm, Pixel Rain | +1 barrel | +1 barrel | +1 barrel | +2 barrels |
+| Draw | Quick Draw, Sniper, Triple Draw | +1 hit | +1 hit | +1 hit | +1 card drawn |
+| Utility | Skip, Wildcard, Focus, Clone, Second Wind, Roulette, Reload, Arsenal | +1 hit | +1 hit | +1 hit (Reload and Arsenal: +1 hit on the added ball) | +1 hit and +1 barrel (1.8 PP) |
+
+Example, Power Shot ("+2 hits for the next cannonball", base 2 PP): Lv2 +3 hits, Lv3 +4, Lv4 +5, Lv5 +6 hits
+and one barrel removed. The bonus is 4 hits (4 PP) plus one barrel (0.8 PP), which is 4.8 PP: inside the 5 PP
+cap. Adding a second barrel at level 5 would break rule 2, and the budget test (Section 8) catches that.
+
+### 3.6 Transcended cards (new, pack-only)
+
+Four new cards. They are not in `Stages.UNLOCKS` and are not in the default deck. The player equips them in
+the **Captain's Slot** (1 slot after clearing stage 50, 2 slots after clearing stage 100). An equipped
+Transcended card is added to the deck for every stage, one copy per card.
+
+| Card | Base effect (level 1) | Notes |
+|---|---|---|
+| Maelstrom | Remove every barrel of the biggest color, up to 20 | cap keeps big boards from being deleted |
+| Davy Jones' Ledger | Add two 5-hit cannonballs to the front; they can hit any color | needs the "add ball" and "wild" effects already in the game |
+| Ghost Compass | Free turn: this turn does not count toward the star turn count; draw 2 cards | helps stars, not wins; new effect |
+| Phantom Echo | Repeat the last card you played at +1 level (max 5). With no last card, draw 1 card | the merge-system synergy card; new effect |
+
+Transcended cards follow the same level rules (Section 3.5) with their own budget, tuned by the bot.
+They are intentionally game-changing but each is a **single use per draw**, so the puzzle still decides the stage.
+
+### 3.7 Where chests come from
+
+| Source | Reward |
+|---|---|
+| Daily crate | 1 Driftwood Crate per day. Skipped days stack, up to 3. Every 7th claimed day gives an Ironbound Chest instead. The counter never resets if the player misses a day |
+| First clear of a stage | 40 Doubloons, +20 per star earned (first clear and star improvements only) |
+| Replaying a cleared stage | 10 Doubloons per win, up to 5 paid wins per day |
+| Elite stage (every 5th, first clear) | 2 Driftwood Crates |
+| Boss stage (every 10th, first clear) | stages 10 and 20: 2 Ironbound; 30: Coffer; 40: 2 Coffers; 50: Gilded Hoard; 60 and 80: Abyssal Vault; 70 and 90: Gilded Hoard; 100: 2 Vaults |
+| Night-world star milestones | stages 55, 65, 75, 85, 95: an Abyssal Vault when 3 stars were earned on every stage of that block of 10 |
+| Shop | any unlocked chest for Doubloons |
+| Port Market | one specific card copy for Pearls (Section 4.5) |
+
+### 3.8 Screens
+
+1. **Treasury** (new button on the menu and on the map): the five chests with owned count, Open and Buy
+   buttons, an "i" button with the odds, and the pity meters. Locked chests show their unlock stage.
+2. **Chest opening** (full screen): the chest sits on the ship deck, the player taps it, it shakes and opens
+   with a rarity-colored light, cards fly out face down and flip one by one. Tap to skip. After the last
+   card a summary shows what merged, what is ready to merge and any Pearls gained.
+3. **Cargo Hold** (collection): grid of all cards, with level pips and a copy bar (for example 3/5). Filters:
+   all, ready to merge, by rarity. Tap a card for its level table (what each level adds) and the MERGE button.
+   Locked cards are shown grayed with their unlock stage.
+4. **Port Market**: the weekly Pearl shop.
+5. **Results screen**: shows the Doubloons earned and any chest dropped, with the chest icon.
+6. **Map**: elite and boss nodes show a small chest icon until their reward is claimed.
+7. **Battle**: each card in hand shows its level pips; the description shows the leveled numbers; the
+   preview (`preview_card`) uses the same leveled numbers.
+8. **Menu**: red dots on Treasury (unopened chests) and on Cargo Hold (a merge is ready).
+
+### 3.9 Daily gift migration
+
+The current daily gift (a rare or better card for the next stage) is replaced by the daily crate. A gift
+card already claimed but not yet used still works for one more stage. Existing saves also get a one-time
+**Welcome Aboard** gift of 3 Driftwood Crates so returning players see the feature at once.
+
+## 4. Formulas
+
+### 4.1 Rarity tables per card slot (percent)
+
+| Chest | Slots | Common | Rare | Epic | Legendary | Transcended |
+|---|---|---|---|---|---|---|
+| Driftwood Crate | 1 to 3 | 88 | 11 | 1 | 0 | 0 |
+| Ironbound Chest | 1 to 3 | 70 | 27 | 3 | 0 | 0 |
+| Ironbound Chest | 4 (guaranteed Rare+) | 0 | 85 | 14 | 1 | 0 |
+| Captain's Coffer | 1 to 3 | 45 | 40 | 14 | 1 | 0 |
+| Captain's Coffer | 4 (guaranteed Epic+) | 0 | 0 | 90 | 10 | 0 |
+| Gilded Hoard | 1 to 4 | 0 | 55 | 40 | 5 | 0 |
+| Gilded Hoard | 5 (guaranteed Epic+) | 0 | 0 | 80 | 18 | 2 |
+| Abyssal Vault | 1 to 4 | 0 | 0 | 72 | 28 | 0 |
+| Abyssal Vault | 5 (guaranteed Legendary+) | 0 | 0 | 0 | 62 | 38 |
+
+The same tables, as the player-facing odds panel, are shown in the app. The panel reads these numbers from
+the data file, so the shown odds cannot drift from the real ones.
+
+### 4.2 Pity
+
+Counters are saved and shared across all chests that can produce the rarity.
+
+- **Epic pity:** every card slot in an Ironbound, Coffer, Gilded or Vault chest adds 1 to `since_epic`. At 30,
+  the next common or rare roll in such a chest becomes Epic. Any Epic or better resets it.
+- **Legendary pity:** same idea, `since_legendary`, threshold 60, only in Coffer, Gilded and Vault chests.
+- **Transcended pity:** `vault_dry` counts Vaults opened without a Transcended card. At 6, the last slot of
+  the next Vault is Transcended.
+- **Duplicate protection (Transcended):** when a Transcended roll happens and the player does not own all four,
+  60% of the time it picks a card they do not own yet.
+
+The displayed meter says "Epic or better guaranteed within N more cards".
+
+### 4.3 Merge
+
+```
+need(rarity, level)      = STEP[rarity][level - 1]          # level 1..4
+ready(card)              = copies[card] >= need(rarity, level[card])
+merge(card):  copies    -= need ; level += 1
+overflow(card at Lv5):   pearls += PEARLS[rarity]
+```
+
+`copies[card]` counts spare copies plus the card itself, exactly as in the Section 3.4 table.
+
+### 4.4 Doubloons
+
+```
+first_clear(stage, stars)   = 40 + 20 * stars
+star_improvement(old, new)  = 20 * (new - old)
+replay_win                  = 10        (max 5 paid per day)
+```
+
+### 4.5 Port Market
+
+```
+price_in_pearls(rarity) = 8 * PEARLS[rarity]       # Common 8, Rare 24, Epic 80, Legendary 240, Transcended 800
+limit = 5 purchases per week; Transcended 1 per week
+```
+
+### 4.6 Simulation results (first pass)
+
+A player who opens the daily crate, claims every stage and boss reward, and spends Doubloons on the best
+unlocked chest. Average level counts every unlocked Common, Rare, Epic and Legendary card. 200 runs each.
+
+| Day | Casual (3 stages/day): stage, avg level, chests | Hardcore (6 stages/day): stage, avg level, chests |
+|---|---|---|
+| 7 | 21, 2.2, 29 | 42, 1.8, 35 |
+| 14 | 42, 2.2, 57 | 84, 2.6, 69 |
+| 30 | 90, 3.3, 124 | 100, 3.3, 106 |
+| 60 | 100, 3.7, 179 | 100, 3.7, 152 |
+| 100 | 100, 3.9, 241 | 100, 3.9, 214 |
+
+Other results: a Gilded Hoard gives a Legendary or better in a median 2 chests (p90 6); a Coffer in a median
+5 (p90 15); collecting all four Transcended cards takes a mean of about 12 Vaults (max 35, with duplicate
+protection and pity). By day 100 a typical player owns about 2.5 Transcended cards and has about 15 cards at
+level 5, mostly Commons.
+
+Reading: pacing is a little generous. If the beta shows the 100-stage balance eroding, lower first-clear
+Doubloons by 15% before touching merge costs.
+
+## 5. Edge Cases
+
+1. **Empty pool.** A rolled rarity with no unlocked card steps down one rarity. Never an empty slot.
+2. **Quit during opening.** Rolls are made, written to `save.cfg` as a pending reveal, then animated. On
+   restart the player sees the same reveal. This also stops "close the app to reroll."
+3. **Time rollback (device clock).** The daily crate is keyed to the local date, as the daily gift is today.
+   Moving the clock back cannot claim twice because `last_claim_date` only moves forward; moving it forward
+   gives at most the stacked 3 crates. Documented as an accepted exploit for a single-player game.
+4. **Merge at max level.** The MERGE button does not appear; copies go to Pearls at pull time.
+5. **Level up while a battle is open.** Not possible: merging happens only from menu screens. The battle
+   copies the level table when it starts.
+6. **Preview and play must match.** Both read the same leveled card data; the existing test that compares
+   `preview_card` with the real play is extended to levels 1 to 5.
+7. **Transcended slot with no cards owned.** The slot is empty and hidden until the first Transcended card.
+8. **Phantom Echo with a Transcended or Echo-type last card.** It repeats it at +1 level, capped at level 5,
+   and cannot repeat itself (it would fizzle into "draw 1 card").
+9. **Existing saves.** Every card unlocked by stage progress becomes 1 copy, level 1. No one loses anything.
+10. **Debug mode.** `debug_unlock` shows all cards in the Cargo Hold but does **not** grant chests or levels.
+    A separate debug flag `--packs=N` grants chests for testing.
+11. **Save tampering.** `save.cfg` is a plain text file the player can edit. That is acceptable for a
+    single-player game with no real-money purchases. Revisit if leaderboards or paid chests are added.
+12. **Web build storage cleared.** Collection and levels live in the same save as stage progress, so they
+    are lost together. A cloud save is a separate, later feature; the Treasury screen should say that clearing
+    browser data resets progress.
+
+## 6. Dependencies
+
+| System | How it is affected |
+|---|---|
+| Cards (`cards.json`, `GameData`) | new `levels` per card, new rarity `transcended`, 4 new cards, `UiKit.RARITY_COLORS` gets a Transcended color |
+| Battle (`battle.gd`, `Stages.new_battle`) | takes a `levels` dictionary; effects read leveled values; preview uses them |
+| Decks (`Stages.deck_for`) | unchanged, plus the equipped Transcended cards appended |
+| Save (`save_data.gd`) | new sections for copies, levels, chests, pity, Doubloons, Pearls, equipped slot; save version number |
+| Daily gift | replaced by the daily crate (Section 3.9) |
+| Results and map | show chest and Doubloon rewards |
+| Balance tools (`tune_slack.gd`, `star_stats.gd`, `run_tests.gd`) | must run with a level profile; level 1 stays the tuning baseline |
+| Art and audio | chest art, Transcended frame, level pips, merge and reveal effects, sounds |
+
+## 7. Tuning Knobs
+
+All in a new `data/packs.json` unless noted.
+
+- Chest prices, card counts, unlock stages, slot rarity tables (4.1).
+- Pity thresholds: Epic 30, Legendary 60, Vault 6; duplicate-protection chance 60%.
+- Merge steps per rarity and max level (5).
+- Pearl values per rarity, Market price multiplier (8), weekly limits.
+- Doubloon faucet: first clear 40, per star 20, replay 10, replays per day 5.
+- Daily crate stack cap (3), streak length for the Ironbound bonus (7).
+- Per-card `levels` bonuses and the power budget (Section 3.5) in `cards.json`.
+- Captain's Slot count (1 and 2) and the unlock stages (50 and 100).
+
+## 8. Acceptance Criteria
+
+Testable in `tests/run_tests.gd` (headless) unless marked manual.
+
+1. **Odds.** Over 100,000 simulated chests of each tier, observed rarity rates are within 1 percentage point of
+   the tables in 4.1 (pity disabled for this test).
+2. **Pity.** With pity enabled, no run goes more than 30 cards without an Epic or better in an
+   Ironbound or higher chest, more than 60 cards without a Legendary or better in a Coffer or higher chest,
+   or more than 6 Vaults without a Transcended card.
+3. **No impossible pulls.** For every stage-progress profile, a chest never gives a card that is locked.
+4. **No empty slots.** Opening every chest with the smallest possible pool (starter cards only) returns the
+   full card count.
+5. **Merge math.** For each rarity, feeding the exact total copies reaches level 5 and not before; one fewer
+   copy stops at level 4. Copies at level 5 become Pearls at the listed rate.
+6. **Level budget.** Every card's `levels` list passes the power-point rules in 3.5, so a bad data entry
+   fails the test, not the game.
+7. **Preview equals play.** `preview_card` output equals the real play result for every card at levels 1 to 5.
+8. **Save.** A save written with copies, levels, chests, pity and a pending reveal loads back identically,
+   and a pending reveal cannot be rerolled.
+9. **Migration.** An old save loads with every unlocked card at level 1 with 1 copy and receives the
+   Welcome Aboard crates exactly once.
+10. **Balance.** The bot (`run_tests.gd` bot report and `tune_slack.gd`) with every unlocked card at level 3
+    wins at most 12 percentage points more than the level 1 baseline (currently 52%), and its average
+    3-star rate is at most 15 points higher. With every card at level 5, win rate stays under 80%.
+11. **Economy.** The simulation (`tools/pack_sim.py`) shows, for the casual profile, average level between
+    2.0 and 2.5 at day 14 and below 4.2 at day 100.
+12. **Performance (manual).** Chest opening stays at 60 fps in the web build on a mid-range phone; the
+    Cargo Hold with 37 cards scrolls without hitches.
+13. **UX (manual).** A new player can open the first crate and merge their first card without any help text
+    other than the on-screen prompts (target: first merge within the first session).
+
+## 9. Flaw Review: What This Design Fixes
+
+This is the "improve any flaws" pass. Each row is a known weakness of card-pack and merge systems, and what
+this design does about it.
+
+| Flaw | Fix in this design |
+|---|---|
+| Packs make players stronger and ruin the tuned 100-stage balance | Small level bonuses under a power budget (3.5), level 1 stays the tuning baseline, bot acceptance test (8.10), with the sim as an early warning |
+| Pulling cards the player cannot use yet | Chests roll only from unlocked cards; chest tiers unlock with the stages that introduce that rarity (3.2, 3.3) |
+| Dead duplicates | Duplicates merge; copies past max level become Pearls; Pearls buy specific cards (3.4, 4.5) |
+| Long bad-luck streaks | Three saved pity counters plus a visible meter (4.2) |
+| Hidden odds | Odds panel in the app, generated from the same data the game rolls from (4.1) |
+| Rolling again by closing the app | Result is saved before the animation (5.2) |
+| Opening fatigue | Skippable, lowest rarity first, common chests fast, Open All with one summary, no forced animation after the first chest |
+| Daily gift expires or is wasted | Daily crate stacks up to 3, never resets; the old one-stage-only gift card goes away |
+| Streak anxiety | The 7-day bonus counts claimed days and never resets |
+| Merge regret ("did I level the wrong card?") | Merge only spends copies of that same card, never other resources, and can never be wasted or undone wrongly |
+| First-session boredom | Scripted first crate guarantees a merge-ready card (3.3) |
+| The top tier feels pointless or unfair | Transcended is capped to a 1 to 2 card Captain's Slot, one effect per draw, with duplicate protection and pity, and a free source in the night world |
+| Pay-to-win and loot-box laws | No real-money chests in this update. If paid chests are ever added, odds are already public and a direct-purchase alternative is required in some regions |
+| Currency hoarding or inflation | Chest prices rise steeply by tier, Doubloon replays are capped per day, Pearls have a weekly spend limit |
+| Information overload in the collection | Filters (all, ready to merge, by rarity), a MERGE glow, and level tables shown only on the card detail |
+| Save loss or editing | Called out in 5.11 and 5.12; a cloud save is a later feature |
+
+## 10. Art and Audio Needs
+
+- Five chest illustrations (closed, opening, open light burst) in the existing SpriteCook pirate style, rarity
+  colors from `UiKit.RARITY_COLORS`. Vault has a ghostly teal look.
+- A **Transcended** card frame and rarity color (aurora cyan, a slow shimmer) and a short full-screen
+  reveal for the first copy of each Transcended card.
+- Level pips (five small anchors), a MERGE glow, a forge-style merge flash, Doubloon and Pearl icons.
+- Four new card icons for the Transcended cards.
+- Sounds (reuse SoundWeaver where it fits): chest creak, lid open, card flip, five rarity stings (rising),
+  merge hammer strike, Pearl clink. A calm 15 second Treasury music loop is optional.
+- All new pictures follow the artwork notes in the repo README (credits and licenses).
+
+## 11. Implementation Plan
+
+Suggested order. Each phase ships and tests on its own, behind a feature flag until phase 5.
+
+1. **Data and rules (no UI).** `data/packs.json`; `scripts/core/collection.gd` (copies, levels, merge,
+   Pearls); `scripts/core/packs.gd` (rolling with pity, pending reveal); save format with a version number and
+   migration; the new tests (8.1 to 8.9). Add `tools/pack_sim.py` to the repo.
+2. **Leveled cards in battle.** `levels` in `cards.json` for all 33 cards, `Battle` reads a `levels`
+   dictionary, preview parity test, card view shows pips. Run the bot balance checks (8.10) and adjust budgets.
+3. **Transcended.** Four new cards and effect kinds (remove biggest color with a cap, add wild balls,
+   free turn, repeat last card), the Captain's Slot, deck integration.
+4. **Screens.** Treasury, chest opening, Cargo Hold, Port Market, results and map rewards, menu red dots,
+   daily crate replacing the daily gift. Skip the polish until the flow works.
+5. **Polish and release.** Chest art and sounds, reveal animation, odds panel, performance pass on the web
+   build, update README and the in-game "How to play", then turn the flag on.
+
+Rough size: phases 1 and 2 are the core; phase 4 is the largest by amount of UI. About two to three weeks of
+focused work for one developer, plus art time for phase 5.
+
+## 12. Assumptions and Open Questions
+
+Decided here, easy to change:
+
+- "Transcended" is both a new **card rarity** (four pack-only cards) and the top **chest tier**. (The request
+  spelled it "Trancended"; the doc uses the standard spelling.)
+- No real-money purchases in this update.
+- Chest tiers unlock with story progress instead of being buyable from the start.
+- Merge is a manual tap with Merge All, not automatic.
+- One Captain's Slot for Transcended cards, two after stage 100.
+
+Please confirm or change before implementation starts:
+
+1. Should chests ever be sold for real money? That changes Sections 3.7, 9 and the legal notes.
+2. Should the level-up make a card appear **more often** in the draw (deck weight) instead of, or in addition
+   to, stronger numbers? Not included here because it would shift balance more than a small number bonus.
+3. Is a cloud save planned? If yes, it moves up, because the collection becomes a longer-term asset.
