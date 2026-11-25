@@ -116,6 +116,35 @@ What this means for Barrelmaw:
 - If the legal duty turns out to apply and the system is still closed, launch first in another market from TikTok's
   list (the plan's region choice), and add Indonesia once the rating is available.
 
+## 4b. The organization: what TikTok asks for and what Indonesia offers (checked 2026-11-25)
+
+TikTok side **[verified]**
+- Create an organization in the Developer Portal, connect an app of type "Mini game", then verify the business.
+  Verification is required to publish a mini game and to use ads or purchases.
+- Documents: a business license, certificate of incorporation or registration, a registry extract or a tax registration
+  certificate (JPEG, PNG or PDF, 10 MB each, valid for at least 30 more days). The company name and registration number
+  must match exactly, and must match the legal entity in the TikTok contract, or payouts can be affected later. The main
+  representative needs a government photo ID.
+- The one-time industry qualification review asks for a **playable link to a representative mini game from another
+  platform** plus proof of identity; the answer takes 1 to 3 business days. The Barrelmaw web build on GitHub Pages can be that link.
+- The docs describe organization-level verification only. Whether an **individual** can register is not stated. **[check]**
+  by starting the "Create organization" flow in the portal before forming any company.
+
+Indonesian side (consultant and media pages, not official; check on oss.go.id and with an accountant)
+- **PT Perorangan** for micro and small businesses: one founder, no notary deed, a statement of establishment made through
+  the OSS system, and the NIB serves as proof. The founder must be an Indonesian citizen of 17 or older; the business must
+  fit micro or small limits (capital up to Rp1 billion micro, Rp1 to 5 billion small, excluding land and buildings). It must
+  convert to an ordinary PT if it gets a second shareholder or outgrows those limits. One source puts the filing fee at
+  about Rp50,000 (not verified).
+- **NIB Perorangan** (a sole proprietor number from OSS) is not a separate legal entity. Whether TikTok accepts it as
+  business registration is **[check]**.
+- A CV or an ordinary PT needs a notary and is more work; it matters mainly with partners or investors.
+- Tax: payouts will need a tax registration number, and money paid from abroad may carry withholding. **[check]** with an
+  accountant before signing the TikTok contract.
+
+Order of work: try the portal first (individual allowed or not), then form the cheapest entity that TikTok accepts, then
+use the same entity for the TikTok contract, the PSE registration and the game rating (Section 4a).
+
 ## 5. Backend (small, but required)
 
 | Job | Why | Notes |
@@ -215,6 +244,9 @@ again before acting.
 - Acceptance testing guidelines: https://developers.tiktok.com/docs/en/acceptance-testing-guidlines
 - Basic information specifications: https://developers.tiktok.com/docs/en/basic-information-specifications
 - Industry qualification review: https://developers.tiktok.com/docs/en/industry-qualification-review
+- Verify your business: https://developers.tiktok.com/docs/en/verify-your-business
+- How to set up a PT Perorangan: https://izin.co.id/blog/cara-mendirikan-pt-perorangan/
+- PT Perorangan without a notary deed (Hukumonline): https://www.hukumonline.com/klinik/a/syarat-dan-cara-pendirian-pt-perorangan-lt614883c49b5bb/
 - Regional launch requirements: https://developers.tiktok.com/docs/en/regional-launch-requirements
 - Monetization overview: https://developers.tiktok.com/docs/en/monetization-overview
 - Game incentive creator videos: https://developers.tiktok.com/docs/en/game-incentive-creator-videos
