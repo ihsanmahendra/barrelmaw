@@ -146,3 +146,6 @@ save("pearl", mix(chime(1760, 0.25, 0.4, ((1.0, 1.0), (2.4, 0.3))), offset(chime
 save("drumroll", mix(*[offset(lowpass(tone(0.05, 190, 170, "sine", 0.25 + 0.5 * i / 22.0, noise=0.7, release=0.045), 0.3), i * 0.036)
                        for i in range(22)],
                      offset(tone(0.3, 120, 55, "sine", 0.9, release=0.27), 0.82)))
+# Crew cheer for a PLUNDER shot: several rising voices with breath noise.
+save("crew_cheer", mix(*[offset(lowpass(tone(0.7, f, f * 1.28, "saw", 0.22, attack=0.08, release=0.35, noise=0.18, vibrato=0.025 + 0.004 * i), 0.22), 0.025 * i)
+                         for i, f in enumerate([220, 262, 294, 330, 392, 440])]))

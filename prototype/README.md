@@ -141,3 +141,8 @@ chest-opening hint sits on the chest.
 A stage lost with 5 barrels or fewer offers one wild 3-hit cannonball ("So close!", `scripts/ui/last_shot_offer.gd`,
 `Battle.take_last_shot`). Once per attempt, one free use per day (`SaveData.LAST_SHOT_FREE_PER_DAY`), and a win after
 it earns 1 star. Spec: `design/gdd/last-shot.md`. Debug: `--autostart --stage=40 --lastshot`.
+
+## Combo shouts
+One press of FIRE that removes 15, 27 or 40 barrels shouts "Broadside!", "Full broadside!" or a "PLUNDER!" stamp with
+a shake (`scripts/ui/combo_fx.gd`); the pirate grins from 15 (it was 6). Presentation only. Debug:
+`--autostart --stage=40 --combo=31`.

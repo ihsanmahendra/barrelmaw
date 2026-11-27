@@ -16,6 +16,7 @@ func run() -> void:
 	SaveData.path = "user://feature_test_save.cfg"
 	SaveData.reset()
 	test_last_shot()
+	test_combo()
 	SaveData.reset()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveData.path))
 	SaveData.path = path
@@ -62,3 +63,9 @@ func test_last_shot() -> void:
 	check(SaveData.last_shot_left("2026-11-27") == 0, "reloading the save does not restore it")
 	check(SaveData.last_shot_left("2026-11-26") == 0, "a clock turned back does not restore it")
 	check(SaveData.last_shot_left("2026-11-30") == 1, "the next day has one again, not several")
+
+
+## design/gdd/combo-feedback.md section 4.
+func test_combo() -> void:
+	for pair in [[0, 0], [6, 0], [14, 0], [15, 1], [26, 1], [27, 2], [39, 2], [40, 3], [90, 3]]:
+		check(ComboFx.tier_of(pair[0]) == pair[1], "%d barrels is combo tier %d, got %d" % [pair[0], pair[1], ComboFx.tier_of(pair[0])])

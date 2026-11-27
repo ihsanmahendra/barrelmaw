@@ -8,7 +8,6 @@ const TEXT_COLOR := Color("fff4dc")
 const MUTED_COLOR := Color("f3e3c3")
 const WOOD := Color("6b4a2f")
 const GOLD := Color("ffd166")
-const BIG_HIT: int = 6  # barrels smashed in one action that count as a big hit (the pirate grins)
 const RARITY_COLORS := {
 	"common": Color("8d93b5"),
 	"rare": Color("4cc9f0"),
@@ -316,6 +315,13 @@ func _ready() -> void:
 		if args.has("--cheer"):
 			await get_tree().create_timer(0.5).timeout
 			queue_view.cheer(8)  # debug: show the grin without having to land a big hit
+		for a in args:  # debug: --combo=N shows the shout for a shot that removed N barrels
+			if a.begins_with("--combo="):
+				await get_tree().create_timer(0.3).timeout
+				_combo(int(a.get_slice("=", 1)))
+				for fx in board_view.get_children():
+					if fx is ComboFx:
+						fx.hold_at = 0.45  # stays on screen for a screenshot
 		if args.has("--lastshot"):  # debug: lose with 3 barrels left, so the Last Shot offer appears
 			await get_tree().create_timer(0.4).timeout
 			var standing := 0
@@ -1246,12 +1252,28 @@ func _on_special_event(kind: String) -> void:
 
 
 func _on_sequence_done(total: int) -> void:
-	if total >= BIG_HIT:
-		queue_view.cheer(total)
 	if total >= 12:
 		sfx.play("boom")
 	elif total >= 6:
 		sfx.play("big")
+	# Big shots get a shout (design/gdd/combo-feedback.md). Only what FIRE removed counts, and the winning
+	# shot has the win celebration instead.
+	if battle.last_fired and not (battle.over and battle.won):
+		_combo(battle.removed_last.size())
+
+
+func _combo(barrels: int) -> void:
+	var tier := ComboFx.tier_of(barrels)
+	if tier == 0:
+		return
+	queue_view.cheer(barrels)
+	board_view.add_child(ComboFx.new(barrels))
+	board_view.shake(float(ComboFx.SHAKE[tier]))
+	if tier == 2:
+		sfx.play("reward", 1.1, 0.05)
+	elif tier == 3:
+		sfx.play("boom", 0.8)
+		sfx.play("crew_cheer", 1.0, 0.15)
 
 
 # ---------- tutorial ----------

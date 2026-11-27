@@ -116,6 +116,12 @@ func _cell_center(p: Vector2i, cs: float, origin: Vector2) -> Vector2:
 	return origin + (Vector2(p) + Vector2(0.5, 0.5)) * cs
 
 
+## Shakes the board; a weaker shake never cuts a stronger one short.
+func shake(amount: float) -> void:
+	_shake = maxf(_shake, amount)
+	set_process(true)
+
+
 ## Replays the latest action: bullets leave shooter_origin (board-local pixels) one after
 ## another and each removed cell pops when its bullet lands. Returns the total duration in
 ## seconds, or 0.0 when nothing was removed.
