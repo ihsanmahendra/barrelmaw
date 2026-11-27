@@ -4,7 +4,7 @@ extends Node
 
 const NAMES: Array = ["click", "card", "deal", "sparkle", "fire", "hit", "big", "boom", "miss", "win", "lose", "reward", "cannon",
 	"chest_shake", "chest_open", "flip", "sting_common", "sting_rare", "sting_epic", "sting_legendary", "sting_transcended", "merge", "pearl"]
-const POOL_SIZE: int = 8
+const POOL_SIZE: int = 16  # a big volley stacks about ten sounds at once
 
 static var muted: bool = false
 
@@ -30,8 +30,20 @@ func play(sound: String, pitch: float = 1.0, delay: float = 0.0) -> void:
 		await get_tree().create_timer(delay).timeout
 		if muted:
 			return
-	var p: AudioStreamPlayer = _players[_next]
-	_next = (_next + 1) % _players.size()
+	var p := _free_player()
 	p.stream = _streams[sound]
 	p.pitch_scale = pitch
 	p.play()
+
+
+## The next silent player, so a new sound does not cut off one that is still playing.
+## Only when every player is busy is one reused, in turn.
+func _free_player() -> AudioStreamPlayer:
+	var pick: int = _next
+	for i in _players.size():
+		var k: int = (_next + i) % _players.size()
+		if not _players[k].playing:
+			pick = k
+			break
+	_next = (pick + 1) % _players.size()
+	return _players[pick]

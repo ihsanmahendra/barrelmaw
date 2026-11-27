@@ -12,6 +12,8 @@ Headless checks plus a bot that plays 200 full runs:
 
     /Applications/Godot.app/Contents/MacOS/Godot --headless --path prototype --script res://tests/run_tests.gd
 
+`tests/sfx_test.gd` (same command, other script name) checks that sound effects do not cut each other off.
+
 ## Layout
 - `data/cards.json`: 33 cards, rarity weights, starter deck. Balance lives here.
 - `data/pictures.json`: 10 pictures and the color palette.
