@@ -82,6 +82,16 @@ body { color: white; background-color: #2a9fd0; overflow: hidden; touch-action: 
 					parseFloat(s.paddingBottom) || 0, window.innerWidth, window.innerHeight].join(',');
 			};
 		</script>
+		<script>
+// Phones with very dense screens would otherwise draw 8 times the CSS pixels (2.8125 squared on a Galaxy A14),
+// more than their graphics chip can fill smoothly. Two device pixels per CSS pixel is still sharp.
+(function () {
+	const real = window.devicePixelRatio || 1;
+	if (real > 2) {
+		Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function () { return 2; } });
+	}
+}());
+		</script>
 		<canvas id="canvas">Your browser does not support the canvas tag.</canvas>
 		<noscript>Your browser does not support JavaScript.</noscript>
 
@@ -96,7 +106,7 @@ body { color: white; background-color: #2a9fd0; overflow: hidden; touch-action: 
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":5114972,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":5121412,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
