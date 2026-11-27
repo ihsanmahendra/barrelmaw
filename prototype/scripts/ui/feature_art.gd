@@ -15,9 +15,11 @@ const BOSS_COLORS: Dictionary = {
 
 # ---------- menu icons ----------
 
-## Daily Haul: a sack of treasure under a rising sun. size is the width of the square it fills.
+## Daily Haul: a sack of treasure under a rising sun, on a pale medallion so it reads on any button color.
+## size is the width of the square it fills.
 static func draw_haul_icon(c: CanvasItem, center: Vector2, size: float) -> void:
-	var u := size / 100.0
+	_disc(c, center, 47.0 * size / 100.0, Color("fff1cf"), 3.5 * size / 100.0)
+	var u := size * 0.8 / 100.0
 	var sun := center + Vector2(14, -16) * u
 	for i in 10:
 		var dir := Vector2.from_angle(TAU * float(i) / 10.0)
@@ -35,7 +37,8 @@ static func draw_haul_icon(c: CanvasItem, center: Vector2, size: float) -> void:
 
 ## Captain's Log: a closed leather book with a brass clasp, a skull on the cover and a red ribbon.
 static func draw_log_icon(c: CanvasItem, center: Vector2, size: float) -> void:
-	var u := size / 100.0
+	_disc(c, center, 47.0 * size / 100.0, Color("fff1cf"), 3.5 * size / 100.0)
+	var u := size * 0.74 / 100.0
 	_poly(c, _at(center, u, [Vector2(-34, -36), Vector2(34, -36), Vector2(38, -30), Vector2(38, 40), Vector2(-30, 42), Vector2(-36, 34)]),
 		Color("fff1cf"), Color("cfb07a"), u * 4.0)  # pages
 	_poly(c, _at(center, u, [Vector2(-38, -42), Vector2(28, -42), Vector2(32, -38), Vector2(32, 34), Vector2(28, 38), Vector2(-38, 38)]),
@@ -81,18 +84,26 @@ static func draw_boss_emblem(c: CanvasItem, center: Vector2, size: float, rule: 
 
 # ---------- strike effects (k from 0 to 1) ----------
 
-## Ghost Tide: a smashed barrel floats back up into its cell, ghostly at first and solid at the end.
+## Ghost Tide: a smashed barrel floats back up into its cell, in a pale ring with an arrow pointing up. The
+## ring and arrow stay bright to the end, because the board's barrels are often the same color.
 static func draw_rising_barrel(c: CanvasItem, center: Vector2, cell: float, barrel_color: Color, k: float) -> void:
 	var light: Color = BOSS_COLORS["ghost"]["light"]
+	var dark: Color = BOSS_COLORS["ghost"]["dark"]
 	var up := ease(clampf(k, 0.0, 1.0), 0.4)
-	var at := center + Vector2(0, cell * 0.7 * (1.0 - up))
-	c.draw_circle(at, cell * (0.75 - 0.2 * up), Color(light, 0.45 * (1.0 - up * 0.7)), true, -1.0, true)
-	PirateArt.draw_barrel(c, at, cell * (0.7 + 0.24 * up), cell * (0.75 + 0.25 * up), barrel_color)
-	c.draw_circle(at, cell * 0.42, Color(light, 0.6 * (1.0 - up)), true, -1.0, true)
-	for i in 4:  # bubbles
-		var phase := fposmod(k * 1.4 + float(i) * 0.27, 1.0)
-		var b := center + Vector2((float(i) - 1.5) * cell * 0.24, cell * (0.55 - phase * 1.1))
-		c.draw_arc(b, cell * (0.05 + 0.03 * float(i % 2)), 0.0, TAU, 10, Color(light, (1.0 - phase) * (1.0 - k * 0.5)), 1.6, true)
+	var at := center + Vector2(0, cell * (0.7 * (1.0 - up) - 0.12 * up))
+	c.draw_circle(at, cell * 0.78, Color(light, 0.5), true, -1.0, true)
+	c.draw_circle(at, cell * 0.6, Color(dark, 0.9), true, -1.0, true)
+	c.draw_arc(at, cell * 0.65, 0.0, TAU, 24, Color.WHITE, maxf(2.0, cell * 0.09), true)
+	PirateArt.draw_barrel(c, at, cell * (0.78 + 0.34 * up), cell * (0.84 + 0.36 * up), barrel_color)
+	c.draw_circle(at, cell * 0.42, Color(light, 0.55 * (1.0 - up)), true, -1.0, true)
+	var tip := at + Vector2(0, -cell * (0.98 + 0.08 * sin(k * 12.0)))
+	_poly(c, [tip, tip + Vector2(0.3, 0.32) * cell, tip + Vector2(0.12, 0.32) * cell, tip + Vector2(0.12, 0.56) * cell,
+		tip + Vector2(-0.12, 0.56) * cell, tip + Vector2(-0.12, 0.32) * cell, tip + Vector2(-0.3, 0.32) * cell],
+		Color.WHITE, light, maxf(1.5, cell * 0.07))
+	for i in 3:  # bubbles
+		var phase := fposmod(k * 1.4 + float(i) * 0.33, 1.0)
+		var bubble := center + Vector2((float(i) - 1.0) * cell * 0.5, cell * (0.6 - phase * 1.2))
+		c.draw_arc(bubble, cell * 0.08, 0.0, TAU, 10, Color(1, 1, 1, 1.0 - phase), 1.8, true)
 
 
 ## Iron Kraken: one great tentacle reaches from `from` toward `to`, sweeping, and withdraws.
@@ -101,13 +112,16 @@ static func draw_tentacle(c: CanvasItem, from: Vector2, to: Vector2, t: float) -
 	var reach := sin(PI * k)
 	if reach <= 0.02:
 		return
-	var along := (to - from) * reach
+	# It starts a little way in from `from` and sways little, so it stays on the board it is given.
 	var length := from.distance_to(to)
-	var side := (to - from).normalized().orthogonal() * length
-	var wave := lerpf(-0.14, 0.14, k)
-	var spine := _curve([from, from + along * 0.35 + side * (wave - 0.08), from + along * 0.7 + side * (wave + 0.2 * reach),
-		from + along + side * (wave + 0.04), from + along * 0.85 + side * (wave - 0.08 * reach)])
-	_tentacle(c, spine, length * 0.08, length * 0.013, Color("8f7fc0"), maxf(2.0, length * 0.008))
+	var dir := (to - from).normalized()
+	var start := from + dir * length * 0.1
+	var along := (to - dir * length * 0.04 - start) * reach
+	var side := dir.orthogonal() * length * reach
+	var wave := lerpf(-0.05, 0.05, k)
+	var spine := _curve([start, start + along * 0.34 + side * (wave - 0.05), start + along * 0.68 + side * (wave + 0.1),
+		start + along + side * wave, start + along * 0.88 + side * (wave - 0.07)])
+	_tentacle(c, spine, length * 0.052, length * 0.01, Color("8f7fc0"), maxf(2.0, length * 0.006))
 
 
 ## Iron Kraken: iron hoops fly in from above and below and clamp around a barrel.
