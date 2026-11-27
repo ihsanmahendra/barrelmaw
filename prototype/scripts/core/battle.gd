@@ -33,6 +33,10 @@ var star2_turns: int = 99  # finish within this many turns for 2 stars (set per 
 var star3_turns: int = 99  # ... and for 3 stars
 var last_played: String = ""  # id of the last card played in this battle (Phantom Echo repeats it)
 var levels: Dictionary = {}  # card id -> level (missing = 1); set by Stages.new_battle from the player's collection
+var last_shot_used: bool = false  # this attempt took its Last Shot (design/gdd/last-shot.md): 1 star at most
+
+const LAST_SHOT_BARRELS: int = 5  # offered when the stage is lost with at most this many barrels left
+const LAST_SHOT_HITS: int = 3  # hits of the wild cannonball it adds
 
 
 ## scripted (optional, for the tutorial): {"queue": Array, "hands": Array of Array of card ids}.
@@ -106,6 +110,8 @@ func projected_stars() -> int:
 
 
 func _stars_for_turn(turn: int) -> int:
+	if last_shot_used:
+		return 1
 	return 3 if turn <= star3_turns else (2 if turn <= star2_turns else 1)
 
 
@@ -200,9 +206,31 @@ func clone() -> Battle:
 	b.scripted_hands = scripted_hands.duplicate(true)
 	b.levels = levels
 	b.last_played = last_played
+	b.last_shot_used = last_shot_used
 	b.rng.seed = rng.seed
 	b.rng.state = rng.state
 	return b
+
+
+## True when this lost battle was close enough for a Last Shot. The daily allowance is checked by the caller.
+func can_last_shot() -> bool:
+	return over and not won and not last_shot_used and board.count() > 0 and board.count() <= LAST_SHOT_BARRELS
+
+
+## Reopens a lost battle with one wild cannonball and starts a new turn.
+func take_last_shot() -> bool:
+	if not can_last_shot():
+		return false
+	over = false
+	last_shot_used = true
+	last_fired = false
+	_begin_action()
+	_reset_mods()
+	discard.append_array(hand)
+	hand.clear()
+	queue = [{"color": board.most_common(), "ammo": LAST_SHOT_HITS, "wild": true}]
+	start_turn()
+	return true
 
 
 ## What playing the card at hand index i would do, without changing this battle.

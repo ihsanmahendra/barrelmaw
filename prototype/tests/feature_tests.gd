@@ -1,0 +1,64 @@
+class_name FeatureTests
+extends RefCounted
+## Headless checks for the features after Rebalance v1 (design/gdd/next-features.md). Run by run_tests.gd.
+
+var failures: int = 0
+
+
+func check(cond: bool, msg: String) -> void:
+	if not cond:
+		failures += 1
+		print("FAIL: ", msg)
+
+
+func run() -> void:
+	var path := SaveData.path
+	SaveData.path = "user://feature_test_save.cfg"
+	SaveData.reset()
+	test_last_shot()
+	SaveData.reset()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveData.path))
+	SaveData.path = path
+
+
+## A battle on one row of `barrels` red barrels, already lost with an empty queue.
+func _lost(barrels: int) -> Battle:
+	var b := Battle.new(["R".repeat(barrels)], ["skip", "skip", "skip", "skip", "skip", "skip"], 1.0, 3, 7)
+	b.queue = [{"color": "R", "ammo": 0}]
+	b.fire()
+	return b
+
+
+## design/gdd/last-shot.md section 8.
+func test_last_shot() -> void:
+	var at5 := _lost(5)
+	check(at5.over and not at5.won and at5.can_last_shot(), "offered with 5 barrels left")
+	check(not _lost(6).can_last_shot(), "not offered with 6 barrels left")
+	var turns := at5.turns
+	check(at5.take_last_shot(), "the shot can be taken")
+	check(not at5.over and at5.queue.size() == 1 and bool(at5.queue[0].get("wild", false)) and int(at5.queue[0]["ammo"]) == 3, "one wild 3-hit cannonball")
+	check(at5.turns == turns + 1 and at5.hand.size() == 3, "a new turn starts with cards drawn")
+	at5.queue[0]["color"] = "B"  # no blue barrel anywhere: a wild ball hits anyway
+	at5.fire()
+	check(at5.board.count() == 2, "the wild ball hits any color, %d left" % at5.board.count())
+	check(at5.over and not at5.won and not at5.can_last_shot() and not at5.take_last_shot(), "never twice in one attempt")
+	var win := _lost(3)
+	win.star3_turns = 99
+	win.star2_turns = 99
+	win.take_last_shot()
+	check(win.projected_stars() == 1 and win.star_limit() == -1, "the stars box shows 1 star after the shot")
+	check(win.clone().last_shot_used, "a cloned battle remembers the Last Shot")
+	win.fire()
+	check(win.won and win.star_rating() == 1, "a win after it records 1 star")
+	SaveData.record(0, 3)
+	SaveData.record(0, win.star_rating())
+	check(SaveData.stars(0) == 3, "it never lowers a better saved result")
+	check(_lost(5).can_last_shot(), "a new attempt may be offered again")
+	# One free use per day; saved; unused days do not stack and turning the clock back gives nothing.
+	check(SaveData.last_shot_left("2026-11-27") == 1, "one free shot a day")
+	check(SaveData.use_last_shot("2026-11-27") and SaveData.last_shot_left("2026-11-27") == 0, "using it spends it")
+	check(not SaveData.use_last_shot("2026-11-27"), "no second use the same day")
+	SaveData.reload_from_disk()
+	check(SaveData.last_shot_left("2026-11-27") == 0, "reloading the save does not restore it")
+	check(SaveData.last_shot_left("2026-11-26") == 0, "a clock turned back does not restore it")
+	check(SaveData.last_shot_left("2026-11-30") == 1, "the next day has one again, not several")

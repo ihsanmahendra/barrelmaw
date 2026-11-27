@@ -218,4 +218,19 @@ func _run() -> void:
 		main.battle.won = true
 		main.show_stage_result(true))
 	await _elite_screens()
+	await _screen("battle before the Last Shot", func() -> void: main._begin_stage(1, Stages.deck_for(1)), 14)
+	main.battle.queue = []
+	main.battle.over = true
+	var standing := 0
+	for y in main.battle.board.h:
+		for x in main.battle.board.w:
+			if main.battle.board.get_c(x, y) != "":
+				standing += 1
+				if standing > 5:
+					main.battle.board.remove_at(x, y)
+	main._offer_last_shot()
+	await _frames(30)
+	_check("Last Shot offer", [main._offer])
+	_check_paper_margins("Last Shot offer", [main._offer])
+	main._close_offer()
 	await _screen("tutorial", func() -> void: main.start_tutorial(), 14)

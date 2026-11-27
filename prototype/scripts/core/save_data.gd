@@ -14,6 +14,10 @@ static var _gift_date: String = ""  # date (YYYY-MM-DD) the daily gift was last 
 static var _gift_card: String = ""  # claimed gift card waiting for the next stage
 static var _intros: Dictionary = {}  # stage index -> true once its New cards screen was shown
 static var _packs: Dictionary = {}  # collection, chests, Doubloons, Pearls, pity (see Collection.new_state)
+static var _last_shot_date: String = ""  # day the Last Shot count belongs to; only moves forward
+static var _last_shot_count: int = 0  # Last Shots taken that day
+
+const LAST_SHOT_FREE_PER_DAY: int = 1
 
 
 static func _ensure_loaded() -> void:
@@ -30,6 +34,8 @@ static func _ensure_loaded() -> void:
 	debug_unlock = bool(cfg.get_value("progress", "debug_unlock", false))
 	_gift_date = str(cfg.get_value("progress", "gift_date", ""))
 	_gift_card = str(cfg.get_value("progress", "gift_card", ""))
+	_last_shot_date = str(cfg.get_value("progress", "last_shot_date", ""))
+	_last_shot_count = int(cfg.get_value("progress", "last_shot_count", 0))
 	var sp: Variant = cfg.get_value("progress", "specials_seen", {})
 	if sp is Dictionary:
 		for k in sp:
@@ -61,6 +67,8 @@ static func save() -> void:
 	cfg.set_value("progress", "stars", out)
 	cfg.set_value("progress", "gift_date", _gift_date)
 	cfg.set_value("progress", "gift_card", _gift_card)
+	cfg.set_value("progress", "last_shot_date", _last_shot_date)
+	cfg.set_value("progress", "last_shot_count", _last_shot_count)
 	cfg.set_value("progress", "specials_seen", _specials_seen)
 	var seen_out := {}
 	for k in _intros:
@@ -147,6 +155,27 @@ static func take_pending_gift() -> String:
 	return c
 
 
+## Free Last Shots still available on `date` (today by default). Unused days do not stack.
+static func last_shot_left(date: String = "") -> int:
+	_ensure_loaded()
+	var day := today() if date == "" else date
+	return LAST_SHOT_FREE_PER_DAY - (_last_shot_count if day <= _last_shot_date else 0)
+
+
+## Spends one Last Shot. Returns false when none is left.
+static func use_last_shot(date: String = "") -> bool:
+	_ensure_loaded()
+	var day := today() if date == "" else date
+	if last_shot_left(day) <= 0:
+		return false
+	if day > _last_shot_date:
+		_last_shot_date = day
+		_last_shot_count = 0
+	_last_shot_count += 1
+	save()
+	return true
+
+
 static func special_seen(kind: String) -> bool:
 	_ensure_loaded()
 	return _specials_seen.has(kind)
@@ -207,6 +236,8 @@ static func reload_from_disk() -> void:
 	_specials_seen.clear()
 	_gift_date = ""
 	_gift_card = ""
+	_last_shot_date = ""
+	_last_shot_count = 0
 	tutorial_done = false
 	debug_unlock = false
 	_packs = {}
@@ -221,6 +252,8 @@ static func reset() -> void:
 	_specials_seen.clear()
 	_gift_date = ""
 	_gift_card = ""
+	_last_shot_date = ""
+	_last_shot_count = 0
 	tutorial_done = false
 	debug_unlock = false
 	_loaded = true

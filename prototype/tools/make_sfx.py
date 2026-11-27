@@ -140,3 +140,9 @@ save("merge", mix(tone(0.25, 130, 60, "sine", 0.9, release=0.22), lowpass(tone(0
                   offset(run([1319, 1568, 1976, 2637], 0.06, 0.3, 0.22, "sine"), 0.12)))
 # Pearls clinking.
 save("pearl", mix(chime(1760, 0.25, 0.4, ((1.0, 1.0), (2.4, 0.3))), offset(chime(2349, 0.3, 0.35, ((1.0, 1.0), (2.4, 0.3))), 0.07)))
+
+# ---- Next features. Added at the end so the older sounds above keep the same noise. ----
+# Drum roll before the Last Shot: fast taps that swell, then one low hit.
+save("drumroll", mix(*[offset(lowpass(tone(0.05, 190, 170, "sine", 0.25 + 0.5 * i / 22.0, noise=0.7, release=0.045), 0.3), i * 0.036)
+                       for i in range(22)],
+                     offset(tone(0.3, 120, 55, "sine", 0.9, release=0.27), 0.82)))

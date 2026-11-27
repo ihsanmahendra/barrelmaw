@@ -28,6 +28,9 @@ func _init() -> void:
 	var packs := PackTests.new()
 	packs.run()
 	failures += packs.failures
+	var features := FeatureTests.new()
+	features.run()
+	failures += features.failures
 	bot_report(60)
 	print("Failures: ", failures)
 	quit(1 if failures > 0 else 0)

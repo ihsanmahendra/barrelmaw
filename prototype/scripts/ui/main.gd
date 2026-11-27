@@ -64,6 +64,7 @@ var _intro_open: Control
 
 signal _intro_closed
 var _overlay_layer: CanvasLayer
+var _offer: LastShotOffer  # the "So close!" panel while it is open
 var _menu_stage: PirateStage
 var packs: PackScreens  # Treasury, chest opening, Cargo Hold, Port Market
 var _last_rewards: Dictionary = {}  # what the latest win paid (Doubloons and chests), for the results screen
@@ -315,6 +316,20 @@ func _ready() -> void:
 		if args.has("--cheer"):
 			await get_tree().create_timer(0.5).timeout
 			queue_view.cheer(8)  # debug: show the grin without having to land a big hit
+		if args.has("--lastshot"):  # debug: lose with 3 barrels left, so the Last Shot offer appears
+			await get_tree().create_timer(0.4).timeout
+			var standing := 0
+			for y in battle.board.h:
+				for x in battle.board.w:
+					if battle.board.get_c(x, y) != "":
+						standing += 1
+						if standing > 3:
+							battle.board.remove_at(x, y)
+			battle.queue = []
+			battle.over = true
+			board_view.queue_redraw()
+			busy = true
+			_on_battle_over()
 		for a in args:  # debug: --intro=bomb|ammo|iron|curse shows that first-time pop-up
 			if a.begins_with("--intro="):
 				await get_tree().create_timer(0.4).timeout
@@ -454,6 +469,7 @@ func _draw_gear() -> void:
 func _new_screen(separation: int = 12) -> VBoxContainer:
 	highlight.clear()
 	_close_options()
+	_close_offer()
 	gear_button.visible = false
 	mute_button.visible = true
 	music.play_track("menu")
@@ -1375,12 +1391,48 @@ func _on_battle_over() -> void:
 		_on_tutorial_over()
 		return
 	_last_rewards = {}
+	if not battle.won and battle.can_last_shot() and SaveData.last_shot_left() > 0:
+		_offer_last_shot()
+		return
 	if battle.won:
 		var stars_earned := battle.star_rating()
 		var before_stars := SaveData.record(stage, stars_earned)
 		_last_rewards = Rewards.stage_clear(SaveData.pack_state(), stage, before_stars, stars_earned, SaveData.best_stars(), SaveData.today())
 		SaveData.save()
 	show_stage_result(battle.won)
+
+
+# ---------- Last Shot ----------
+
+## Lost with few barrels left: offer one wild cannonball before the result screen.
+func _offer_last_shot() -> void:
+	highlight.clear()
+	_offer = LastShotOffer.new(self, battle, SaveData.last_shot_left())
+	_offer.taken.connect(_take_last_shot)
+	_offer.declined.connect(func() -> void:
+		_close_offer()
+		show_stage_result(false))
+	_overlay_layer.add_child(_offer)
+	sfx.play("drumroll")
+
+
+func _take_last_shot() -> void:
+	if _offer == null or not battle.can_last_shot() or not SaveData.use_last_shot():
+		return
+	_close_offer()
+	battle.take_last_shot()
+	_removed_note = ""
+	sfx.play("sparkle")
+	_refresh()
+	queue_view.queue_redraw()
+	busy = false
+	_update_highlight()
+
+
+func _close_offer() -> void:
+	if _offer != null and is_instance_valid(_offer):
+		_offer.queue_free()
+	_offer = null
 
 
 # ---------- treasure map ----------
@@ -1660,7 +1712,10 @@ func show_stage_result(won: bool) -> void:
 		inner.add_child(_label("Cleared in %d turn%s." % [battle.turns, "" if battle.turns == 1 else "s"], 20, Color("6b4a2f"), HORIZONTAL_ALIGNMENT_CENTER, true, false))
 		var extra := "New best!" if earned > _prev_best else ("Best so far: %d star%s" % [_prev_best, "" if _prev_best == 1 else "s"])
 		inner.add_child(_label(extra, 18, Color("d62839") if earned > _prev_best else Color("8a5a30"), HORIZONTAL_ALIGNMENT_CENTER, true, false))
-		inner.add_child(_label("3 stars: %d turns or fewer.   2 stars: %d turns or fewer." % [battle.star3_turns, battle.star2_turns], 15, Color("8a5a30"), HORIZONTAL_ALIGNMENT_CENTER, false, false))
+		var limits := "3 stars: %d turns or fewer.   2 stars: %d turns or fewer." % [battle.star3_turns, battle.star2_turns]
+		if battle.last_shot_used:
+			limits = "Won with the Last Shot: 1 star."
+		inner.add_child(_label(limits, 15, Color("8a5a30"), HORIZONTAL_ALIGNMENT_CENTER, false, false))
 		_add_reward_rows(inner)
 	else:
 		sfx.play("lose")

@@ -136,3 +136,8 @@ with a fake notch and fails if any label, button or panel is outside the safe ar
 768x1024, 800x600). It needs a window, not `--headless`.
 It also fails if map pictures cover each other (stage ship and reward chest, treasure box and compass) or the
 chest-opening hint sits on the chest.
+
+## Last Shot
+A stage lost with 5 barrels or fewer offers one wild 3-hit cannonball ("So close!", `scripts/ui/last_shot_offer.gd`,
+`Battle.take_last_shot`). Once per attempt, one free use per day (`SaveData.LAST_SHOT_FREE_PER_DAY`), and a win after
+it earns 1 star. Spec: `design/gdd/last-shot.md`. Debug: `--autostart --stage=40 --lastshot`.

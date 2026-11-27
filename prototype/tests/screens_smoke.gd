@@ -85,6 +85,42 @@ func _initialize() -> void:
 		await process_frame
 	main.show_menu()
 	await process_frame
+	await _last_shot(main)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://smoke_save.cfg"))
 	print("Screens smoke test failures: ", failures)
 	quit(1 if failures > 0 else 0)
+
+
+func _lose_with(main: Control, barrels: int) -> void:
+	var b: Battle = main.battle
+	var standing := 0
+	for y in b.board.h:
+		for x in b.board.w:
+			if b.board.get_c(x, y) != "":
+				standing += 1
+				if standing > barrels:
+					b.board.remove_at(x, y)
+	b.queue = []
+	b.over = true
+	main.busy = true
+	main._on_battle_over()
+
+
+## Last Shot: offered after a close loss, taken once, then the free use of the day is gone.
+func _last_shot(main: Control) -> void:
+	main._begin_stage(1, Stages.deck_for(1))
+	await process_frame
+	_lose_with(main, 3)
+	await process_frame
+	check(main._offer != null, "a close loss offers the Last Shot")
+	main._take_last_shot()
+	await process_frame
+	check(main._offer == null and not main.battle.over and not main.busy and main.battle.queue.size() == 1, "taking it resumes the battle")
+	check(SaveData.last_shot_left() == 0, "the daily use is spent")
+	main._begin_stage(1, Stages.deck_for(1))
+	await process_frame
+	_lose_with(main, 3)
+	await process_frame
+	check(main._offer == null, "no offer once the day's shot is used")
+	main.show_menu()
+	await process_frame
