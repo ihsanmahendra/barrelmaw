@@ -36,7 +36,58 @@ static func draw_special(c: CanvasItem, center: Vector2, cs: float, kind: String
 			_skull(c, center, cs, t)
 
 
-static func _bomb(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
+## The same icon for a board full of them: the still part comes from a cached texture (see BakedArt) and only
+## the moving light (fuse spark, twinkle, glow) is drawn each time.
+static func draw_cached(c: CanvasItem, center: Vector2, cs: float, kind: String, hp: int, t: float) -> void:
+	var size := snappedf(cs, 0.5)
+	var cracked := kind == "iron" and hp <= 1
+	if kind == "curse":
+		var glow := 0.5 + 0.5 * sin(t * 3.0)
+		_light(c, center, size * (0.34 + 0.03 * glow), Color(0.55, 0.15, 0.85, 0.35 + 0.2 * glow))
+	BakedArt.draw(c, "special:%s:%.1f:%s" % [kind, size, cracked], center, Rect2(-size * 0.65, -size * 0.65, size * 1.3, size * 1.3),
+		_still.bind(kind, size, cracked))
+	if kind == "bomb":
+		_spark(c, _fuse_tip(center, size), size, t)
+	elif kind == "ammo":
+		_twinkle(c, center, size, t)
+
+
+## The part of an icon that does not move.
+static func _still(item: CanvasItem, at: Vector2, kind: String, size: float, cracked: bool) -> void:
+	match kind:
+		"bomb":
+			_bomb(item, at, size, 0.0, false)
+		"ammo":
+			_crate(item, at, size, 0.0, false)
+		"iron":
+			_iron(item, at, size, 1 if cracked else 2)
+		"curse":
+			_skull(item, at, size, 0.0, false)
+
+
+## A soft disc that batches with the others, unlike draw_circle.
+static func _light(c: CanvasItem, at: Vector2, r: float, col: Color) -> void:
+	c.draw_texture_rect(BakedArt.soft_shape(1.0), Rect2(at - Vector2(r, r), Vector2(r, r) * 2.0), false, col)
+
+
+static func _fuse_tip(p: Vector2, cs: float) -> Vector2:
+	var r := cs * 0.27
+	return p + Vector2(0.0, cs * 0.06) + Vector2(r * 0.25, -r * 0.88) + Vector2(r * 0.55, -r * 0.55)
+
+
+static func _spark(c: CanvasItem, tip: Vector2, cs: float, t: float) -> void:
+	var flick := 0.6 + 0.4 * sin(t * 18.0)
+	_light(c, tip, cs * 0.11 * flick + 2.0, Color(1.0, 0.55, 0.15, 0.55))
+	_light(c, tip, cs * 0.06 * flick + 1.2, Color(1.0, 0.92, 0.5))
+
+
+static func _twinkle(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
+	var r := cs * 0.3
+	var tw := 0.5 + 0.5 * sin(t * 5.0)
+	_light(c, p + Vector2(r * 0.7, -r * 0.7), cs * 0.045 * (0.6 + tw), Color(1, 1, 1, 0.5 + 0.5 * tw))
+
+
+static func _bomb(c: CanvasItem, p: Vector2, cs: float, t: float, live: bool = true) -> void:
 	var r := cs * 0.27
 	var b := p + Vector2(0.0, cs * 0.06)
 	c.draw_circle(b, r * 1.3, Color("fff4dc"), true, -1.0, true)  # a pale rim so it stands out on any tile
@@ -48,12 +99,11 @@ static func _bomb(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
 	var top := b + Vector2(r * 0.25, -r * 0.88)
 	var tip := top + Vector2(r * 0.55, -r * 0.55)
 	c.draw_line(top, tip, Color("a8743f"), maxf(2.0, cs * 0.06))
-	var flick := 0.6 + 0.4 * sin(t * 18.0)
-	c.draw_circle(tip, cs * 0.11 * flick + 2.0, Color(1.0, 0.55, 0.15, 0.55))
-	c.draw_circle(tip, cs * 0.06 * flick + 1.2, Color(1.0, 0.92, 0.5))
+	if live:
+		_spark(c, tip, cs, t)
 
 
-static func _crate(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
+static func _crate(c: CanvasItem, p: Vector2, cs: float, t: float, live: bool = true) -> void:
 	var r := cs * 0.3
 	c.draw_circle(p + Vector2(0.0, cs * 0.04), r * 1.06, Color(0, 0, 0, 0.35))
 	c.draw_circle(p, r, Color("8a5a1a"))
@@ -63,8 +113,8 @@ static func _crate(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
 	var a := r * 0.52
 	c.draw_line(p + Vector2(-a, 0.0), p + Vector2(a, 0.0), Color("7a4a10"), w)
 	c.draw_line(p + Vector2(0.0, -a), p + Vector2(0.0, a), Color("7a4a10"), w)
-	var tw := 0.5 + 0.5 * sin(t * 5.0)
-	c.draw_circle(p + Vector2(r * 0.7, -r * 0.7), cs * 0.045 * (0.6 + tw), Color(1, 1, 1, 0.5 + 0.5 * tw))
+	if live:
+		_twinkle(c, p, cs, t)
 
 
 static func _iron(c: CanvasItem, p: Vector2, cs: float, hp: int) -> void:
@@ -92,9 +142,10 @@ static func _iron(c: CanvasItem, p: Vector2, cs: float, hp: int) -> void:
 		c.draw_polyline(PackedVector2Array([p + Vector2(half * 0.05, -half * 0.35), p + Vector2(half * 0.7, -half * 0.1)]), Color(0.1, 0.1, 0.14), w)
 
 
-static func _skull(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
+static func _skull(c: CanvasItem, p: Vector2, cs: float, t: float, live: bool = true) -> void:
 	var glow := 0.5 + 0.5 * sin(t * 3.0)
-	c.draw_circle(p, cs * (0.34 + 0.03 * glow), Color(0.55, 0.15, 0.85, 0.35 + 0.2 * glow))
+	if live:
+		c.draw_circle(p, cs * (0.34 + 0.03 * glow), Color(0.55, 0.15, 0.85, 0.35 + 0.2 * glow))
 	var r := cs * 0.22
 	var line := maxf(1.2, cs * 0.045)
 	c.draw_circle(p + Vector2(0.0, -cs * 0.02), r + line, Color("2a1233"), true, -1.0, true)

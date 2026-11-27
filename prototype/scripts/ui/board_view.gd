@@ -344,7 +344,9 @@ func _add_popup(pos: Vector2, text: String, fs: int, color: Color) -> void:
 		for pu in _popups:
 			var other := _popup_pos(pu)
 			var gap := float(maxi(fs, int(pu["size"]))) * 1.1
-			if absf(other.x - at.x) < 110.0 and absf(other.y - at.y) < gap:
+			# The half unit of slack matters: positions are 32 bit, so "exactly one gap apart" can read as a hair
+			# less than a gap, and without it the same text would be moved to the same spot forever (a freeze).
+			if absf(other.x - at.x) < 110.0 and absf(other.y - at.y) < gap - 0.5:
 				at.y = other.y - gap
 				moved = true
 	_popups.append({"pos": at, "text": text, "t": 0.0, "size": fs, "color": color})
@@ -441,6 +443,15 @@ func _fill(rect: Rect2, color: Color, radius: float) -> void:
 	_style.draw(get_canvas_item(), rect)
 
 
+## A tinted rounded square or disc that batches with its neighbours (see BakedArt.soft_shape).
+func _chip(rect: Rect2, color: Color) -> void:
+	draw_texture_rect(BakedArt.soft_shape(0.5), rect, false, color)
+
+
+func _dot(center: Vector2, radius: float, color: Color) -> void:
+	draw_texture_rect(BakedArt.soft_shape(1.0), Rect2(center - Vector2(radius, radius), Vector2(radius, radius) * 2.0), false, color)
+
+
 func _draw() -> void:
 	if battle == null:
 		return
@@ -457,6 +468,9 @@ func _draw() -> void:
 	_style.border_color = Color("8a5a30")
 	_style.draw(get_canvas_item(), tray)
 	_style.set_border_width_all(0)
+	# All tiles first, then all barrels: barrels come from one atlas, so drawn together they are one draw call.
+	var barrels: Array = []  # rect, color
+	var round_tiles: Array = []  # x, y, rect, color
 	for y in bd.h:
 		for x in bd.w:
 			var r := _cell_rect(x, y, cs, origin)
@@ -467,15 +481,24 @@ func _draw() -> void:
 			if letter == "":
 				var key := Vector2i(x, y)
 				if _pending.has(key):
-					_draw_barrel_cell(r, _pending[key][1])  # removed, but its cannonball has not landed yet
+					barrels.append([r, _pending[key][1]])  # removed, but its cannonball has not landed yet
 				elif ghost != "":
 					var g := GameData.color_of(ghost)
 					g.a = 0.14
-					_fill(r, g, cs * 0.3)
+					_chip(r, g)
 				continue
 			# A color tile under each barrel so the whole picture reads as one shape.
-			_draw_silhouette_tile(bd, x, y, r.grow(GAP / 2.0), _tile_color(GameData.color_of(letter)), cs)
-			_draw_barrel_cell(r, GameData.color_of(letter))
+			var tile := _tile_color(GameData.color_of(letter))
+			var inside := bd.get_c(x, y - 1) != "" and bd.get_c(x, y + 1) != "" and bd.get_c(x - 1, y) != "" and bd.get_c(x + 1, y) != ""
+			if inside:
+				draw_rect(r.grow(GAP / 2.0), tile)  # no rounded corner: a plain rectangle batches
+			else:
+				round_tiles.append([x, y, r.grow(GAP / 2.0), tile])
+			barrels.append([r, GameData.color_of(letter)])
+	for tile in round_tiles:
+		_draw_silhouette_tile(bd, tile[0], tile[1], tile[2], tile[3], cs)
+	for barrel in barrels:
+		_draw_barrel_cell(barrel[0], barrel[1])
 	for bl in _blasts:
 		var k: float = float(bl["t"]) / 0.45
 		draw_circle(bl["pos"], cs * (0.5 + 2.2 * k), Color(1.0, 0.65, 0.2, 0.45 * (1.0 - k)))
@@ -486,15 +509,15 @@ func _draw() -> void:
 		var col: Color = _flashes[p][1]
 		col.a = 1.0 - t
 		var r := _cell_rect(p.x, p.y, cs, origin).grow(cs * 0.25 * t)
-		_fill(r, col, cs * 0.3)
+		_chip(r, col)
 		var core := Color(1, 1, 1, maxf(0.0, 0.8 - t * 2.0))
-		_fill(_cell_rect(p.x, p.y, cs, origin).grow(-cs * 0.15), core, cs * 0.2)
+		_chip(_cell_rect(p.x, p.y, cs, origin).grow(-cs * 0.15), core)
 	for pt in _parts:
 		var k: float = 1.0 - float(pt["t"]) / float(pt["life"])
 		var c: Color = pt["color"]
 		c.a = clampf(k * 1.5, 0.0, 1.0)
 		var s: float = float(pt["size"]) * (0.4 + 0.6 * k)
-		_fill(Rect2(pt["pos"] - Vector2(s, s) / 2.0, Vector2(s, s)), c, s * 0.3)
+		_chip(Rect2(pt["pos"] - Vector2(s, s) / 2.0, Vector2(s, s)), c)
 	_draw_celebration(cs)
 	var font := ThemeDB.fallback_font
 	for pu in _popups:
@@ -513,7 +536,7 @@ func _draw_bullets(cs: float) -> void:
 		var k: float = float(r["t"]) / RING_TIME
 		var c: Color = r["color"]
 		c.a = 0.8 * (1.0 - k)
-		draw_circle(r["pos"], cs * (0.3 + 0.8 * k), c)
+		_dot(r["pos"], cs * (0.3 + 0.8 * k), c)
 	for s in _shots:
 		if not s["launched"] or s["landed"]:
 			continue
@@ -525,7 +548,7 @@ func _draw_bullets(cs: float) -> void:
 		for j in range(5, 0, -1):
 			var kt: float = maxf(0.0, k - 0.06 * j)
 			var tp := from.lerp(to, kt * kt)
-			draw_circle(tp, cs * (0.2 + 0.03 * j), Color(0.85, 0.85, 0.9, 0.38 - 0.06 * j))
+			_dot(tp, cs * (0.2 + 0.03 * j), Color(0.85, 0.85, 0.9, 0.38 - 0.06 * j))
 		var pos := from.lerp(to, k * k)
 		if s["kind"] == "card":
 			draw_circle(pos, cs * 0.3, Color(1, 1, 1, 0.95))
@@ -550,11 +573,11 @@ func _draw_overlay() -> void:
 		for x in bd.w:
 			var kind := bd.get_special(x, y)
 			if kind != "" and not _held.has(Vector2i(x, y)):
-				SpecialArt.draw_special(_overlay, origin + (Vector2(x, y) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, kind), kind, bd.get_hp(x, y), now)
+				SpecialArt.draw_cached(_overlay, origin + (Vector2(x, y) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, kind), kind, bd.get_hp(x, y), now)
 	for pc in _pending.keys():
 		var pk: String = _pending[pc][2]
 		if pk != "":
-			SpecialArt.draw_special(_overlay, origin + (Vector2(pc) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, pk), pk, 1, now)
+			SpecialArt.draw_cached(_overlay, origin + (Vector2(pc) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, pk), pk, 1, now)
 	if _strike_t >= 0.0:
 		_draw_strike(cs, origin)
 	if _seq_active or _strike_t >= 0.0 or not _held.is_empty() or (preview.is_empty() and card_preview.is_empty()):
