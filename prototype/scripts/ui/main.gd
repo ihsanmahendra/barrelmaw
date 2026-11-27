@@ -747,7 +747,7 @@ func _menu_features() -> HBoxContainer:
 	row.add_theme_constant_override("separation", 8)
 	if SaveData.daily_haul_open():
 		var haul := _button("Daily Haul", func() -> void: daily.show_start(), Color("3a6ea5"))
-		FeatureArt.add_icon(haul, FeatureArt.draw_haul_icon)
+		_add_icon(haul, "haul", 40.0)
 		haul.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		haul.custom_minimum_size = Vector2(0, 52)
 		haul.add_theme_font_size_override("font_size", 21)
@@ -756,7 +756,7 @@ func _menu_features() -> HBoxContainer:
 			_add_red_dot(haul)
 		row.add_child(haul)
 	var log_btn := _button("Captain's Log", func() -> void: album.show(), Color("8a5a30"))
-	FeatureArt.add_icon(log_btn, FeatureArt.draw_log_icon, 30.0)
+	_add_icon(log_btn, "log", 36.0)
 	log_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	log_btn.custom_minimum_size = Vector2(0, 52)
 	log_btn.add_theme_font_size_override("font_size", 21)
@@ -768,6 +768,18 @@ func _menu_features() -> HBoxContainer:
 			b.add_theme_font_size_override("font_size", 18)
 			(b as Button).alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	return row
+
+
+## A FeatureArt picture on the left side of a button.
+func _add_icon(b: Button, kind: String, side: float) -> void:
+	var icon := FeatureIcon.new(kind, side)
+	icon.anchor_top = 0.5
+	icon.anchor_bottom = 0.5
+	icon.offset_left = 12.0
+	icon.offset_right = 12.0 + side
+	icon.offset_top = -side / 2.0 - 2.0
+	icon.offset_bottom = side / 2.0 - 2.0
+	b.add_child(icon)
 
 
 ## A small red dot on the top right of a button: something is waiting there.
