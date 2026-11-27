@@ -6,6 +6,9 @@ extends Control
 ## nothing when there is too little.
 
 const MIN_HEIGHT: float = 96.0
+const CHEST_SPAN: float = 0.42  # room for each piece, as a share of the pirate's height
+const PILE_SPAN: float = 0.38
+const BARRELS_SPAN: float = 0.42
 const OUT := Color("3a1f12")
 const COIN := Color("ffc93c")
 
@@ -32,45 +35,49 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if size.y < MIN_HEIGHT:
 		return
-	var h := minf(size.y - 12.0, 290.0)
-	var s := h / 124.0
+	# The pieces stand side by side, so nothing covers the pirate. The widths are in pirate heights.
+	var side_w := (CHEST_SPAN + PILE_SPAN) if won else BARRELS_SPAN
+	var total := side_w + PirateArt.PIRATE_ASPECT
+	var h := minf(minf(size.y - 12.0, 290.0), (size.x - 8.0) / total)
 	var pirate_w := h * PirateArt.PIRATE_ASPECT
 	var ground := size.y - 18.0
 	_deck(ground, h)
-	var feet := Vector2(size.x / 2.0 - pirate_w * 0.3, ground)
+	var left := (size.x - h * total) / 2.0
+	var pirate_left := left + h * (CHEST_SPAN if won else BARRELS_SPAN)
+	var feet := Vector2(pirate_left + pirate_w * 0.2, ground)  # the sprite starts 0.2 of its width left of the feet
 	if won:
-		_win(feet, s, h, pirate_w, ground)
+		_win(feet, h, left, pirate_left + pirate_w, ground)
 	else:
-		_loss(feet, s, h, pirate_w, ground)
+		_loss(feet, h, left, ground)
 
 
-func _win(feet: Vector2, s: float, h: float, pirate_w: float, ground: float) -> void:
+func _win(feet: Vector2, h: float, left: float, pirate_right: float, ground: float) -> void:
 	# Doubloons raining behind the pirate.
 	for i in 16:
 		var phase := fposmod(_time * (0.22 + 0.05 * float(i % 3)) + float(i) * 0.137, 1.0)
 		var x := size.x * fposmod(0.07 + float(i) * 0.618, 1.0)
 		var fade := clampf(phase * 6.0, 0.0, 1.0) * clampf((1.0 - phase) * 4.0, 0.0, 1.0)
 		_coin(Vector2(x, lerpf(-10.0, ground - 10.0, phase)), 6.0 + float(i % 3) * 1.5, absf(cos(_time * 3.0 + float(i))), fade)
-	var side := h * 0.42
-	var chest_x := maxf(side * 0.7, size.x / 2.0 - pirate_w * 0.5 - side * 0.34)
-	ChestArt.draw(self, Vector2(chest_x, ground - side * 0.45), side, "gilded", 1.0, _time)
-	_pile(Vector2(minf(size.x - h * 0.22, size.x / 2.0 + pirate_w * 0.68), ground - 4.0), h * 0.045)
-	PirateArt.draw_pirate(self, feet, s, _time, 0.0, Transform2D.IDENTITY, false, true)
+	var chest_w := h * CHEST_SPAN / 1.24  # the spilled coins reach 0.62 of its width to each side
+	ChestArt.draw(self, Vector2(left + h * CHEST_SPAN / 2.0, ground - chest_w * 0.45), chest_w, "gilded", 1.0, _time)
+	_pile(Vector2(pirate_right + h * PILE_SPAN / 2.0, ground - 4.0), h * 0.042)
+	PirateArt.draw_pirate(self, feet, h / 124.0, _time, 0.0, Transform2D.IDENTITY, false, true)
 	for i in 5:
 		var k := 0.5 + 0.5 * sin(_time * 3.0 + float(i) * 1.9)
 		var at := Vector2(size.x * (0.12 + 0.19 * float(i)), h * (0.12 + 0.17 * float((i * 2) % 3)))
 		_sparkle(at, 4.0 + 7.0 * k, Color(1.0, 0.92, 0.55, 0.4 + 0.6 * k))
 
 
-func _loss(feet: Vector2, s: float, h: float, pirate_w: float, ground: float) -> void:
+func _loss(feet: Vector2, h: float, left: float, ground: float) -> void:
 	# The barrels that got away, stacked and untouched.
 	var bw := h * 0.19
 	var bh := bw / PirateArt.BARREL_ASPECT
-	var bx := maxf(bw * 1.25, size.x / 2.0 - pirate_w * 0.5 - bw * 0.7)
+	var bx := left + h * BARRELS_SPAN / 2.0 - h * 0.01
 	var bob := sin(_time * 2.0) * 1.5
 	PirateArt.draw_barrel(self, Vector2(bx - bw * 0.52, ground - bh * 0.5), bw, bh, Color("4cc9f0"))
 	PirateArt.draw_barrel(self, Vector2(bx + bw * 0.52, ground - bh * 0.5), bw, bh, Color("ef476f"))
 	PirateArt.draw_barrel(self, Vector2(bx, ground - bh * 1.38 + bob), bw, bh, Color("ffd166"))
+	var s := h / 124.0
 	PirateArt.draw_pirate(self, feet, s, _time * 0.5, 0.0)
 	var mouth := PirateArt.muzzle(feet, s)
 	for i in 6:  # the last of the smoke curling up from an empty cannon

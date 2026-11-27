@@ -62,7 +62,7 @@ func _draw_level(dsz: Vector2, text_y: float, text_width: float) -> void:
 	if level < 2:
 		return
 	var font := UiKit.bold_font()
-	var c := Vector2(dsz.x - 22.0, 22.0)
+	var c := Vector2(dsz.x - 13.0, 11.0)  # up in the corner, clear of the name
 	var badge_col: Color = LEVEL_COLORS[clampi(level, 2, 5)]  # bronze, silver, gold, then a prismatic ice-blue
 	draw_circle(c, 13.0, Color(0.16, 0.1, 0.05, 0.95))
 	draw_circle(c, 11.0, badge_col)
@@ -77,8 +77,8 @@ func _draw_level(dsz: Vector2, text_y: float, text_width: float) -> void:
 
 
 ## Y position just under the description, where the level bonus text goes.
-func _bonus_y(desc_y: float, width: float, max_lines: int) -> float:
-	var size_px := ThemeDB.fallback_font.get_multiline_string_size(_card["desc"], HORIZONTAL_ALIGNMENT_CENTER, width, 13, max_lines)
+func _bonus_y(desc_y: float, width: float, max_lines: int, font_size: int) -> float:
+	var size_px := ThemeDB.fallback_font.get_multiline_string_size(_card["desc"], HORIZONTAL_ALIGNMENT_CENTER, width, font_size, max_lines)
 	return desc_y + size_px.y + 2.0
 
 
@@ -177,14 +177,34 @@ func _draw_textured(rc: Color, hovered: bool, dsz: Vector2, frame_tex: Texture2D
 	draw_string(font, np, name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fsz, Color.WHITE)
 	# Icon and description, spread out when the scaled card is taller than designed.
 	var extra := maxf(0.0, dsz.y - 188.0)
-	UiKit.draw_card_icon(self, Rect2(Vector2(20, 54 + extra * 0.28), Vector2(dsz.x - 40, 52)), _card)
 	# A card with a level bonus line lifts its description a little so both fit above the frame.
 	var desc_y := 126.0 + extra * 0.6 - (12.0 if level > 1 else 0.0)
 	var max_lines := 3 if dsz.x < 175.0 and dsz.y < 205.0 else 5
+	_draw_icon_between(dsz, 49.0 + extra * 0.28, desc_y - 14.0)
+	# Long descriptions get a smaller font, so no words are cut off and the last line stays inside the frame.
+	var fsize := 13
+	var room := dsz.y - 17.0 - (desc_y - 13.0) - (14.0 if level > 1 else 0.0)
+	while fsize > 10 and ThemeDB.fallback_font.get_multiline_string_size(_card["desc"], HORIZONTAL_ALIGNMENT_CENTER, dsz.x - 40.0, fsize).y \
+			> minf(room, ThemeDB.fallback_font.get_height(fsize) * max_lines + 1.0):
+		fsize -= 1
 	draw_multiline_string(ThemeDB.fallback_font, Vector2(20, desc_y), _card["desc"],
-		HORIZONTAL_ALIGNMENT_CENTER, dsz.x - 40.0, 13, max_lines, UiKit.INK)
-	_draw_level(dsz, _bonus_y(desc_y, dsz.x - 40.0, max_lines), dsz.x - 40.0)
+		HORIZONTAL_ALIGNMENT_CENTER, dsz.x - 40.0, fsize, max_lines, UiKit.INK)
+	_draw_level(dsz, _bonus_y(desc_y, dsz.x - 40.0, max_lines, fsize), dsz.x - 40.0)
 	if disabled:
 		_body.bg_color = Color(0.05, 0.03, 0.02, 0.5)
 		_body.shadow_size = 0
 		draw_style_box(_body, inner)
+
+
+## Draws the icon shrunk to fit between the name plate (top) and the description (bottom), in design units.
+## Icons are laid out for a 120 x 52 box and may reach ICON_TOP above and ICON_BOTTOM below its top edge.
+func _draw_icon_between(dsz: Vector2, top: float, bottom: float) -> void:
+	const ICON_TOP: float = -9.0
+	const ICON_BOTTOM: float = 61.0
+	var k := clampf(size.x / DESIGN_W, 0.55, 1.0)
+	var fit := minf(1.0, (bottom - top) / (ICON_BOTTOM - ICON_TOP))
+	var width := dsz.x - 40.0
+	var origin := Vector2(dsz.x / 2.0 - width / 2.0 * fit, top - ICON_TOP * fit)
+	draw_set_transform(origin * k, 0.0, Vector2(k, k) * fit)
+	UiKit.draw_card_icon(self, Rect2(Vector2.ZERO, Vector2(width, 52)), _card)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(k, k))
