@@ -86,6 +86,7 @@ func _tap(p: Vector2) -> void:
 func _draw() -> void:
 	var t := float(Time.get_ticks_msec()) / 1000.0
 	_draw_sea(t)
+	_draw_decor(t)
 	_draw_start_beach(t)
 	_draw_compass()
 	for k in Stages.TOTAL:  # far islands (top of the map) first so near ones overlap them
@@ -145,6 +146,23 @@ func _draw_sea(t: float) -> void:
 		draw_circle(m, 38.0, Color("f6f0d8"))
 		draw_circle(m + Vector2(-12, -8), 7.0, Color(0.82, 0.8, 0.7, 0.8))
 		draw_circle(m + Vector2(10, 11), 5.0, Color(0.82, 0.8, 0.7, 0.8))
+
+
+## Reefs, ships and sea creatures on the open water opposite the path (drawing only).
+func _draw_decor(t: float) -> void:
+	var yb := _boundary_y()
+	for k in Stages.TOTAL - 1:
+		var mid := (node_pos(k) + node_pos(k + 1)) / 2.0
+		if not _visible(mid.y, 140.0):
+			continue
+		var lean := (mid.x - size.x * 0.5) / (size.x * 0.26)  # which side the path is on, -1 to 1
+		if absf(lean) < 0.4 or absf(mid.y - yb) < 190.0 or mid.y > size.y - 430.0:
+			continue
+		if absf(mid.y - node_pos(Stages.NIGHT_START + 22).y) < 130.0:
+			continue  # the moon hangs there
+		var at := Vector2(size.x * (0.5 - signf(lean) * 0.32), mid.y + sin(float(k) * 2.3) * 34.0)
+		var light := Color(0.52, 0.62, 0.9) if mid.y < yb else Color.WHITE
+		MapDecor.draw(self, at, k * 5 + k / 7, t, light)
 
 
 ## "Night seas" ribbon across the map where stage 51 begins.
@@ -266,15 +284,21 @@ func _draw_island(i: int, t: float) -> void:
 	var key := _island_name(i)
 	var tex := _island_tex(key)
 	if tex != null:
-		var s := Vector2(tex.get_width(), tex.get_height()) * (0.82 if key == "skull" else 0.72)
+		# Islands of one kind differ in size, and every other pair is mirrored.
+		var s := Vector2(tex.get_width(), tex.get_height()) * (0.82 if key == "skull" else 0.68 + 0.04 * float((i * 7) % 3))
 		var bob := sin(t * 1.3 + float(i)) * 2.0
 		var anchor: Vector2 = ISLAND_ANCHORS[key]
-		var pos := p - s * anchor + Vector2(0, bob)
+		var mirrored := key != "skull" and (i / 2) % 2 == 1
+		var pos := p - s * Vector2(1.0 - anchor.x if mirrored else anchor.x, anchor.y) + Vector2(0, bob)
 		if Stages.is_night(i):  # a warm glow from the island's own lights, and moonlit colors
 			var gp := p + Vector2(0, -s.y * 0.1)
 			for gi in 3:
 				draw_circle(gp, s.x * (0.62 - 0.14 * gi), Color(1.0, 0.78, 0.4, 0.05 + 0.03 * gi + 0.01 * sin(t * 2.0 + i)))
-		draw_texture_rect(tex, Rect2(pos, s), false, Color(0.7, 0.78, 1.0) if Stages.is_night(i) else Color.WHITE)
+		var tint := Color(0.7, 0.78, 1.0) if Stages.is_night(i) else Color.WHITE
+		if mirrored:  # a negative width flips the picture
+			draw_texture_rect(tex, Rect2(pos, Vector2(-s.x, s.y)), false, tint)
+		else:
+			draw_texture_rect(tex, Rect2(pos, s), false, tint)
 		if i == Stages.TOTAL - 1:
 			_draw_treasure(p + Vector2(0, -s.y * anchor.y - 18.0))
 		return

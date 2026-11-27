@@ -35,24 +35,39 @@ func _draw() -> void:
 	var k := size.y / 960.0
 	if night:
 		_night_sky(t, k)
-	var ink := Color(0.12, 0.12, 0.18, 0.85) if not night else Color(0.85, 0.88, 0.98, 0.8)
 	for g in _gulls:
 		if not birds:
 			break
 		var flap := sin(t * 5.0 + float(g["phase"]))
 		var p := Vector2(float(g["x"]), float(g["y"]) * k + sin(t * 0.8 + float(g["phase"])) * float(g["bob"]))
-		var s: float = float(g["size"]) * 16.0 * k
-		# A bird as two curved wings that flap up and down.
-		var tip := Vector2(s, -s * (0.25 + 0.55 * flap))
-		draw_polyline(PackedVector2Array([p + Vector2(-s, tip.y), p + Vector2(-s * 0.5, -s * 0.3 * (0.4 + flap * 0.4)), p]), ink, 2.6)
-		draw_polyline(PackedVector2Array([p, p + Vector2(s * 0.5, -s * 0.3 * (0.4 + flap * 0.4)), p + tip]), ink, 2.6)
-	# Glints on the water: small white dashes that fade in and out.
-	for i in 26:
+		_gull(p, float(g["size"]) * 17.0 * k, flap)
+	# Glints on the water: short white dashes that fade in and out, kept above the ship's rail.
+	for i in 22:
 		var gx := fposmod(float(i) * 83.7 + t * 6.0, size.x)
-		var gy := (500.0 + fposmod(float(i) * 47.3, 110.0)) * k
+		var gy := (480.0 + fposmod(float(i) * 47.3, 78.0)) * k
 		var a := 0.5 + 0.5 * sin(t * 2.2 + float(i) * 1.9)
-		var gl := (7.0 + fposmod(float(i) * 3.1, 9.0)) * k
-		draw_line(Vector2(gx, gy), Vector2(gx + gl, gy), Color(1, 1, 1, 0.55 * a), 2.0)
+		var gl := (5.0 + fposmod(float(i) * 3.1, 7.0)) * k
+		draw_line(Vector2(gx, gy), Vector2(gx + gl, gy), Color(1, 1, 1, 0.5 * a), 2.0)
+
+
+## A gull seen head on: white wings with dark tips that beat up and down around a little body.
+func _gull(p: Vector2, s: float, flap: float) -> void:
+	var white := Color("fffdf6") if not night else Color("aebbe0")
+	var ink := Color("3a2a22") if not night else Color("26304f")
+	var tip := -s * (0.12 + 0.5 * flap)
+	var arch := -s * (0.34 + 0.18 * flap)
+	var thick := s * 0.17
+	for side in [-1.0, 1.0]:
+		var d := float(side)
+		var wing := PackedVector2Array([p + Vector2(0, -thick * 0.5), p + Vector2(d * s * 0.5, arch - thick), p + Vector2(d * s * 1.15, tip),
+			p + Vector2(d * s * 0.52, arch + thick * 0.45), p + Vector2(0, thick * 0.9)])
+		draw_colored_polygon(wing, white)
+		var closed := wing.duplicate()
+		closed.append(wing[0])
+		draw_polyline(closed, ink, 1.5, true)
+		draw_line(p + Vector2(d * s * 0.9, lerpf(arch - thick * 0.3, tip, 0.6)), p + Vector2(d * s * 1.15, tip), ink, 2.6, true)  # dark wing tip
+	draw_circle(p + Vector2(0, thick * 0.2), s * 0.16, white, true, -1.0, true)
+	draw_circle(p + Vector2(0, thick * 0.75), s * 0.07, Color("f59e2c"), true, -1.0, true)  # beak
 
 
 func _night_sky(t: float, k: float) -> void:

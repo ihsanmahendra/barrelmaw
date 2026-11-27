@@ -39,7 +39,8 @@ static func draw_special(c: CanvasItem, center: Vector2, cs: float, kind: String
 static func _bomb(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
 	var r := cs * 0.27
 	var b := p + Vector2(0.0, cs * 0.06)
-	c.draw_circle(b + Vector2(0.0, cs * 0.03), r * 1.08, Color(0, 0, 0, 0.35))
+	c.draw_circle(b, r * 1.3, Color("fff4dc"), true, -1.0, true)  # a pale rim so it stands out on any tile
+	c.draw_circle(b, r * 1.12, Color("1f2233"), true, -1.0, true)
 	c.draw_circle(b, r, Color("1f2233"))
 	c.draw_circle(b, r * 0.86, Color("34384f"))
 	c.draw_circle(b + Vector2(-r * 0.34, -r * 0.36), r * 0.26, Color(1, 1, 1, 0.55))
@@ -68,12 +69,18 @@ static func _crate(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
 
 static func _iron(c: CanvasItem, p: Vector2, cs: float, hp: int) -> void:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.6, 0.65, 0.74, 0.62)
+	sb.bg_color = Color(0.6, 0.65, 0.74, 0.26)  # thin enough that the barrel color shows through
 	sb.set_corner_radius_all(int(cs * 0.18))
 	sb.set_border_width_all(maxi(2, int(cs * 0.07)))
 	sb.border_color = Color(0.22, 0.25, 0.33, 0.95)
 	var half := cs * 0.40
 	c.draw_style_box(sb, Rect2(p - Vector2(half, half), Vector2(half, half) * 2.0))
+	var brace := half * 0.68
+	for side in [-1.0, 1.0]:  # crossed iron braces
+		var a := p + Vector2(-brace, -brace * float(side))
+		var b := p + Vector2(brace, brace * float(side))
+		c.draw_line(a, b, Color(0.22, 0.25, 0.33), maxf(2.5, cs * 0.11), true)
+		c.draw_line(a, b, Color(0.78, 0.83, 0.92), maxf(1.2, cs * 0.05), true)
 	for sx in [-1.0, 1.0]:
 		for sy in [-1.0, 1.0]:
 			var rv := p + Vector2(sx * half * 0.68, sy * half * 0.68)
@@ -88,8 +95,11 @@ static func _iron(c: CanvasItem, p: Vector2, cs: float, hp: int) -> void:
 static func _skull(c: CanvasItem, p: Vector2, cs: float, t: float) -> void:
 	var glow := 0.5 + 0.5 * sin(t * 3.0)
 	c.draw_circle(p, cs * (0.34 + 0.03 * glow), Color(0.55, 0.15, 0.85, 0.35 + 0.2 * glow))
-	var r := cs * 0.2
-	c.draw_circle(p + Vector2(0.0, -cs * 0.02), r, Color("f4efe4"))
+	var r := cs * 0.22
+	var line := maxf(1.2, cs * 0.045)
+	c.draw_circle(p + Vector2(0.0, -cs * 0.02), r + line, Color("2a1233"), true, -1.0, true)
+	c.draw_rect(Rect2(p + Vector2(-r * 0.55 - line, r * 0.55), Vector2(r * 1.1 + line * 2.0, r * 0.7 + line)), Color("2a1233"))
+	c.draw_circle(p + Vector2(0.0, -cs * 0.02), r, Color("f4efe4"), true, -1.0, true)
 	c.draw_rect(Rect2(p + Vector2(-r * 0.55, r * 0.55), Vector2(r * 1.1, r * 0.7)), Color("f4efe4"))
 	c.draw_circle(p + Vector2(-r * 0.4, -cs * 0.03), r * 0.3, Color("2a1233"))
 	c.draw_circle(p + Vector2(r * 0.4, -cs * 0.03), r * 0.3, Color("2a1233"))

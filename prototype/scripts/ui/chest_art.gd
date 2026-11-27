@@ -105,6 +105,37 @@ static func _hoop(c: CanvasItem, cx: float, y0: float, y1: float, bw: float, met
 		_rivet(c, Vector2(cx, y), bw * 0.2, metal, line)
 
 
+## A quad whose left and right edges have their own color: the soft side light and side shadow.
+static func _fade(c: CanvasItem, x0: float, x1: float, y0: float, y1: float, left: Color, right: Color) -> void:
+	c.draw_polygon(PackedVector2Array([Vector2(x0, y0), Vector2(x1, y0), Vector2(x1, y1), Vector2(x0, y1)]),
+		PackedColorArray([left, right, right, left]))
+
+
+## A horizontal metal band with a bright upper edge, a shaded lower edge and rivets.
+static func _band(c: CanvasItem, rect: Rect2, metal: Array, line: Color, rivet_xs: Array) -> void:
+	_paint(c, _rrect(rect, rect.size.y * 0.3, 3), rect, metal, _dark(metal[2], 0.45), maxf(1.5, rect.size.y * 0.16), 0.15)
+	c.draw_line(Vector2(rect.position.x + 4.0, rect.position.y + rect.size.y * 0.28), Vector2(rect.end.x - 4.0, rect.position.y + rect.size.y * 0.28),
+		Color(1, 1, 1, 0.45), maxf(1.0, rect.size.y * 0.14))
+	for x in rivet_xs:
+		_rivet(c, Vector2(float(x), rect.get_center().y), rect.size.y * 0.26, metal, line)
+
+
+## Wavy grain and a knot or two on the planks.
+static func _grain(c: CanvasItem, body: Rect2, line: Color) -> void:
+	var w := body.size.x
+	for k in 6:
+		var x := body.position.x + w * (float(k) + 0.5) / 6.0
+		var pts := PackedVector2Array()
+		for i in 7:
+			var u := float(i) / 6.0
+			pts.append(Vector2(x + sin(u * 5.0 + float(k) * 2.1) * w * 0.018, body.position.y + body.size.y * (0.14 + 0.72 * u)))
+		c.draw_polyline(pts, Color(line.r, line.g, line.b, 0.25), maxf(1.0, w * 0.007), true)
+	for knot in [Vector2(0.08, 0.62), Vector2(0.58, 0.38), Vector2(0.92, 0.7)]:
+		var at: Vector2 = body.position + body.size * (knot as Vector2)
+		c.draw_circle(at, w * 0.015, Color(line.r, line.g, line.b, 0.45))
+		c.draw_arc(at, w * 0.028, 0.0, TAU, 10, Color(line.r, line.g, line.b, 0.22), 1.0, true)
+
+
 # ---------- the lid ----------
 
 ## Dome outline in lid space: bottom edge at y = 0, 2 * hw wide, rising to y = -lid_h.
@@ -183,7 +214,7 @@ static func draw(c: CanvasItem, center: Vector2, w: float, chest_id: String, ope
 	var wood: Array = lk["wood"]
 	var metal: Array = lk["metal"]
 	var line: Color = lk["line"]
-	var lw := maxf(2.0, w * 0.03)
+	var lw := maxf(2.2, w * 0.046)  # as heavy as the outlines of the painted pieces
 	var h := w * 0.84
 	var body_h := h * 0.5
 	var body := Rect2(Vector2(center.x - w * 0.5, center.y + h * 0.04), Vector2(w, body_h))
@@ -223,22 +254,40 @@ static func draw(c: CanvasItem, center: Vector2, w: float, chest_id: String, ope
 		c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if open_t > 0.0:
 		_draw_heap(c, body, w, open_t, t, lk)
+	# Stubby metal feet.
+	for fx in [-0.46, 0.31]:
+		var foot := Rect2(Vector2(center.x + w * float(fx), body.end.y - w * 0.045), Vector2(w * 0.15, w * 0.105))
+		_paint(c, _rrect(foot, w * 0.03, 3), foot, metal, line, lw * 0.7, 0.4)
 	# Body: shaded planks with a dark outline.
 	_paint(c, _rrect(body, w * 0.05, 5), body, wood, line, lw, 0.28)
+	for k in 6:  # neighboring planks differ a little, and each one rounds off to the right
+		var px := body.position.x + w * float(k) / 6.0
+		var y0 := body.position.y + 3.0
+		var y1 := body.end.y - 3.0
+		if k % 2 == 1:
+			c.draw_rect(Rect2(Vector2(px, y0), Vector2(w / 6.0, y1 - y0)), Color(1, 1, 1, 0.07))
+		_fade(c, px + w * 0.08, px + w / 6.0 - 1.0, y0, y1, Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.2))
 	# Vertical staves, like the barrels'.
 	for k in range(1, 6):
 		var sx := body.position.x + w * float(k) / 6.0
 		c.draw_line(Vector2(sx, body.position.y + 4.0), Vector2(sx, body.end.y - 4.0), Color(line.r, line.g, line.b, 0.5), maxf(1.2, w * 0.011))
 		c.draw_line(Vector2(sx + 1.8, body.position.y + 4.0), Vector2(sx + 1.8, body.end.y - 4.0), Color(1, 1, 1, 0.13), 1.2)
-	for k in 4:  # a little painted grain
-		var gx := body.position.x + w * (0.1 + 0.22 * float(k))
-		c.draw_line(Vector2(gx, body.position.y + body_h * 0.3), Vector2(gx + w * 0.07, body.position.y + body_h * 0.36), Color(line.r, line.g, line.b, 0.22), 1.5)
-		c.draw_line(Vector2(gx + w * 0.03, body.position.y + body_h * 0.62), Vector2(gx + w * 0.1, body.position.y + body_h * 0.57), Color(1, 1, 1, 0.12), 1.5)
+	_grain(c, body, line)
 	# Highlight along the top edge, shadow at the foot.
 	c.draw_line(Vector2(body.position.x + w * 0.06, body.position.y + 3.0), Vector2(body.end.x - w * 0.06, body.position.y + 3.0), Color(1, 1, 1, 0.3), maxf(1.5, w * 0.018))
 	c.draw_rect(Rect2(Vector2(body.position.x + 3.0, body.end.y - w * 0.045), Vector2(w - 6.0, w * 0.04)), Color(0, 0, 0, 0.22))
+	# Light from the left, shadow on the right side and under the lid.
+	_fade(c, body.position.x + 3.0, body.position.x + w * 0.2, body.position.y + 3.0, body.end.y - 3.0, Color(1, 1, 1, 0.2), Color(1, 1, 1, 0.0))
+	_fade(c, body.end.x - w * 0.26, body.end.x - 3.0, body.position.y + 3.0, body.end.y - 3.0, Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.34))
+	var band_h := w * 0.075
+	var rivet_xs := [center.x - w * 0.45, center.x + w * 0.45]
+	if open_t > 0.15:  # with the lid up the body shows its own top rim
+		_band(c, Rect2(Vector2(body.position.x - w * 0.012, body.position.y - 1.0), Vector2(w * 1.024, band_h)), metal, line, rivet_xs)
+	else:
+		c.draw_rect(Rect2(Vector2(body.position.x + 3.0, body.position.y + 1.0), Vector2(w - 6.0, w * 0.045)), Color(0, 0, 0, 0.28))
+	_band(c, Rect2(Vector2(body.position.x - w * 0.012, body.end.y - band_h), Vector2(w * 1.024, band_h)), metal, line, rivet_xs)
 	# Two steel hoops with domed rivets.
-	var bw := w * 0.1
+	var bw := w * 0.11
 	for sx in [-0.34, 0.34]:
 		_hoop(c, center.x + w * float(sx), body.position.y - 1.0, body.end.y + 1.0, bw, metal, line, 3)
 	_tier_front(c, body, w, chest_id, lk, line)
@@ -251,20 +300,36 @@ static func draw(c: CanvasItem, center: Vector2, w: float, chest_id: String, ope
 		for k in range(1, 6):
 			var sx2 := -hw + hw * 2.0 * float(k) / 6.0
 			c.draw_line(Vector2(sx2, -3.0), Vector2(sx2, _lid_top(sx2, hw, lid_h) + 4.0), Color(line.r, line.g, line.b, 0.45), 1.5)
+		# The dome turns away from the light toward the right.
+		for i in 10:
+			var xa := hw * (0.36 + 0.062 * float(i))
+			var xb := hw * (0.36 + 0.062 * float(i + 1))
+			c.draw_polygon(PackedVector2Array([Vector2(xa, _lid_top(xa, hw, lid_h) + 2.0), Vector2(xb, _lid_top(xb, hw, lid_h) + 2.0), Vector2(xb, -2.0), Vector2(xa, -2.0)]),
+				PackedColorArray([Color(0, 0, 0, 0.035 * i), Color(0, 0, 0, 0.035 * (i + 1)), Color(0, 0, 0, 0.035 * (i + 1)), Color(0, 0, 0, 0.035 * i)]))
 		# Glossy highlight sweeping over the top left of the dome.
 		var gloss := PackedVector2Array()
 		for i in range(2, 11):
 			var u := PI * float(i) / 18.0
 			gloss.append(Vector2(-hw * 0.92 * cos(u), -lid_h * (0.40 + 0.60 * sin(u)) * 0.9 - 3.0))
 		c.draw_polyline(gloss, Color(1, 1, 1, 0.38), maxf(2.0, w * 0.03), true)
+		# The metal rim along the bottom edge of the lid, then the straps over it.
+		_band(c, Rect2(Vector2(-hw - w * 0.008, -w * 0.075), Vector2(hw * 2.0 + w * 0.016, w * 0.075)), metal, line, [-hw * 0.88, 0.0, hw * 0.88])
 		for sx in [-0.34, 0.34]:
 			_lid_strap(c, w * float(sx), bw, hw, lid_h, metal, line, true)
-		# The lip along the bottom edge of the lid.
-		c.draw_line(Vector2(-hw + 2.0, -2.0), Vector2(hw - 2.0, -2.0), Color(line.r, line.g, line.b, 0.6), maxf(1.5, w * 0.016))
 		_tier_lid(c, hw, lid_h, w, chest_id, lk)
 		c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		if open_t < 0.3:
 			_lock(c, Vector2(center.x, hinge_y + 2.0), w, chest_id, lk, t)
+	if open_t > 0.6:  # a few coins spill onto the ground
+		var spill := clampf((open_t - 0.6) / 0.4, 0.0, 1.0)
+		var coin: Color = lk["coin"]
+		for sp in [Vector3(-0.56, 0.0, 0.055), Vector3(-0.47, 0.05, 0.045), Vector3(0.5, 0.045, 0.05), Vector3(0.58, -0.005, 0.04), Vector3(0.08, 0.075, 0.05)]:
+			var at := Vector2(center.x + w * sp.x, body.end.y + w * sp.y)
+			c.draw_set_transform(at, 0.0, Vector2(1.0, 0.65))
+			c.draw_circle(Vector2.ZERO, w * sp.z * spill, line)
+			c.draw_circle(Vector2.ZERO, w * sp.z * 0.8 * spill, coin.darkened(0.08))
+			c.draw_circle(Vector2(-1, -2), w * sp.z * 0.45 * spill, coin.lightened(0.3))
+			c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	# Glints on the metal.
 	var tw := 0.5 + 0.5 * sin(t * 2.2 + w)
 	_glint(c, Vector2(center.x - w * 0.34, body.position.y + body_h * 0.3), w * 0.035, 0.5 + 0.4 * tw)
@@ -277,7 +342,7 @@ static func draw(c: CanvasItem, center: Vector2, w: float, chest_id: String, ope
 
 ## The padlock: gold like the map chest's, or a skull for the Vault, a gem for the Coffer, a crown for the Gilded.
 static func _lock(c: CanvasItem, p: Vector2, w: float, chest_id: String, lk: Dictionary, t: float) -> void:
-	var r := w * 0.085
+	var r := w * 0.1
 	if chest_id == "vault":
 		var pulse := 0.6 + 0.4 * sin(t * 3.0)
 		c.draw_circle(p + Vector2(0, r * 0.3), r * 1.9, Color(0.24, 0.88, 0.78, 0.18 * pulse))

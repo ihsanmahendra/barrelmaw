@@ -28,6 +28,10 @@ islands); files are in
 (`design/art-source/make_barrels.py`), and cannonballs are a neutral light texture tinted in code. If an art file is missing, the game falls
 back to the drawn vector versions in `scripts/ui/pirate_art.gd` and `beach_bg.gd`.
 
+Drawn in code in the same painted style: the card icons (`card_art.gd`, one silhouette per kind of effect), the
+chests (`chest_art.gd`), the win and lose scene (`result_art.gd`) and the reefs, ships and sea creatures on the
+map (`map_decor.gd`).
+
 ## Rules in short
 A turn has two steps: pick one card (tap it to preview, then Play) or skip, then press FIRE. The NEXT
 cannonball smashes barrels of its own color, as many as its number. White outlines preview exactly which

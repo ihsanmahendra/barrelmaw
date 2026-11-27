@@ -354,14 +354,14 @@ func _make_mute_button() -> void:
 	layer.layer = 10
 	add_child(layer)
 	mute_button = Button.new()
-	mute_button.text = "Sound on"
+	mute_button.tooltip_text = "Sound on"
 	mute_button.focus_mode = Control.FOCUS_NONE
 	mute_button.flat = true
-	mute_button.add_theme_font_size_override("font_size", 16)
-	mute_button.add_theme_color_override("font_color", Color.WHITE)
-	mute_button.add_theme_color_override("font_outline_color", Color(0.1, 0.07, 0.05, 0.9))
-	mute_button.add_theme_constant_override("outline_size", 4)
-	mute_button.position = Vector2(8, 4)
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		mute_button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+	mute_button.position = Vector2(8, 2)
+	mute_button.size = Vector2(44, 29)
+	mute_button.draw.connect(_draw_mute)
 	mute_button.pressed.connect(_toggle_mute)
 	layer.add_child(mute_button)
 	# Options (gear) button, shown on the battle screen only.
@@ -396,7 +396,7 @@ func _apply_safe_area() -> void:
 		screen.add_theme_constant_override("margin_top", 30 + int(ins.y))  # 30 leaves room for the sound toggle
 		screen.add_theme_constant_override("margin_bottom", 16 + int(ins.w))
 	if mute_button != null:
-		mute_button.position = Vector2(8.0 + ins.x, 4.0 + ins.y)
+		mute_button.position = Vector2(8.0 + ins.x, 2.0 + ins.y)
 	if gear_button != null:
 		gear_button.offset_right = -10.0 - ins.z
 		gear_button.offset_left = -58.0 - ins.z
@@ -406,9 +406,32 @@ func _apply_safe_area() -> void:
 
 func _toggle_mute() -> void:
 	Sfx.muted = not Sfx.muted
-	mute_button.text = "Sound off" if Sfx.muted else "Sound on"
+	mute_button.tooltip_text = "Sound off" if Sfx.muted else "Sound on"
+	mute_button.queue_redraw()
 	music.refresh()
 	sfx.play("click")
+
+
+## Small wooden plank with a speaker: sound waves when on, a red cross when off.
+func _draw_mute() -> void:
+	var b := mute_button
+	var pressed := b.is_pressed() and b.is_hovered()
+	var back := StyleBoxFlat.new()  # too small for the plank texture
+	back.bg_color = WOOD.darkened(0.2) if pressed else WOOD
+	back.border_color = Color("3a1f12")
+	back.set_border_width_all(2)
+	back.border_width_bottom = 4
+	back.set_corner_radius_all(9)
+	b.draw_style_box(back, Rect2(Vector2.ZERO, b.size))
+	var c := b.size / 2.0 + Vector2(-5, -1)
+	b.draw_colored_polygon(PackedVector2Array([c + Vector2(-8, -4), c + Vector2(-3, -4), c + Vector2(4, -10), c + Vector2(4, 10), c + Vector2(-3, 4), c + Vector2(-8, 4)]), UiKit.CREAM)
+	if Sfx.muted:
+		var x := c + Vector2(12, 0)
+		for d in [Vector2(4, 4), Vector2(4, -4)]:
+			b.draw_line(x - d, x + d, Color("ff6b6b"), 3.0, true)
+	else:
+		for r in [7.0, 12.0]:
+			b.draw_arc(c + Vector2(4, 0), r, -0.75, 0.75, 10, UiKit.CREAM, 2.4, true)
 
 
 ## Wooden square with a gear icon.
@@ -1607,7 +1630,9 @@ func show_unlock(index: int) -> void:
 ## Result after a stage: stars and stats on a win, retry options on a loss.
 func show_stage_result(won: bool) -> void:
 	var box := _new_screen()
-	box.add_child(_spacer())
+	box.add_child(ResultArt.new(won))
+	if not won and beach != null:
+		beach.modulate = Color(0.68, 0.72, 0.84)  # the sky clouds over; _new_screen() clears it again
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", UiKit.parchment_style())
 	box.add_child(panel)

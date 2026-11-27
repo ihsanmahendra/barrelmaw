@@ -337,6 +337,14 @@ func _finish_sequence(cs: float, origin: Vector2) -> void:
 	sequence_done.emit(n)
 
 
+## The tile color behind a barrel: a deep shade of its color, so the bright barrel stands off it. A dark
+## barrel gets a paler tile instead, or it would look like a hole in the picture.
+func _tile_color(col: Color) -> Color:
+	var base := col.lightened(0.5) if col.get_luminance() < 0.35 else col.darkened(0.48)
+	base.a = 0.78
+	return base
+
+
 ## Tile under a barrel. Only the corners on the outside edge of the picture are rounded, so
 ## neighbouring tiles melt into one smooth shape.
 func _draw_silhouette_tile(bd: Board, x: int, y: int, rect: Rect2, col: Color, cs: float) -> void:
@@ -356,6 +364,12 @@ func _draw_silhouette_tile(bd: Board, x: int, y: int, rect: Rect2, col: Color, c
 
 func _draw_barrel_cell(r: Rect2, col: Color) -> void:
 	PirateArt.draw_barrel(self, r.get_center(), r.size.x * 0.94, r.size.y, col)
+
+
+## Special icons are drawn a little larger than their cell so they read on a crowded board (the iron
+## plate already covers its whole cell).
+func _icon_size(cs: float, kind: String) -> float:
+	return cs if kind == "iron" else cs * 1.18
 
 
 func _cell_rect(x: int, y: int, cs: float, origin: Vector2) -> Rect2:
@@ -398,9 +412,8 @@ func _draw() -> void:
 					g.a = 0.14
 					_fill(r, g, cs * 0.3)
 				continue
-			var base_col := GameData.color_of(letter)
-			base_col.a = 0.5  # a color tile under each barrel so the whole picture reads as one shape
-			_draw_silhouette_tile(bd, x, y, r.grow(GAP / 2.0), base_col, cs)
+			# A color tile under each barrel so the whole picture reads as one shape.
+			_draw_silhouette_tile(bd, x, y, r.grow(GAP / 2.0), _tile_color(GameData.color_of(letter)), cs)
 			_draw_barrel_cell(r, GameData.color_of(letter))
 	for bl in _blasts:
 		var k: float = float(bl["t"]) / 0.45
@@ -477,11 +490,11 @@ func _draw_overlay() -> void:
 		for x in bd.w:
 			var kind := bd.get_special(x, y)
 			if kind != "":
-				SpecialArt.draw_special(_overlay, origin + (Vector2(x, y) + Vector2(0.5, 0.5)) * cs, cs, kind, bd.get_hp(x, y), now)
+				SpecialArt.draw_special(_overlay, origin + (Vector2(x, y) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, kind), kind, bd.get_hp(x, y), now)
 	for pc in _pending.keys():
 		var pk: String = _pending[pc][2]
 		if pk != "":
-			SpecialArt.draw_special(_overlay, origin + (Vector2(pc) + Vector2(0.5, 0.5)) * cs, cs, pk, 1, now)
+			SpecialArt.draw_special(_overlay, origin + (Vector2(pc) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, pk), pk, 1, now)
 	if _seq_active or (preview.is_empty() and card_preview.is_empty()):
 		_overlay.draw_set_transform(Vector2.ZERO)
 		return
