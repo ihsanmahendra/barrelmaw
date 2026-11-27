@@ -4,7 +4,7 @@ extends SceneTree
 ##   godot --path . --resolution 540x960 --script res://tests/perf_budget_test.gd   (needs a window, not --headless)
 
 # Draw calls per frame. Measured values were roughly two thirds of these when the budgets were set.
-const BUDGETS: Dictionary = {"menu": 220, "map": 170, "treasury": 160, "cargo": 220, "battle": 700}
+const BUDGETS: Dictionary = {"menu": 220, "map": 170, "treasury": 160, "cargo": 220, "battle": 330}
 
 var failures: int = 0
 var main: Control
@@ -74,6 +74,26 @@ func _check_animated_cards() -> void:
 	check(BakedArt._cache.size() == before, "scaling cards made %d new textures" % (BakedArt._cache.size() - before))
 
 
+## Debris, flashes and smoke of a big volley must not each cost a draw call.
+func _check_volley() -> void:
+	var board: BoardView = main.board_view
+	var quiet := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+	var most := 0
+	for i in 20:
+		board._parts.clear()
+		board._flashes.clear()
+		for k in 20:
+			board._burst(Vector2(30 + (k % 8) * 40, 40 + (k / 8) * 40), Color.RED, 36.0, 5)
+			board._flashes[Vector2i(k % 8, k / 8)] = [0.05, Color.RED]
+		board.queue_redraw()
+		await process_frame
+		most = maxi(most, RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME))
+	board._parts.clear()
+	board._flashes.clear()
+	board.queue_redraw()
+	check(most <= quiet + 20, "a big volley adds %d draw calls" % (most - quiet))
+
+
 ## Share of pixels that differ clearly between art drawn directly and from its cached texture.
 func _difference(paint_direct: Callable, paint_cached: Callable) -> float:
 	var shots: Array = []
@@ -127,6 +147,7 @@ func _run() -> void:
 	await _screen("battle", func() -> void: main._begin_stage(48, Stages.deck_for(48)))
 	_check_card_processing(main.screen)
 	await _check_animated_cards()
+	await _check_volley()
 	main.visible = false
 	await _check_cached_art()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://perf_budget_save.cfg"))
