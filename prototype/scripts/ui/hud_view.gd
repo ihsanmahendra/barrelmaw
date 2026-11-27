@@ -51,6 +51,9 @@ func _draw() -> void:
 		draw_style_box(UiKit.plank_style(UiKit.WOOD), plank.grow(0))
 		var fs := 21
 		var tw := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		while tw > plank.size.x - 28.0 and fs > 13:  # long picture names with a rule name
+			fs -= 1
+			tw = font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var pos := Vector2(plank.position.x + (plank.size.x - tw) / 2.0, 25.0)
 		draw_string_outline(font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, Color(0.1, 0.06, 0.03, 0.9))
 		draw_string(font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, UiKit.CREAM)

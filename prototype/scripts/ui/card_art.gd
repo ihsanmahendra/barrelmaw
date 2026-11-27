@@ -80,6 +80,16 @@ static func draw(c: CanvasItem, rect: Rect2, card: Dictionary) -> void:
 		_ball(c, mid + Vector2(-23, -4), 14.0, BALL_RED)
 		_ball(c, mid + Vector2(-5, 6), 16.0, BALL_RED)
 		_number(c, mid + Vector2(17, 11), "x2", 30)
+	elif kinds.has("dup"):  # before "ammo": Clone also adds hits but must keep its own picture
+		c.draw_circle(mid + Vector2(-22, 0), 18.0, Color(0.94, 0.28, 0.44, 0.35))
+		_dashed_ring(c, mid + Vector2(-22, 0), 18.0)
+		_arrow(c, mid + Vector2(-6, 0), mid + Vector2(9, 0), FIRE_LIGHT)
+		_ball(c, mid + Vector2(25, 0), 18.0, BALL_RED)
+		_sparkle(c, mid + Vector2(41, -15), 7.0, FIRE_LIGHT)
+		if ammo > 0:
+			_number(c, mid + Vector2(25, 20), "+%d" % ammo, 18)
+	elif kinds.has("extra_play") and ammo > 0:  # Second Wind
+		_extra_play_art(c, mid, "+%d" % ammo)
 	elif kinds.has("ammo"):
 		var with_draw := kinds.has("draw")
 		var ball_at := mid + Vector2(-30.0 if with_draw else -17.0, 0)
@@ -90,12 +100,6 @@ static func draw(c: CanvasItem, rect: Rect2, card: Dictionary) -> void:
 			_number(c, mid + Vector2(-9, 12), "+%d" % ammo, 28)
 		else:
 			_number(c, mid + Vector2(9, 12), "+%d" % ammo, 34)
-	elif kinds.has("dup"):
-		c.draw_circle(mid + Vector2(-22, 0), 18.0, Color(0.94, 0.28, 0.44, 0.35))
-		_dashed_ring(c, mid + Vector2(-22, 0), 18.0)
-		_arrow(c, mid + Vector2(-6, 0), mid + Vector2(9, 0), FIRE_LIGHT)
-		_ball(c, mid + Vector2(25, 0), 18.0, BALL_RED)
-		_sparkle(c, mid + Vector2(41, -15), 7.0, FIRE_LIGHT)
 	elif kinds.has("add_shooter") and ball_count > 1:
 		var col := BALL_PALE if wild_ball else BALL_RED  # pale balls are wild
 		_ball(c, mid + Vector2(-15, -4), 18.0, col, str(count), 20)
@@ -126,14 +130,24 @@ static func draw(c: CanvasItem, rect: Rect2, card: Dictionary) -> void:
 		_cards(c, mid + Vector2(-17, 0), maxi(2, count + 1), 1.0)
 		_number(c, mid + Vector2(17, 12), "+%d" % count, 30)
 	elif kinds.has("extra_play"):
-		for i in 3:  # a gust of wind behind the card
-			var y := mid.y - 11.0 + i * 11.0
-			var x := mid.x - 52.0 + (6.0 if i == 1 else 0.0)
-			c.draw_line(Vector2(x, y), Vector2(x + 22.0, y), OUT, 5.0, true)
-			c.draw_line(Vector2(x + 1.0, y), Vector2(x + 21.0, y), Color("bfe9ff"), 2.5, true)
-		_cards(c, mid + Vector2(-10, 0), 1, 1.12)
-		_shaded(c, PackedVector2Array([mid + Vector2(-16, -10), mid + Vector2(0, 0), mid + Vector2(-16, 10)]), FIRE_LIGHT, FIRE, 2.0)
-		_number(c, mid + Vector2(17, 12), "+1", 30)
+		_extra_play_art(c, mid, "+1")
+
+
+## A fanned hand of `n` cards, used by the Short Hand pop-up.
+static func draw_hand(c: CanvasItem, mid: Vector2, n: int, size_scale: float) -> void:
+	_cards(c, mid, n, size_scale)
+
+
+## "Play another card": a card pushed along by a gust of wind.
+static func _extra_play_art(c: CanvasItem, mid: Vector2, label: String) -> void:
+	for i in 3:  # a gust of wind behind the card
+		var y := mid.y - 11.0 + i * 11.0
+		var x := mid.x - 52.0 + (6.0 if i == 1 else 0.0)
+		c.draw_line(Vector2(x, y), Vector2(x + 22.0, y), OUT, 5.0, true)
+		c.draw_line(Vector2(x + 1.0, y), Vector2(x + 21.0, y), Color("bfe9ff"), 2.5, true)
+	_cards(c, mid + Vector2(-10, 0), 1, 1.12)
+	_shaded(c, PackedVector2Array([mid + Vector2(-16, -10), mid + Vector2(0, 0), mid + Vector2(-16, 10)]), FIRE_LIGHT, FIRE, 2.0)
+	_number(c, mid + Vector2(17, 12), label, 30)
 
 
 # ---------- building blocks ----------

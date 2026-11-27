@@ -18,7 +18,9 @@ func _draw() -> void:
 			kinds.append(k)
 	if kinds.is_empty():
 		return
-	var cell := 78.0
+	# Iron Hull stages can have 20 or more iron barrels: wider chips when any count has two digits.
+	var wide := kinds.any(func(k: String) -> bool: return int(counts[k]) >= 10)
+	var cell := 86.0 if wide else 78.0
 	var start := (size.x - cell * kinds.size()) / 2.0
 	var font := UiKit.bold_font()
 	for i in kinds.size():
@@ -32,5 +34,7 @@ func _draw() -> void:
 		draw_style_box(sb, Rect2(c - Vector2(20, 22), Vector2(cell - 6.0, 44)))
 		SpecialArt.draw_special(self, c, 34.0, kind, 2, float(Time.get_ticks_msec()) / 1000.0)
 		var txt := "x%d" % int(counts[kind])
-		draw_string_outline(font, c + Vector2(24, 7), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(0, 0, 0, 0.7))
-		draw_string(font, c + Vector2(24, 7), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, UiKit.CREAM)
+		var at := c + Vector2(20 if wide else 24, 7)
+		var fs := 16 if int(counts[kind]) >= 10 else 18
+		draw_string_outline(font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Color(0, 0, 0, 0.7))
+		draw_string(font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, UiKit.CREAM)

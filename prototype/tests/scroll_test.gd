@@ -168,9 +168,9 @@ func _run() -> void:
 	await _scroll_case("Treasury, from the edge", sc, null if sc == null else sc)
 	check(Packs.count(st, "crate") == chests_before and (st["pending"] as Array).is_empty() and int(st["doubloons"]) == 5000, "Treasury: dragging over buttons opened or bought nothing")
 	# A plain tap still presses the button (and a drag just before did not leave it half pressed).
-	var buy_crate := _first(sc, func(n): return n is Button and (n as Button).text == "Buy 150")
+	var buy_crate := _first(sc, func(n): return n is Button and (n as Button).text == "Buy 200")
 	await _tap(buy_crate)
-	check(Packs.count(st, "crate") == chests_before + 1 and int(st["doubloons"]) == 5000 - 150, "Treasury: a tap on Buy still buys (crates %d, gold %d)" % [Packs.count(st, "crate"), int(st["doubloons"])])
+	check(Packs.count(st, "crate") == chests_before + 1 and int(st["doubloons"]) == 5000 - 200, "Treasury: a tap on Buy still buys (crates %d, gold %d)" % [Packs.count(st, "crate"), int(st["doubloons"])])
 	st["doubloons"] = 5000
 	Packs.grant(st, "crate", -1)
 	# ---- Cargo Hold ----

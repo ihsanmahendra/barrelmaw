@@ -5,11 +5,11 @@
    "id": "power_shot",
    "name": "Power Shot",
    "rarity": "common",
-   "desc": "+2 hits for the next cannonball",
+   "desc": "+3 hits for the next cannonball",
    "effects": [
     {
      "kind": "ammo",
-     "n": 2
+     "n": 3
     }
    ],
    "levels": [
@@ -38,11 +38,11 @@
    "id": "heavy_round",
    "name": "Heavy Round",
    "rarity": "common",
-   "desc": "+3 hits for the next cannonball",
+   "desc": "+5 hits for the next cannonball",
    "effects": [
     {
      "kind": "ammo",
-     "n": 3
+     "n": 5
     }
    ],
    "levels": [
@@ -247,10 +247,14 @@
    "id": "quick_draw",
    "name": "Quick Draw",
    "rarity": "common",
-   "desc": "Draw 1 more card",
+   "desc": "Draw 1 card and play 1 more",
    "effects": [
     {
      "kind": "draw",
+     "n": 1
+    },
+    {
+     "kind": "extra_play",
      "n": 1
     }
    ],
@@ -345,10 +349,14 @@
    "id": "rapid_fire",
    "name": "Rapid Fire",
    "rarity": "common",
-   "desc": "Double the hits of the next cannonball",
+   "desc": "+1 hit, then double the hits",
    "effects": [
     {
      "kind": "double"
+    },
+    {
+     "kind": "ammo",
+     "n": 1
     }
    ],
    "levels": [
@@ -372,15 +380,15 @@
    "id": "tidy_up",
    "name": "Tidy Up",
    "rarity": "common",
-   "desc": "Remove 1 barrel and +1 hit",
+   "desc": "Remove 2 barrels and +2 hits",
    "effects": [
     {
      "kind": "clear_random",
-     "n": 1
+     "n": 2
     },
     {
      "kind": "ammo",
-     "n": 1
+     "n": 2
     }
    ],
    "levels": [
@@ -409,11 +417,11 @@
    "id": "sniper",
    "name": "Sniper",
    "rarity": "common",
-   "desc": "+1 hit and draw 1 card",
+   "desc": "+3 hits and draw 1 card",
    "effects": [
     {
      "kind": "ammo",
-     "n": 1
+     "n": 3
     },
     {
      "kind": "draw",
@@ -474,11 +482,15 @@
    "id": "diagonal",
    "name": "Diagonal",
    "rarity": "rare",
-   "desc": "Each hit clears both diagonals",
+   "desc": "Each hit clears both diagonals; +2 hits",
    "effects": [
     {
      "kind": "shape",
      "shape": "diag"
+    },
+    {
+     "kind": "ammo",
+     "n": 2
     }
    ],
    "levels": [
@@ -502,11 +514,11 @@
    "id": "color_bomb",
    "name": "Color Bomb",
    "rarity": "rare",
-   "desc": "Remove 5 barrels of the biggest color",
+   "desc": "Remove 8 barrels of the biggest color",
    "effects": [
     {
      "kind": "clear_color",
-     "n": 5
+     "n": 8
     }
    ],
    "levels": [
@@ -530,10 +542,14 @@
    "id": "clone",
    "name": "Clone",
    "rarity": "rare",
-   "desc": "Copy the first cannonball",
+   "desc": "Copy the first cannonball; +2 hits",
    "effects": [
     {
      "kind": "dup"
+    },
+    {
+     "kind": "ammo",
+     "n": 2
     }
    ],
    "levels": [
@@ -562,11 +578,11 @@
    "id": "overclock",
    "name": "Overclock",
    "rarity": "rare",
-   "desc": "+4 hits and draw 1 card",
+   "desc": "+6 hits and draw 1 card",
    "effects": [
     {
      "kind": "ammo",
-     "n": 4
+     "n": 6
     },
     {
      "kind": "draw",
@@ -599,11 +615,19 @@
    "id": "second_wind",
    "name": "Second Wind",
    "rarity": "rare",
-   "desc": "Play one more card this turn",
+   "desc": "Play 1 more card, draw 1, +2 hits",
    "effects": [
     {
      "kind": "extra_play",
      "n": 1
+    },
+    {
+     "kind": "draw",
+     "n": 1
+    },
+    {
+     "kind": "ammo",
+     "n": 2
     }
    ],
    "levels": [
@@ -694,11 +718,11 @@
    "id": "arsenal",
    "name": "Arsenal",
    "rarity": "rare",
-   "desc": "Add a new 5-hit cannonball to the front",
+   "desc": "Add a new 4-hit cannonball to the front",
    "effects": [
     {
      "kind": "add_shooter",
-     "n": 5
+     "n": 4
     }
    ],
    "levels": [
@@ -727,11 +751,15 @@
    "id": "triple_draw",
    "name": "Triple Draw",
    "rarity": "rare",
-   "desc": "Draw 2 more cards",
+   "desc": "Draw 2 cards and play 1 more",
    "effects": [
     {
      "kind": "draw",
      "n": 2
+    },
+    {
+     "kind": "extra_play",
+     "n": 1
     }
    ],
    "levels": [
@@ -791,11 +819,15 @@
    "id": "blast",
    "name": "Blast",
    "rarity": "epic",
-   "desc": "Each hit clears a 3x3 area",
+   "desc": "+1 hit; each hit clears a 3x3 area",
    "effects": [
     {
      "kind": "shape",
      "shape": "blast"
+    },
+    {
+     "kind": "ammo",
+     "n": 1
     }
    ],
    "levels": [
@@ -850,11 +882,11 @@
    "id": "color_storm",
    "name": "Color Storm",
    "rarity": "epic",
-   "desc": "Remove 8 barrels of the biggest color",
+   "desc": "Remove 13 barrels of the biggest color",
    "effects": [
     {
      "kind": "clear_color",
-     "n": 8
+     "n": 13
     }
    ],
    "levels": [
@@ -878,7 +910,7 @@
    "id": "pierce_blast",
    "name": "Heavy Blast",
    "rarity": "epic",
-   "desc": "+2 hits; each hit clears a 3x3 area",
+   "desc": "+4 hits; each hit clears a 3x3 area",
    "effects": [
     {
      "kind": "shape",
@@ -886,7 +918,7 @@
     },
     {
      "kind": "ammo",
-     "n": 2
+     "n": 4
     }
    ],
    "levels": [
@@ -910,7 +942,7 @@
    "id": "double_blast",
    "name": "Double Blast",
    "rarity": "epic",
-   "desc": "Double hits; each hit clears 3x3",
+   "desc": "+1 hit, double hits; each hit clears 3x3",
    "effects": [
     {
      "kind": "double"
@@ -918,6 +950,10 @@
     {
      "kind": "shape",
      "shape": "blast"
+    },
+    {
+     "kind": "ammo",
+     "n": 1
     }
    ],
    "levels": [
@@ -941,10 +977,14 @@
    "id": "roulette",
    "name": "Roulette",
    "rarity": "epic",
-   "desc": "A random strong effect",
+   "desc": "A random strong effect and +2 hits",
    "effects": [
     {
      "kind": "chaos"
+    },
+    {
+     "kind": "ammo",
+     "n": 2
     }
    ],
    "levels": [
@@ -973,7 +1013,7 @@
    "id": "prism",
    "name": "Prism",
    "rarity": "legendary",
-   "desc": "Any color, 3x3 clear, +3 hits",
+   "desc": "Any color, 3x3 clear, +1 hit",
    "effects": [
     {
      "kind": "wild"
@@ -984,7 +1024,7 @@
     },
     {
      "kind": "ammo",
-     "n": 3
+     "n": 1
     }
    ],
    "levels": [
@@ -1064,11 +1104,11 @@
    "id": "davy_ledger",
    "name": "Jones' Ledger",
    "rarity": "transcended",
-   "desc": "Add two 3-hit cannonballs that can hit any color",
+   "desc": "Add two 2-hit cannonballs that can hit any color",
    "effects": [
     {
      "kind": "add_shooter",
-     "n": 3,
+     "n": 2,
      "count": 2,
      "wild": true
     }

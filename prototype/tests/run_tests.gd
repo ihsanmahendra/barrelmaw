@@ -20,6 +20,8 @@ func _init() -> void:
 	test_preview_matches_play()
 	test_unlocks()
 	test_specials()
+	test_elite_rules()
+	test_design_values()
 	test_menu_data()
 	test_save_data()
 	var packs := PackTests.new()
@@ -106,9 +108,9 @@ func test_tutorial_script() -> void:
 	var b := Battle.new(rows, GameData.starter_deck, 1.0, 3, 1, {"queue": queue, "hands": hands})
 	check(b.hand == ["power_shot", "skip", "wildcard"], "tutorial hand 1")
 	b.play_card(0)  # Power Shot
-	check(b.preview_targets().size() == 6, "power shot preview is 6, got %d" % b.preview_targets().size())
+	check(b.preview_targets().size() == 7, "power shot preview is 7, got %d" % b.preview_targets().size())
 	b.fire()
-	check(b.board.count() == 14 - 2 + 0 or b.board.count() == 14, "tutorial board after fire: %d" % b.board.count())
+	check(b.board.count() == 13, "tutorial board after fire: %d" % b.board.count())
 	check(b.hand[0] == "row_strike", "tutorial hand 2")
 	b.play_card(0)  # Row Strike
 	b.fire()
@@ -187,12 +189,78 @@ func test_specials() -> void:
 		var total := 0
 		for k in Stages.specials_for(i):
 			total += int(Stages.specials_for(i)[k])
-		var cells := 0
-		for r in Stages.picture(i)["rows"]:
-			for ch in String(r):
-				if ch != ".":
-					cells += 1
-		check(total <= cells / 4, "stage %d has too many specials (%d of %d cells)" % [i + 1, total, cells])
+		var cells := _barrels(i)
+		var packed := ["keg", "iron"].has(Stages.elite_modifier(i))  # these rules may fill 40%
+		var limit := cells * 2 / 5 if packed else cells / 4
+		check(total <= limit, "stage %d has too many specials (%d of %d cells)" % [i + 1, total, cells])
+
+
+func _barrels(index: int) -> int:
+	var n := 0
+	for r in Stages.picture(index)["rows"]:
+		for ch in String(r):
+			if ch != ".":
+				n += 1
+	return n
+
+
+## Powder Keg, Iron Hull and Short Hand (design/balance/rebalance.md 3.3 and 4).
+func test_elite_rules() -> void:
+	var count := 0
+	for i in Stages.TOTAL:
+		var mod := Stages.elite_modifier(i)
+		check(Stages.is_elite(i) == (mod != ""), "stage %d: every elite stage and no other has a rule" % (i + 1))
+		check(Stages.hand_size_for(i) == (2 if mod == "short" else 3), "stage %d hand size" % (i + 1))
+		if mod == "":
+			continue
+		count += 1
+		check(Stages.elite_name(i) != "" and Stages.elite_line(i) != "", "stage %d rule has a name and a line" % (i + 1))
+		check(Stages.title(i).ends_with(Stages.elite_name(i).to_upper()), "battle title names the rule: " + Stages.title(i))
+		check(not (mod == "keg" and Stages.is_night(i)), "Powder Keg is day only")
+		var sp := Stages.specials_for(i)
+		if mod == "keg":
+			check(int(sp["bomb"]) >= 5, "stage %d keg has at least 5 bombs, got %d" % [i + 1, sp["bomb"]])
+		elif mod == "iron":
+			check(int(sp["iron"]) >= int(round(_barrels(i) * 0.25)), "stage %d: a quarter iron, got %d of %d" % [i + 1, sp["iron"], _barrels(i)])
+	check(count == 10, "ten elite stages, got %d" % count)
+	var short_battle := Stages.new_battle(24, Stages.deck_for(24), 5)
+	check(short_battle.hand_size == 2 and short_battle.hand.size() == 2, "Short Hand offers 2 cards")
+	# Preview equals play on a stage of each rule, with its specials on the board.
+	for i in [4, 14, 24]:
+		for id in GameData.card_order:
+			var b := Stages.new_battle(i, [id, id, id], 21)
+			var after: Battle = b.preview_card(0)["battle"]
+			b.play_card(0)
+			check(after.board.cells == b.board.cells and after.queue == b.queue and after.hand == b.hand and after.mods == b.mods,
+				"preview matches play for %s on %s" % [id, Stages.elite_name(i)])
+
+
+## The game data equals the Design value files, when they are in the working copy (they live in
+## design/balance, outside the game project). DESIGN_VALUES=<folder> points somewhere else.
+func test_design_values() -> void:
+	var dir := OS.get_environment("DESIGN_VALUES")
+	if dir == "":
+		dir = ProjectSettings.globalize_path("res://").path_join("../design/balance")
+	if not FileAccess.file_exists(dir.path_join("rebalance-values.json")):
+		print("  (design value files not found, comparison skipped: %s)" % dir)
+		return
+	var cards: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("card-values.json")))
+	for id in cards:
+		check(GameData.cards[id]["effects"] == cards[id]["effects"], "card effects match design: " + str(id))
+	var economy: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("economy-values.json")))
+	PackConfig.ensure_loaded()
+	for id in economy["chest_prices"]:
+		check(int(PackConfig.chest(id).get("price", -1)) == int(economy["chest_prices"][id]), "chest price matches design: " + str(id))
+	var v: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("rebalance-values.json")))
+	for i in Stages.TOTAL:
+		check(is_equal_approx(Stages.slack(i), float(v["slack"][i])), "slack matches design, stage %d" % (i + 1))
+		check(Stages.star3_turns(i) == int(v["star3_turns"][i]) and Stages.star2_turns(i) == int(v["star2_turns"][i]), "star turns match design, stage %d" % (i + 1))
+		var row: Dictionary = v["stages"][str(i + 1)]
+		check(Stages.elite_modifier(i) == str(row.get("mod", "")), "elite rule matches design, stage %d" % (i + 1))
+		var sp := Stages.specials_for(i)
+		for kind in Board.SPECIALS:
+			check(int(sp.get(kind, 0)) == int(row["specials"].get(kind, 0)), "stage %d %s count matches design" % [i + 1, kind])
+	print("  design values compared: ", dir)
 
 
 func test_unlocks() -> void:
