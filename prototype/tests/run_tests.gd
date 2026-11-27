@@ -51,6 +51,14 @@ func test_effect_spacing() -> void:
 		ys.sort()
 		for i in ys.size() - 1:
 			check(ys[i + 1] - ys[i] >= 30.0, "popups overlap at age %.1f: %s" % [age, str(ys)])
+	# Placing many texts always ends. (It once looped forever on some positions, freezing the battle.)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1
+	for i in 500:
+		view._popups.clear()
+		var spot := Vector2(rng.randf_range(0.0, 500.0), rng.randf_range(0.0, 900.0))
+		for n in 5:
+			view._add_popup(spot, "+1", [22, 30, 40, 52][(i + n) % 4], Color.WHITE)
 	view.free()
 	# The how-to chest's light stays inside its picture frame, however far the lid is open.
 	for open_t in [0.3, 0.55, 0.8]:

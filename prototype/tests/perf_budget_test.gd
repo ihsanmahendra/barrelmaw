@@ -61,6 +61,19 @@ func _check_card_processing(node: Node) -> void:
 		_check_card_processing(c)
 
 
+## A card being dealt grows from small to full size; that must not paint a texture per step.
+func _check_animated_cards() -> void:
+	var cards: Array = main.screen.find_children("*", "CardView", true, false)
+	check(not cards.is_empty(), "no cards in battle to animate")
+	var before := BakedArt._cache.size()
+	for step in 12:
+		for card in cards:
+			card.scale = Vector2.ONE * (0.3 + 0.07 * step)
+			card.queue_redraw()
+		await process_frame
+	check(BakedArt._cache.size() == before, "scaling cards made %d new textures" % (BakedArt._cache.size() - before))
+
+
 ## Share of pixels that differ clearly between art drawn directly and from its cached texture.
 func _difference(paint_direct: Callable, paint_cached: Callable) -> float:
 	var shots: Array = []
@@ -113,6 +126,7 @@ func _run() -> void:
 	_check_card_processing(main.screen)
 	await _screen("battle", func() -> void: main._begin_stage(48, Stages.deck_for(48)))
 	_check_card_processing(main.screen)
+	await _check_animated_cards()
 	main.visible = false
 	await _check_cached_art()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://perf_budget_save.cfg"))

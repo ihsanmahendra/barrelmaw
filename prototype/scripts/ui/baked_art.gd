@@ -13,6 +13,9 @@ static var enabled: bool = true
 static var _cache: Dictionary = {}  # key -> {"view": SubViewport, "frame": int}
 static var _screen_scale: float = 0.0
 
+## A ceiling on textures, so that no mistake in a key can eat a phone's memory. Past it, art is drawn directly.
+const MAX_TEXTURES: int = 200
+
 const UNPREMULTIPLY: String = """shader_type canvas_item;
 render_mode blend_disabled;
 void fragment() {
@@ -23,7 +26,8 @@ void fragment() {
 
 ## Draws the art on c with its anchor at `anchor`. area is the box around the art relative to the anchor, and
 ## paint is func(item: CanvasItem, anchor: Vector2) that draws it. paint must give the same picture every time
-## for one key. zoom is any extra scale set with c.draw_set_transform. Until the texture is ready (the first
+## for one key. zoom is any extra scale set with c.draw_set_transform. A scale on the node itself is left out on
+## purpose: cards are tweened as they are dealt, and one texture per animation step crashed phones. Until the texture is ready (the first
 ## frames, or where nothing renders) the art is painted directly.
 static func draw(c: CanvasItem, key: String, anchor: Vector2, area: Rect2, paint: Callable, zoom: float = 1.0) -> void:
 	var tex := _texture(c, key, area, paint, zoom)
@@ -50,12 +54,15 @@ static func _texture(c: CanvasItem, key: String, area: Rect2, paint: Callable, z
 	if not is_equal_approx(screen, _screen_scale):  # the window changed size: paint again at the new resolution
 		clear()
 		_screen_scale = screen
-	var px := snappedf(screen * c.get_global_transform().get_scale().x * zoom, 0.05)
+		c.get_tree().root.propagate_call("queue_redraw")  # whatever showed an old texture paints again
+	var px := snappedf(screen * zoom, 0.05)
 	if px <= 0.0:
 		return null
 	var full_key := "%s@%.2f" % [key, px]
 	var entry: Dictionary = _cache.get(full_key, {})
 	if entry.is_empty():
+		if _cache.size() >= MAX_TEXTURES:
+			return null
 		entry = {"view": _bake(c.get_tree(), area, px, paint), "frame": Engine.get_frames_drawn()}
 		_cache[full_key] = entry
 	var view: SubViewport = entry["view"]

@@ -344,7 +344,9 @@ func _add_popup(pos: Vector2, text: String, fs: int, color: Color) -> void:
 		for pu in _popups:
 			var other := _popup_pos(pu)
 			var gap := float(maxi(fs, int(pu["size"]))) * 1.1
-			if absf(other.x - at.x) < 110.0 and absf(other.y - at.y) < gap:
+			# The half unit of slack matters: positions are 32 bit, so "exactly one gap apart" can read as a hair
+			# less than a gap, and without it the same text would be moved to the same spot forever (a freeze).
+			if absf(other.x - at.x) < 110.0 and absf(other.y - at.y) < gap - 0.5:
 				at.y = other.y - gap
 				moved = true
 	_popups.append({"pos": at, "text": text, "t": 0.0, "size": fs, "color": color})

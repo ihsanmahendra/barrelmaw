@@ -211,6 +211,9 @@ func _draw_icon_between(dsz: Vector2, top: float, bottom: float) -> void:
 	var width := dsz.x - 40.0
 	var origin := Vector2(dsz.x / 2.0 - width / 2.0 * fit, top - ICON_TOP * fit)
 	draw_set_transform(origin * k, 0.0, Vector2(k, k) * fit)
+	if width < 20.0:  # not laid out yet
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(k, k))
+		return
 	var card := _card
 	var box := Vector2(width, 52)
 	BakedArt.draw(self, "card:%s:%d" % [card_id, int(width)], Vector2.ZERO, Rect2(-10.0, -14.0, width + 20.0, 80.0),
