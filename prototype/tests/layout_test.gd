@@ -246,6 +246,14 @@ func _run() -> void:
 		main._intro_closed.emit()
 		await _frames(2)
 	await _screen("boss battle", func() -> void: main._begin_stage(39, Stages.deck_for(39)), 120)  # the deal has to finish
+	for k in range(24, 45):
+		SaveData.record(k, 2)
+	Collection.bench(SaveData.pack_state(), "skip", SaveData.highest_unlocked())
+	await _screen("cargo hold with loadout", func() -> void: packs.show_cargo(), 14)
+	packs._show_detail("skip")
+	await _frames(20)
+	_check("card detail with bench", [main._overlay_layer])
+	packs._close_detail()
 	await _screen("captain's log", func() -> void: main.album.show(0), 14)
 	_check_paper_margins("captain's log", [main.screen])
 	await _screen("captain's log night page", func() -> void: main.album.show(7), 14)

@@ -17,6 +17,7 @@ var _cargo_list: VBoxContainer = null
 var _cargo_filter: String = "all"
 var _cargo_back: Callable = Callable()
 var _cargo_merge_btn: Button = null
+var _cargo_deck: Control = null  # the deck counter, once the loadout is open
 var _cargo_scroll: DragScroll = null
 var _treasury_back: Callable = Callable()
 var _burst_next: bool = false  # play a burst on the card the next time the detail view opens (after a merge)
@@ -580,6 +581,10 @@ func show_cargo(back: Callable = Callable(), filter: String = "all") -> void:
 			m.sfx.play("merge")
 			m._flash(UiKit.GOLD)
 		_fill_cargo()
+	_cargo_deck = null
+	if Collection.bench_open(_progress()):
+		_cargo_deck = _deck_plate()
+		box.add_child(_cargo_deck)
 	_cargo_merge_btn = m._button("", merge_all_cb, Color("2a9d8f"))
 	_cargo_merge_btn.custom_minimum_size = Vector2(0, 50)
 	_cargo_merge_btn.add_theme_font_size_override("font_size", 20)
@@ -609,6 +614,11 @@ func _fill_cargo() -> void:
 	var ready := Collection.ready_count(st, GameData.cards)
 	_cargo_merge_btn.text = "Merge all (%d)" % ready if ready > 0 else "Nothing to merge yet"
 	_enable(_cargo_merge_btn, ready > 0)
+	# With the deck counter on screen, Merge all only takes room when there is something to merge.
+	_cargo_merge_btn.visible = _cargo_deck == null or ready > 0
+	if _cargo_deck != null and is_instance_valid(_cargo_deck):
+		_cargo_deck.queue_redraw()
+	var benched := Collection.benched_cards(st)
 	var ids: Array = []
 	for id in GameData.card_order:
 		var rarity := str(GameData.cards[id]["rarity"])
@@ -643,6 +653,8 @@ func _fill_cargo() -> void:
 		cv.custom_minimum_size = Vector2(0, 188)
 		if not has:
 			cv.modulate = Color(0.42, 0.42, 0.5)
+		if benched.has(id):
+			_stamp_benched(cv)
 		cell.add_child(cv)
 		cell.add_child(_progress_bar(id, has))
 	# Fill the last row so the cards keep their size.
@@ -652,6 +664,56 @@ func _fill_cargo() -> void:
 		row.add_child(pad)
 	if _cargo_scroll != null and is_instance_valid(_cargo_scroll):
 		_cargo_scroll.wire(_cargo_list)  # cards and bars take touches, so the list must listen to them
+
+
+## Cards in the next stage's deck, and how many are benched.
+func _deck_size() -> int:
+	var progress := _progress()
+	var deck := Collection.without_benched(Stages.deck_for(mini(progress, Stages.TOTAL - 1)), _st())
+	return Collection.deck_with_equipped(deck, _st(), progress, GameData.cards).size()
+
+
+func _deck_plate() -> Control:
+	var plate := Control.new()
+	plate.custom_minimum_size = Vector2(0, 50)
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.draw.connect(func() -> void:
+		plate.draw_style_box(UiKit.panel_style(Color(0.2, 0.12, 0.07, 0.94), Color("a8743f"), 3, 14), Rect2(Vector2.ZERO, plate.size))
+		var f := UiKit.bold_font()
+		var y := plate.size.y / 2.0 + 7.0
+		plate.draw_string(f, Vector2(18, y), "Deck: %d cards" % _deck_size(), HORIZONTAL_ALIGNMENT_LEFT, -1, 19, UiKit.CREAM)
+		var right := "Benched %d / %d" % [Collection.benched_cards(_st()).size(), Collection.BENCH_LIMIT]
+		var tw := f.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
+		plate.draw_string(f, Vector2(plate.size.x - tw - 18.0, y), right, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, UiKit.GOLD))
+	return plate
+
+
+## A dim veil and a red "BENCHED" stamp over a card in the grid.
+func _stamp_benched(card: Control) -> void:
+	var stamp := Control.new()
+	stamp.name = "benched"
+	stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamp.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stamp.draw.connect(func() -> void:
+		var veil := StyleBoxFlat.new()
+		veil.bg_color = Color(0.08, 0.05, 0.03, 0.55)
+		veil.set_corner_radius_all(14)
+		stamp.draw_style_box(veil, Rect2(Vector2(4, 4), stamp.size - Vector2(8, 8)))
+		var f := UiKit.bold_font()
+		var fs := 21
+		var text := "BENCHED"
+		while f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > stamp.size.x - 34.0 and fs > 12:
+			fs -= 1
+		var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		stamp.draw_set_transform(stamp.size / 2.0, -0.2, Vector2.ONE)
+		var box := StyleBoxFlat.new()
+		box.bg_color = Color("c4284d")
+		box.set_corner_radius_all(8)
+		box.set_border_width_all(3)
+		box.border_color = Color("fbefd0")
+		stamp.draw_style_box(box, Rect2(Vector2(-tw / 2.0 - 12.0, -fs * 0.85), Vector2(tw + 24.0, fs * 1.6)))
+		stamp.draw_string(f, Vector2(-tw / 2.0, fs * 0.32), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE))
+	card.add_child(stamp)
 
 
 ## Copy progress under a card: spare/needed, MERGE when ready, MAX at level 5, or how to unlock it.
@@ -700,6 +762,25 @@ func _close_detail() -> void:
 	if _detail != null and is_instance_valid(_detail):
 		_detail.queue_free()
 	_detail = null
+
+
+## Leave one copy of the card out of stage decks, or put it back.
+func _bench_button(id: String, st: Dictionary, progress: int) -> Button:
+	var benched := Collection.benched_cards(st)
+	var toggle := func() -> void:
+		if benched.has(id):
+			Collection.unbench(st, id)
+			m.sfx.play("card")
+		elif Collection.bench(st, id, progress):
+			m.sfx.play("hit", 0.55)  # the stamp thuds
+		SaveData.save()
+		_fill_cargo()
+		_show_detail(id)
+	var text := "Return to the deck" if benched.has(id) else ("Bench this card" if benched.size() < Collection.BENCH_LIMIT else "Bench is full (%d / %d)" % [benched.size(), Collection.BENCH_LIMIT])
+	var b: Button = m._button(text, toggle, Color("6a4c93") if benched.has(id) else Color("c4284d"))
+	b.name = "bench"
+	_enable(b, benched.has(id) or benched.size() < Collection.BENCH_LIMIT)
+	return b
 
 
 ## A card up close: its level table, merge button and (for Transcended cards) the Captain's Slot.
@@ -788,6 +869,8 @@ func _show_detail(id: String) -> void:
 			var eq: Button = m._button("Equip in a Captain's Slot", do_equip, Color("6a4c93"))
 			_enable(eq, equipped.size() < slots)
 			inner.add_child(eq)
+	if has and Collection.bench_open(progress) and Stages.deck_for(Stages.TOTAL - 1).has(id):
+		inner.add_child(_bench_button(id, st, progress))
 	inner.add_child(m._button("Close", _close_detail, WOOD))
 	panel.pivot_offset = Vector2(200, 300)
 	panel.scale = Vector2(0.9, 0.9)

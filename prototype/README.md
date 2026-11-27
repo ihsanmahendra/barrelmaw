@@ -166,3 +166,9 @@ A menu screen with the 100 pictures on 10 pages (`scripts/ui/album_screen.gd`, r
 Cleared stages show in color with their best stars (gold frame for 3) and open the stage pop-up; the rest are
 silhouettes. A fully cleared page pays 100 Doubloons, a page with all 30 stars an Ironbound Chest, each once and
 claimed by tapping. Spec: `design/gdd/album.md`. Debug: `--album --page=2`.
+
+## Loadout
+After stage 40, the card detail in the Cargo Hold can **bench** up to 3 cards (one copy each): stage decks leave them
+out, restarts keep the same deck, and the Daily Haul ignores it (`Collection.bench`, `Collection.without_benched`).
+Benched cards are stamped in the grid and a plate shows the deck size; "Merge all" appears below the plate only when
+something can be merged. Spec: `design/gdd/loadout.md`. Debug: `--progress=45 --cargo --bench=skip,focus`.

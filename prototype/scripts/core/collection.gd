@@ -207,6 +207,57 @@ static func unequip(st: Dictionary, id: String) -> void:
 	(st["equipped"] as Array).erase(id)
 
 
+## Loadout (design/gdd/loadout.md): up to BENCH_LIMIT stage cards may be left out of stage decks once
+## BENCH_UNLOCK stages are cleared. The daily challenge ignores it.
+const BENCH_LIMIT: int = 3
+const BENCH_UNLOCK: int = 40
+
+
+static func bench_open(progress: int) -> bool:
+	return progress >= BENCH_UNLOCK
+
+
+## The benched card ids (at most BENCH_LIMIT, one copy each).
+static func benched_cards(st: Dictionary) -> Array:
+	var out: Array = []
+	for id in st.get("benched", []):
+		var sid := str(id)
+		if GameData.cards.has(sid) and not out.has(sid) and out.size() < BENCH_LIMIT:
+			out.append(sid)
+	return out
+
+
+## Benches a stage card. Refused before the unlock, for a fourth card, twice, or for a card no stage deck has.
+static func bench(st: Dictionary, id: String, progress: int) -> bool:
+	var list := benched_cards(st)
+	if not bench_open(progress) or list.has(id) or list.size() >= BENCH_LIMIT:
+		return false
+	if not Stages.deck_for(Stages.TOTAL - 1).has(id):
+		return false
+	list.append(id)
+	st["benched"] = list
+	return true
+
+
+static func unbench(st: Dictionary, id: String) -> void:
+	var list := benched_cards(st)
+	list.erase(id)
+	st["benched"] = list
+
+
+## A stage deck with one copy of each benched card taken out. It never drops below the starter deck's size,
+## and a card the deck does not hold is ignored. Apply it once, to a fresh deck.
+static func without_benched(deck: Array, st: Dictionary) -> Array:
+	var out := deck.duplicate()
+	for id in benched_cards(st):
+		if out.size() <= GameData.starter_deck.size():
+			break
+		var at := out.find(id)
+		if at >= 0:
+			out.remove_at(at)
+	return out
+
+
 ## The deck for a stage: the stage deck without any Transcended card, plus the equipped ones.
 static func deck_with_equipped(deck: Array, st: Dictionary, progress: int, catalog: Dictionary) -> Array:
 	var out: Array = []

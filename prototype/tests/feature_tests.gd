@@ -20,6 +20,7 @@ func run() -> void:
 	test_daily()
 	test_boss_rules()
 	test_album()
+	test_loadout()
 	SaveData.reset()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveData.path))
 	SaveData.path = path
@@ -203,3 +204,31 @@ func test_album() -> void:
 	SaveData.set_debug_unlock(true)
 	check(not Album.earned(1, "complete", SaveData.best_stars()), "debug mode completes no page")
 	SaveData.set_debug_unlock(false)
+
+
+## design/gdd/loadout.md section 8.
+func test_loadout() -> void:
+	SaveData.reset()
+	var st := SaveData.pack_state()
+	var full := Stages.deck_for(44)
+	check(not Collection.bench(st, "skip", 39), "closed before stage 40 is cleared")
+	check(Collection.bench(st, "power_shot", 40) and Collection.bench(st, "skip", 40) and Collection.bench(st, "focus", 40), "three benches")
+	check(not Collection.bench(st, "scatter", 40), "a fourth is refused")
+	check(not Collection.bench(st, "skip", 40), "a card is benched once")
+	var deck := Collection.without_benched(full, st)
+	check(deck.size() == full.size() - 3, "three cards fewer, got %d of %d" % [deck.size(), full.size()])
+	check(deck.count("power_shot") == 1 and not deck.has("skip") and not deck.has("focus"), "exactly one copy of each benched card")
+	check(Collection.without_benched(Stages.deck_for(0), st).size() == GameData.starter_deck.size(), "never below the starter size")
+	Collection.unbench(st, "skip")
+	check(Collection.without_benched(full, st).has("skip"), "removing a bench restores the card")
+	SaveData.save()
+	SaveData.reload_from_disk()
+	check(Collection.benched_cards(SaveData.pack_state()) == ["power_shot", "focus"], "the save keeps the choice")
+	# A benched card the stage deck does not hold is ignored; Transcended cards cannot be benched.
+	st = SaveData.pack_state()
+	Collection.unbench(st, "power_shot")
+	Collection.unbench(st, "focus")
+	check(Collection.bench(st, "prism", 40) and Collection.without_benched(Stages.deck_for(15), st) == Stages.deck_for(15), "a later card changes nothing on earlier stages")
+	check(not Collection.bench(st, "maelstrom", 100), "chest-only cards use the Captain's Slot instead")
+	Collection.bench(st, "skip", 40)
+	check(DailyHaul.new_battle("2026-11-27").draw_pile.size() + 3 == 34, "the daily keeps the full deck")

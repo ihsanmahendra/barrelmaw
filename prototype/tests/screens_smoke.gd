@@ -89,6 +89,7 @@ func _initialize() -> void:
 	await _daily(main)
 	await _boss(main)
 	await _album(main)
+	await _loadout(main)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://smoke_save.cfg"))
 	print("Screens smoke test failures: ", failures)
 	quit(1 if failures > 0 else 0)
@@ -107,6 +108,37 @@ func _lose_with(main: Control, barrels: int) -> void:
 	b.over = true
 	main.busy = true
 	main._on_battle_over()
+
+
+## Loadout: bench from the card detail, the stamp, the deck of a stage and of a restart.
+func _loadout(main: Control) -> void:
+	var packs: PackScreens = main.packs
+	packs.show_cargo()
+	await process_frame
+	packs._show_detail("power_shot")
+	await process_frame
+	var button: Node = main._overlay_layer.find_child("bench", true, false)
+	check(button != null, "the card detail offers the bench after stage 40")
+	if button != null:
+		button.pressed.emit()
+	await process_frame
+	await process_frame
+	check(Collection.benched_cards(SaveData.pack_state()) == ["power_shot"], "the card is benched")
+	packs._close_detail()
+	check(main.screen.find_child("benched", true, false) != null, "and stamped in the grid")
+	var full := Stages.deck_for(44).size()
+	main._start_stage(44)
+	await process_frame
+	var held: int = main._stage_deck.count("power_shot")
+	var size_before: int = main._stage_deck.size()
+	main._options_restart()
+	await process_frame
+	check(held == 1 and main._stage_deck.count("power_shot") == 1 and main._stage_deck.size() == size_before, "one copy stays, also after a restart")
+	check(main.stage_deck(44).size() == full - 1, "the stage deck lacks one card")
+	Collection.unbench(SaveData.pack_state(), "power_shot")
+	SaveData.save()
+	main.show_menu()
+	await process_frame
 
 
 ## Captain's Log: every page builds, a cleared picture opens the stage pop-up, a reward is claimed once.

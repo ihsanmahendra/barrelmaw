@@ -175,6 +175,11 @@ func _ready() -> void:
 			if a.begins_with("--filter="):
 				filter = a.get_slice("=", 1)
 		packs.show_cargo(Callable(), filter)
+		for a in args:  # debug: --bench=a,b,c benches those cards (needs --progress=40 or more)
+			if a.begins_with("--bench="):
+				for id in a.get_slice("=", 1).split(",", false):
+					Collection.bench(SaveData.pack_state(), id, SaveData.highest_unlocked())
+				packs.show_cargo(Callable(), filter)
 		for a in args:
 			if a.begins_with("--detail="):
 				packs._show_detail(a.get_slice("=", 1))
@@ -1773,13 +1778,18 @@ func _close_popup() -> void:
 
 # ---------- stage flow ----------
 
+## The player's deck for a stage: the stage deck without the benched cards (Captain's Slots join later).
+func stage_deck(index: int) -> Array:
+	return Collection.without_benched(Stages.deck_for(index), SaveData.pack_state())
+
+
 func _start_stage(index: int) -> void:
 	_close_popup()
 	# The first time you reach a stage that unlocks cards, introduce them before playing.
 	if not Stages.unlocks_at(index).is_empty() and not SaveData.intro_seen(index):
 		show_unlock(index)
 	else:
-		_begin_stage(index, Stages.deck_for(index))
+		_begin_stage(index, stage_deck(index))
 
 
 ## Introduces the cards that join the deck at this stage (stages 11, 21, 31 and 41).
@@ -1806,7 +1816,7 @@ func show_unlock(index: int) -> void:
 	box.add_child(_button("Let's go!", func() -> void:
 		SaveData.mark_intro_seen(index)
 		sfx.play("reward")
-		_begin_stage(index, Stages.deck_for(index))))
+		_begin_stage(index, stage_deck(index))))
 	box.add_child(_button("Back to map", func() -> void: show_map(index), WOOD))
 
 
