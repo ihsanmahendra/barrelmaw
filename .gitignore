@@ -1,6 +1,9 @@
 # Godot
 .godot/
 *.import
+# Import files with non-default settings (mipmaps) must be kept
+!prototype/assets/art/barrel.png.import
+!prototype/assets/art/barrel_atlas.png.import
 # Web export output
 prototype/build/
 # OS / editor
