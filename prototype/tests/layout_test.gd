@@ -246,6 +246,9 @@ func _run() -> void:
 		main._intro_closed.emit()
 		await _frames(2)
 	await _screen("boss battle", func() -> void: main._begin_stage(39, Stages.deck_for(39)), 120)  # the deal has to finish
+	await _screen("captain's log", func() -> void: main.album.show(0), 14)
+	_check_paper_margins("captain's log", [main.screen])
+	await _screen("captain's log night page", func() -> void: main.album.show(7), 14)
 	await _screen("daily haul", func() -> void: main.daily.show_start(), 14)
 	_check_paper_margins("daily haul", [main.screen])
 	await _screen("daily result", func() -> void:

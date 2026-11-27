@@ -19,6 +19,7 @@ func run() -> void:
 	test_combo()
 	test_daily()
 	test_boss_rules()
+	test_album()
 	SaveData.reset()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveData.path))
 	SaveData.path = path
@@ -176,3 +177,29 @@ func test_boss_rules() -> void:
 	win.queue = [{"color": "R", "ammo": 1, "wild": true}, {"color": "R", "ammo": 1}]
 	win.fire()
 	check(win.won and win.strike_last.is_empty(), "no strike after the winning shot")
+
+
+## design/gdd/album.md section 8.
+func test_album() -> void:
+	SaveData.reset()
+	check(Album.pages() == 10 and Album.stages_on(0).size() == 10 and Album.stages_on(9)[9] == 99, "ten pages of ten")
+	check(not Album.waiting(SaveData.pack_state(), SaveData.best_stars()), "nothing waits on a new save")
+	for i in 9:
+		SaveData.record(i, 3)
+	check(Album.cleared_count(0, SaveData.best_stars()) == 9 and Album.star_count(0, SaveData.best_stars()) == 27, "cleared stages count with their stars")
+	check(not Album.claim(SaveData.pack_state(), 0, "complete", SaveData.best_stars()), "nine of ten pays nothing")
+	SaveData.record(9, 2)
+	var st := SaveData.pack_state()
+	var gold := int(st["doubloons"])
+	check(Album.claimable(st, 0, "complete", SaveData.best_stars()) and not Album.claimable(st, 0, "mastered", SaveData.best_stars()), "complete, not mastered")
+	check(Album.claim(st, 0, "complete", SaveData.best_stars()) and int(st["doubloons"]) == gold + 100, "complete pays 100 Doubloons")
+	SaveData.record(9, 3)
+	var chests := Packs.count(st, "iron")
+	check(Album.claim(st, 0, "mastered", SaveData.best_stars()) and Packs.count(st, "iron") == chests + 1, "mastery pays an Ironbound Chest")
+	SaveData.save()
+	SaveData.reload_from_disk()
+	st = SaveData.pack_state()
+	check(not Album.claim(st, 0, "complete", SaveData.best_stars()) and not Album.claim(st, 0, "mastered", SaveData.best_stars()), "each reward is paid once, also after reload")
+	SaveData.set_debug_unlock(true)
+	check(not Album.earned(1, "complete", SaveData.best_stars()), "debug mode completes no page")
+	SaveData.set_debug_unlock(false)

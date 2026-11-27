@@ -88,6 +88,7 @@ func _initialize() -> void:
 	await _last_shot(main)
 	await _daily(main)
 	await _boss(main)
+	await _album(main)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://smoke_save.cfg"))
 	print("Screens smoke test failures: ", failures)
 	quit(1 if failures > 0 else 0)
@@ -106,6 +107,32 @@ func _lose_with(main: Control, barrels: int) -> void:
 	b.over = true
 	main.busy = true
 	main._on_battle_over()
+
+
+## Captain's Log: every page builds, a cleared picture opens the stage pop-up, a reward is claimed once.
+func _album(main: Control) -> void:
+	for p in Album.pages():
+		main.album.show(p)
+		await process_frame
+	main.album.show(0)
+	await process_frame
+	var tiles: Array = main.screen.find_children("*", "Button", true, false).filter(func(n): return n.has_meta("stage"))
+	check(tiles.size() == 10 and int(tiles[0].get_meta("stars")) == SaveData.stars(0), "page 1 shows ten pictures with their stars")
+	tiles[0].pressed.emit()
+	await process_frame
+	check(main.popup != null, "a cleared picture opens the stage pop-up")
+	main._close_popup()
+	var gold := int(SaveData.pack_state()["doubloons"])
+	var claim: Node = main.screen.find_child("claim_complete", true, false)
+	check(claim != null, "a full page offers its reward")
+	if claim != null:
+		claim.pressed.emit()
+		await process_frame
+		await process_frame
+		check(int(SaveData.pack_state()["doubloons"]) == gold + Album.COMPLETE_DOUBLOONS, "claiming pays 100")
+		check(main.screen.find_child("claim_complete", true, false) == null, "and only once")
+	main.show_menu()
+	await process_frame
 
 
 ## Boss stage: explanation once, the bar, and a strike after the third shot.

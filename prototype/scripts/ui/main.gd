@@ -68,6 +68,7 @@ var _offer: LastShotOffer  # the "So close!" panel while it is open
 var _menu_stage: PirateStage
 var packs: PackScreens  # Treasury, chest opening, Cargo Hold, Port Market
 var daily: DailyScreens
+var album: AlbumScreen  # Captain's Log
 var _daily_date: String = ""  # set while a Daily Haul battle is on the screen (the date it belongs to)
 var _last_rewards: Dictionary = {}  # what the latest win paid (Doubloons and chests), for the results screen
 var screen: Control
@@ -110,6 +111,7 @@ func _ready() -> void:
 	_make_mute_button()
 	packs = PackScreens.new(self)
 	daily = DailyScreens.new(self)
+	album = AlbumScreen.new(self)
 	var args := OS.get_cmdline_user_args()
 	for a in args:  # debug: --safe=left,top,right,bottom pretends the phone keeps that space (viewport units)
 		if a.begins_with("--safe="):
@@ -154,7 +156,13 @@ func _ready() -> void:
 		_begin_stage(1, Stages.deck_for(1))
 		print("GIFTPLAY second stage deck=", _stage_deck.size(), " base=", Stages.deck_for(1).size())
 		return
-	if args.has("--daily"):  # debug: today's Daily Haul screen
+	if args.has("--album"):  # debug: the Captain's Log (--page=N picks a page)
+		var p := -1
+		for a in args:
+			if a.begins_with("--page="):
+				p = int(a.get_slice("=", 1)) - 1
+		album.show(p)
+	elif args.has("--daily"):  # debug: today's Daily Haul screen
 		daily.show_start()
 	elif args.has("--daily-result"):  # debug: a finished Daily Haul score
 		var made := {"won": true, "turns": DailyHaul.par(SaveData.today()) + 2, "hits": 3}
@@ -727,7 +735,8 @@ func show_menu() -> void:
 	_sync_menu_deck()
 
 
-## Row of the menu's extra places (Daily Haul, once it is open), with a red dot when something waits.
+## Row of the menu's extra places (Daily Haul once it is open, and the Captain's Log), with a red dot when
+## something waits.
 func _menu_features() -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
@@ -741,6 +750,18 @@ func _menu_features() -> HBoxContainer:
 		if entry.is_empty() or not bool(entry["paid"]):
 			_add_red_dot(haul)
 		row.add_child(haul)
+	var log_btn := _button("Captain's Log", func() -> void: album.show(), Color("8a5a30"))
+	FeatureArt.add_icon(log_btn, FeatureArt.draw_log_icon, 30.0)
+	log_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	log_btn.custom_minimum_size = Vector2(0, 52)
+	log_btn.add_theme_font_size_override("font_size", 21)
+	if Album.waiting(SaveData.pack_state(), SaveData.best_stars()):
+		_add_red_dot(log_btn)
+	row.add_child(log_btn)
+	if row.get_child_count() == 2:  # two buttons side by side: keep the words clear of the pictures
+		for b in row.get_children():
+			b.add_theme_font_size_override("font_size", 18)
+			(b as Button).alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	return row
 
 

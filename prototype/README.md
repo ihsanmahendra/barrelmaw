@@ -160,3 +160,9 @@ Kraken** (20, 50, 80) turns plain barrels to iron, **Skull Storm** (30, 60, 90) 
 (`Stages.BOSS_RULES`, `Battle._boss_strike`). A strike affects 4% of the picture's barrels (at least 2). The bar under
 the HUD counts the shots. Boss slack and star limits were tuned with the rules (`design/gdd/boss-rules.md`).
 Debug: `--progress=39 --autostart --stage=40 --strike-demo`.
+
+## Captain's Log
+A menu screen with the 100 pictures on 10 pages (`scripts/ui/album_screen.gd`, rules in `scripts/core/album.gd`).
+Cleared stages show in color with their best stars (gold frame for 3) and open the stage pop-up; the rest are
+silhouettes. A fully cleared page pays 100 Doubloons, a page with all 30 stars an Ironbound Chest, each once and
+claimed by tapping. Spec: `design/gdd/album.md`. Debug: `--album --page=2`.
