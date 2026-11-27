@@ -37,6 +37,13 @@ var _ov_accum: float = 0.0
 var _cel: float = -1.0  # win celebration clock in seconds; -1 when it is not running
 var _coins: Array = []  # falling doubloons: pos, vel, spin, spin_speed, size, delay
 
+const STRIKE_TIME: float = 0.9
+var _held: Dictionary = {}  # Vector2i -> strike kind: cells still drawn as they were before the strike
+var _strike_rule: String = ""
+var _strike_cells: Array = []
+var _strike_t: float = -1.0  # seconds into the strike animation; -1 when none
+var strike_hold_at: float = -1.0  # debug screenshots: the strike animation stops here
+
 const REVEAL_TIME: float = 1.2  # the finished picture lights up over this long
 const STAMP_AT: float = 1.05  # when the stamp slams down
 const STAMP_SLAM: float = 0.3
@@ -84,7 +91,26 @@ func set_battle(b: Battle) -> void:
 	_pending.clear()
 	_seq_active = false
 	_shake = 0.0
+	_held.clear()
+	_strike_t = -1.0
 	queue_redraw()
+
+
+## A boss strike has happened in the rules: keep those cells looking as before until play_strike().
+func hold_strike(strikes: Array) -> void:
+	_held.clear()
+	for s in strikes:
+		_held[s["pos"]] = s["kind"]
+	queue_redraw()
+
+
+## Plays the strike over the board (the caller blocks input for STRIKE_TIME).
+func play_strike(rule: String) -> void:
+	_strike_rule = rule
+	_strike_cells = _held.keys()
+	_strike_t = 0.0
+	_shake = maxf(_shake, 5.0)
+	set_process(true)
 
 
 func set_preview(cells: Array, from_card: Array = []) -> void:
@@ -212,6 +238,16 @@ func _burst(center: Vector2, color: Color, cs: float, count: int) -> void:
 
 
 func _process(delta: float) -> void:
+	if _strike_t >= 0.0:
+		_strike_t += delta
+		if strike_hold_at >= 0.0:
+			_strike_t = minf(_strike_t, strike_hold_at)
+		if _strike_t >= STRIKE_TIME * 0.65:
+			_held.clear()  # the barrels have changed
+		if _strike_t >= STRIKE_TIME:
+			_strike_t = -1.0
+		queue_redraw()
+		_overlay.queue_redraw()
 	if _seq_active:
 		_clock += delta
 		_step_sequence()
@@ -261,7 +297,7 @@ func _process(delta: float) -> void:
 		if bl["t"] < 0.45:
 			alive_blasts.append(bl)
 	_blasts = alive_blasts
-	var animating := _seq_active or _cel >= 0.0 or not (_flashes.is_empty() and _parts.is_empty() and _popups.is_empty() and _rings.is_empty() and _blasts.is_empty()) or _shake > 0.0
+	var animating := _seq_active or _strike_t >= 0.0 or _cel >= 0.0 or not (_flashes.is_empty() and _parts.is_empty() and _popups.is_empty() and _rings.is_empty() and _blasts.is_empty()) or _shake > 0.0
 	var pulsing := not (preview.is_empty() and card_preview.is_empty()) or _has_specials()
 	if animating:
 		queue_redraw()  # the barrels only redraw while something is actually moving
@@ -426,6 +462,8 @@ func _draw() -> void:
 			var r := _cell_rect(x, y, cs, origin)
 			var ghost: String = _ghost[y * bd.w + x]
 			var letter := bd.get_c(x, y)
+			if _held.get(Vector2i(x, y), "") == "ghost":
+				letter = ""  # it has not risen on screen yet
 			if letter == "":
 				var key := Vector2i(x, y)
 				if _pending.has(key):
@@ -511,13 +549,15 @@ func _draw_overlay() -> void:
 	for y in bd.h:
 		for x in bd.w:
 			var kind := bd.get_special(x, y)
-			if kind != "":
+			if kind != "" and not _held.has(Vector2i(x, y)):
 				SpecialArt.draw_special(_overlay, origin + (Vector2(x, y) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, kind), kind, bd.get_hp(x, y), now)
 	for pc in _pending.keys():
 		var pk: String = _pending[pc][2]
 		if pk != "":
 			SpecialArt.draw_special(_overlay, origin + (Vector2(pc) + Vector2(0.5, 0.5)) * cs, _icon_size(cs, pk), pk, 1, now)
-	if _seq_active or (preview.is_empty() and card_preview.is_empty()):
+	if _strike_t >= 0.0:
+		_draw_strike(cs, origin)
+	if _seq_active or _strike_t >= 0.0 or not _held.is_empty() or (preview.is_empty() and card_preview.is_empty()):
 		_overlay.draw_set_transform(Vector2.ZERO)
 		return
 	if not preview.is_empty():
@@ -540,6 +580,49 @@ func _draw_overlay() -> void:
 			_overlay.draw_line(cr.position + cr.size * 0.28, cr.position + cr.size * 0.72, Color(1, 0.95, 0.8, pulse2), 4.0)
 			_overlay.draw_line(cr.position + Vector2(cr.size.x * 0.72, cr.size.y * 0.28), cr.position + Vector2(cr.size.x * 0.28, cr.size.y * 0.72), Color(1, 0.95, 0.8, pulse2), 4.0)
 	_overlay.draw_set_transform(Vector2.ZERO)
+
+
+## The boss strike: a colored wash over the board, the shout, and the struck barrels changing.
+func _draw_strike(cs: float, origin: Vector2) -> void:
+	var k := clampf(_strike_t / STRIKE_TIME, 0.0, 1.0)
+	var fade := clampf((1.0 - k) * 4.0, 0.0, 1.0) * clampf(k * 6.0, 0.0, 1.0)
+	var ink: Color = BossBar.COLORS[_strike_rule][0]
+	var plate: Color = BossBar.COLORS[_strike_rule][1]
+	var tray := Rect2(origin, Vector2(battle.board.w, battle.board.h) * cs).grow(10.0)
+	# The wash rises over the board from below.
+	var rise := clampf(k * 2.5, 0.0, 1.0)
+	_overlay.draw_rect(Rect2(Vector2(tray.position.x, tray.end.y - tray.size.y * rise), Vector2(tray.size.x, tray.size.y * rise)),
+		Color(ink.lerp(plate, 0.45), 0.34 * fade))
+	for i in _strike_cells.size():
+		var p: Vector2i = _strike_cells[i]
+		var center := _cell_center(p, cs, origin)
+		var local := clampf(k * 1.5 - 0.04 * i, 0.0, 1.0)
+		match _strike_rule:
+			"ghost":
+				var col := GameData.color_of(battle.board.get_c(p.x, p.y))
+				var at := center + Vector2(0, (1.0 - local) * cs * 1.8)
+				if k < 0.65:
+					PirateArt.draw_barrel(_overlay, at, cs * 0.9, cs, Color(col.lightened(0.25), 0.35 + 0.65 * local))
+				_overlay.draw_arc(center, cs * (0.4 + 0.5 * local), 0.0, TAU, 20, Color(ink, fade), 2.0, true)
+			"armor":
+				_overlay.draw_arc(center, cs * (1.1 - 0.6 * local), 0.0, TAU, 20, Color(ink, fade), 3.0, true)
+			_:
+				FeatureArt.draw_falling_skull(_overlay, center, cs * 1.15, clampf(k * 1.1 - 0.03 * i, 0.0, 1.0))
+	if _strike_rule == "armor":
+		var from := Vector2(tray.position.x - 10.0, tray.end.y)
+		var to := Vector2(tray.end.x, tray.position.y + tray.size.y * 0.35)
+		FeatureArt.draw_tentacle(_overlay, from, to, k)
+	var font := UiKit.bold_font()
+	var text := String(Stages.BOSS_TEXT[_strike_rule][0]).to_upper() + "!"
+	var fs := 46
+	while font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > size.x - 24.0 and fs > 22:
+		fs -= 2
+	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var grow := 0.6 + 0.4 * clampf(k * 5.0, 0.0, 1.0)
+	_overlay.draw_set_transform(Vector2(size.x / 2.0, size.y * 0.3), -0.07, Vector2(grow, grow))
+	_overlay.draw_string_outline(font, Vector2(-tw / 2.0, 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 12, Color(plate, fade))
+	_overlay.draw_string(font, Vector2(-tw / 2.0, 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, fade))
+	_overlay.draw_set_transform(_shake_offset)
 
 
 ## Gold doubloons that spin as they fall, and the "PLUNDERED!" stamp.

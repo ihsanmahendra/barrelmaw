@@ -39,6 +39,45 @@ const IRON_MIN_EXTRA: int = 4
 const SHORT_HAND_SIZE: int = 2
 
 
+# The rule each boss strikes with (design/gdd/boss-rules.md). Keys are stage numbers. The slack and star
+# limits of these stages were tuned with the rule in play: change them together.
+const BOSS_RULES: Dictionary = {
+	10: "ghost", 20: "armor", 30: "curse", 40: "ghost", 50: "armor",
+	60: "curse", 70: "ghost", 80: "armor", 90: "curse", 100: "ghost",
+}
+const BOSS_TEXT: Dictionary = {
+	"ghost": ["Ghost Tide", "Every third shot, sunken barrels rise again."],
+	"armor": ["Iron Kraken", "Every third shot, the Kraken armors your barrels."],
+	"curse": ["Skull Storm", "Every third shot, skulls wash aboard."],
+}
+const STRIKE_SHARE: float = 0.04  # of the picture's barrels, per strike
+const STRIKE_MIN: int = 2
+
+
+static func boss_rule(index: int) -> String:
+	return String(BOSS_RULES.get(index + 1, ""))
+
+
+static func boss_rule_name(index: int) -> String:
+	var rule := boss_rule(index)
+	return "" if rule == "" else String(BOSS_TEXT[rule][0])
+
+
+static func boss_rule_line(index: int) -> String:
+	var rule := boss_rule(index)
+	return "" if rule == "" else String(BOSS_TEXT[rule][1])
+
+
+## Barrels a strike affects on this stage.
+static func strike_size(index: int) -> int:
+	var n := 0
+	for r in picture(index)["rows"]:
+		for ch in String(r):
+			if ch != ".":
+				n += 1
+	return maxi(STRIKE_MIN, int(round(n * STRIKE_SHARE)))
+
+
 ## The elite rule of a stage: "keg", "iron", "short" or "" for none.
 static func elite_modifier(index: int) -> String:
 	return String(ELITE_RULES.get(index + 1, ""))
@@ -73,12 +112,12 @@ static func slack(index: int) -> float:
 # below that). A person who uses the card preview does clearly better than this simple bot. Late stages give
 # very few cannonballs on purpose: by then the unlocked cards (shapes, bombs, blasts) have to do the work.
 # Slack, star limits and elite rules were measured together: change them together.
-const SLACK_TABLE: Array = [0.65, 0.74, 0.49, 0.58, 0.33, 0.52, 0.48, 0.41, 0.41, 0.49, 0.41, 0.44, 0.38, 0.43, 0.46, 0.35, 0.46, 0.4, 0.46, 0.37, 0.26, 0.26, 0.29, 0.41, 0.28, 0.24, 0.26, 0.28, 0.24, 0.23, 0.12, 0.18, 0.23, 0.17, 0.1, 0.16, 0.15, 0.21, 0.17, 0.13, 0.09, 0.12, 0.13, 0.08, 0.2, 0.09, 0.14, 0.16, 0.15, 0.14, 0.01, 0.03, 0.06, 0.12, 0.01, 0.01, 0.04, 0.01, 0.01, 0.13, 0.07, 0.08, 0.09, 0.06, 0.11, 0.08, 0.03, 0.06, 0.05, 0.06, 0.01, 0.05, 0.06, 0.07, 0.05, 0.01, 0.01, 0.04, 0.05, 0.06, 0.01, 0.01, 0.01, 0.06, 0.06, 0.01, 0.01, 0.03, 0.06, 0.01, 0.02, 0.04, 0.04, 0.04, 0.04, 0.06, 0.04, 0.06, 0.05, 0.05]
+const SLACK_TABLE: Array = [0.65, 0.74, 0.49, 0.58, 0.33, 0.52, 0.48, 0.41, 0.41, 0.62, 0.41, 0.44, 0.38, 0.43, 0.46, 0.35, 0.46, 0.4, 0.46, 0.51, 0.26, 0.26, 0.29, 0.41, 0.28, 0.24, 0.26, 0.28, 0.24, 0.26, 0.12, 0.18, 0.23, 0.17, 0.1, 0.16, 0.15, 0.21, 0.17, 0.16, 0.09, 0.12, 0.13, 0.08, 0.2, 0.09, 0.14, 0.16, 0.15, 0.17, 0.01, 0.03, 0.06, 0.12, 0.01, 0.01, 0.04, 0.01, 0.01, 0.15, 0.07, 0.08, 0.09, 0.06, 0.11, 0.08, 0.03, 0.06, 0.05, 0.08, 0.01, 0.05, 0.06, 0.07, 0.05, 0.01, 0.01, 0.04, 0.05, 0.08, 0.01, 0.01, 0.01, 0.06, 0.06, 0.01, 0.01, 0.03, 0.06, 0.01, 0.02, 0.04, 0.04, 0.04, 0.04, 0.06, 0.04, 0.06, 0.05, 0.08]
 
 # Turn limits for 3 and 2 stars, from the same file: 3 stars is the median number of turns of a bot that reads
 # the card preview, 2 stars is its 80th percentile (and at least 2 turns more than 3 stars).
-const STAR3_TURNS: Array = [6, 6, 6, 7, 5, 7, 6, 7, 7, 10, 8, 9, 8, 10, 11, 8, 10, 10, 12, 11, 4, 5, 6, 7, 7, 7, 6, 7, 6, 6, 5, 5, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 6, 6, 8, 6, 7, 8, 8, 9, 3, 3, 4, 5, 5, 5, 4, 5, 5, 9, 6, 5, 5, 5, 6, 5, 5, 5, 5, 7, 6, 5, 5, 6, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 7, 6, 7, 6, 6, 7, 5, 7, 7, 7, 7, 7, 7, 8, 8, 9]
-const STAR2_TURNS: Array = [8, 8, 8, 9, 7, 9, 8, 9, 9, 12, 10, 11, 10, 12, 13, 10, 12, 12, 14, 13, 6, 7, 8, 9, 9, 9, 8, 9, 8, 8, 7, 7, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 10, 8, 9, 10, 10, 11, 5, 5, 6, 7, 7, 7, 6, 7, 7, 11, 8, 7, 7, 7, 8, 7, 7, 7, 7, 9, 8, 7, 7, 8, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 9, 8, 9, 8, 8, 9, 7, 9, 9, 9, 9, 9, 9, 10, 10, 11]
+const STAR3_TURNS: Array = [6, 6, 6, 7, 5, 7, 6, 7, 7, 10, 8, 9, 8, 10, 11, 8, 10, 10, 12, 13, 4, 5, 6, 7, 7, 7, 6, 7, 6, 7, 5, 5, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 6, 6, 8, 6, 7, 8, 8, 10, 3, 3, 4, 5, 5, 5, 4, 5, 5, 9, 6, 5, 5, 5, 6, 5, 5, 5, 5, 8, 6, 5, 5, 6, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 7, 6, 7, 6, 6, 7, 5, 7, 7, 7, 7, 7, 7, 8, 8, 9]
+const STAR2_TURNS: Array = [8, 8, 8, 9, 7, 9, 8, 9, 9, 12, 10, 11, 10, 12, 13, 10, 12, 12, 14, 15, 6, 7, 8, 9, 9, 9, 8, 9, 8, 9, 7, 7, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 10, 8, 9, 10, 10, 12, 5, 5, 6, 7, 7, 7, 6, 7, 7, 11, 8, 7, 7, 7, 8, 7, 7, 7, 7, 10, 8, 7, 7, 8, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 9, 8, 9, 8, 8, 9, 7, 9, 9, 9, 9, 9, 9, 10, 10, 11]
 
 
 ## Turn limit for 3 stars; falls back to a size-based guess if the table is short.
@@ -181,6 +220,9 @@ static func title(index: int) -> String:
 static func new_battle(index: int, deck: Array, seed_value: int, levels: Dictionary = {}) -> Battle:
 	var b := Battle.new(picture(index)["rows"], deck, slack(index), hand_size_for(index), seed_value, {}, specials_for(index))
 	b.levels = levels
+	if boss_rule(index) != "":
+		b.boss_rule = boss_rule(index)
+		b.strike_size = strike_size(index)
 	b.star2_turns = star2_turns(index)
 	b.star3_turns = star3_turns(index)
 	return b

@@ -233,6 +233,19 @@ func _run() -> void:
 	_check("Last Shot offer", [main._offer])
 	_check_paper_margins("Last Shot offer", [main._offer])
 	main._close_offer()
+	for i in [9, 19, 29]:
+		main.show_map(i)
+		await _frames(4)
+		main._open_popup(i)
+		await _frames(30)
+		_check("boss %d pop-up" % (i + 1), [main.popup])
+		main._close_popup()
+		main._show_boss_intro(i)
+		await _frames(30)
+		_check("boss %d explanation" % (i + 1), [main._intro_open])
+		main._intro_closed.emit()
+		await _frames(2)
+	await _screen("boss battle", func() -> void: main._begin_stage(39, Stages.deck_for(39)), 120)  # the deal has to finish
 	await _screen("daily haul", func() -> void: main.daily.show_start(), 14)
 	_check_paper_margins("daily haul", [main.screen])
 	await _screen("daily result", func() -> void:

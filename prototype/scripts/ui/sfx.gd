@@ -3,7 +3,7 @@ extends Node
 ## Plays short sound effects from res://audio through a small pool of players.
 
 const NAMES: Array = ["click", "card", "deal", "sparkle", "fire", "hit", "big", "boom", "miss", "win", "lose", "reward", "cannon",
-	"chest_shake", "chest_open", "flip", "sting_common", "sting_rare", "sting_epic", "sting_legendary", "sting_transcended", "merge", "pearl", "drumroll", "crew_cheer"]
+	"chest_shake", "chest_open", "flip", "sting_common", "sting_rare", "sting_epic", "sting_legendary", "sting_transcended", "merge", "pearl", "drumroll", "crew_cheer", "strike_ghost", "strike_armor", "strike_curse"]
 const POOL_SIZE: int = 16  # a big volley stacks about ten sounds at once
 
 static var muted: bool = false

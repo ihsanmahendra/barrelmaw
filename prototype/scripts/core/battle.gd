@@ -35,6 +35,13 @@ var last_played: String = ""  # id of the last card played in this battle (Phant
 var levels: Dictionary = {}  # card id -> level (missing = 1); set by Stages.new_battle from the player's collection
 var last_shot_used: bool = false  # this attempt took its Last Shot (design/gdd/last-shot.md): 1 star at most
 
+var boss_rule: String = ""  # "ghost", "armor" or "curse" on a boss stage (design/gdd/boss-rules.md)
+var strike_size: int = 0  # barrels a strike affects
+var shots_fired: int = 0  # shots so far; every STRIKE_EVERY-th one brings a strike
+var strike_last: Array = []  # {pos, kind} barrels struck after the latest shot
+var original_cells: Array = []  # the picture as it started, for barrels that rise again
+
+const STRIKE_EVERY: int = 3
 const LAST_SHOT_BARRELS: int = 5  # offered when the stage is lost with at most this many barrels left
 const LAST_SHOT_HITS: int = 3  # hits of the wild cannonball it adds
 
@@ -44,6 +51,7 @@ const LAST_SHOT_HITS: int = 3  # hits of the wild cannonball it adds
 func _init(rows: Array, deck: Array, slack: float, p_hand_size: int, seed_value: int, scripted: Dictionary = {}, specials: Dictionary = {}) -> void:
 	rng.seed = seed_value
 	board = Board.new(rows)
+	original_cells = board.cells.duplicate()
 	_place_specials(specials)
 	hand_size = p_hand_size
 	draw_pile = deck.duplicate()
@@ -75,6 +83,7 @@ func _begin_action() -> void:
 	shots_last = []
 	damaged_last = []
 	events_last = []
+	strike_last = []
 	last_shot_wasted = false
 
 
@@ -207,6 +216,10 @@ func clone() -> Battle:
 	b.levels = levels
 	b.last_played = last_played
 	b.last_shot_used = last_shot_used
+	b.boss_rule = boss_rule
+	b.strike_size = strike_size
+	b.shots_fired = shots_fired
+	b.original_cells = original_cells.duplicate()
 	b.rng.seed = rng.seed
 	b.rng.state = rng.state
 	return b
@@ -478,8 +491,43 @@ func fire() -> void:
 	_reset_mods()
 	discard.append_array(hand)
 	hand.clear()
+	shots_fired += 1
 	if not _check_end():
 		start_turn()
+	if boss_rule != "" and not over and shots_fired % STRIKE_EVERY == 0:
+		_boss_strike()
+
+
+## The boss strikes: sunken barrels rise again ("ghost", only in colors a queued cannonball has), or plain
+## barrels turn to iron ("armor") or into cursed skulls ("curse"). Chosen with the battle's generator.
+func _boss_strike() -> void:
+	var pool: Array = []
+	if boss_rule == "ghost":
+		var usable := {}
+		for s in queue:
+			usable[s["color"]] = true
+		for k in board.cells.size():
+			if board.cells[k] == "" and original_cells[k] != "" and usable.has(original_cells[k]):
+				pool.append(k)
+	else:
+		for k in board.cells.size():
+			if board.cells[k] != "" and board.special[k] == "":
+				pool.append(k)
+	for j in strike_size:
+		if pool.is_empty():
+			return
+		var k: int = pool.pop_at(rng.randi_range(0, pool.size() - 1))
+		var p := Vector2i(k % board.w, k / board.w)
+		if boss_rule == "ghost":
+			board.cells[k] = original_cells[k]
+		else:
+			board.set_special(p.x, p.y, "iron" if boss_rule == "armor" else "curse")
+		strike_last.append({"pos": p, "kind": boss_rule})
+
+
+## Shots left until the next strike (1 means the next shot brings it).
+func shots_to_strike() -> int:
+	return STRIKE_EVERY - shots_fired % STRIKE_EVERY
 
 
 ## Picks where the next bullet lands: lowest row, nearest the center. With a shape modifier,

@@ -87,6 +87,7 @@ func _initialize() -> void:
 	await process_frame
 	await _last_shot(main)
 	await _daily(main)
+	await _boss(main)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://smoke_save.cfg"))
 	print("Screens smoke test failures: ", failures)
 	quit(1 if failures > 0 else 0)
@@ -105,6 +106,34 @@ func _lose_with(main: Control, barrels: int) -> void:
 	b.over = true
 	main.busy = true
 	main._on_battle_over()
+
+
+## Boss stage: explanation once, the bar, and a strike after the third shot.
+func _boss(main: Control) -> void:
+	main._begin_stage(9, Stages.deck_for(9))
+	await process_frame
+	check(main.boss_bar != null and main._intro_open != null, "a boss stage has its bar and explains the rule")
+	main._intro_closed.emit()
+	await process_frame
+	var b: Battle = main.battle
+	b.queue = [{"color": b.board.most_common(), "ammo": 1}]
+	for k in 12:
+		b.queue.append({"color": b.board.most_common(), "ammo": 1})
+	for shot in 3:
+		main.selected = -1
+		main.busy = false
+		main._on_fire_pressed()
+		while main.busy:
+			if main._intro_open != null:
+				main._intro_closed.emit()
+			await process_frame
+	check(b.shots_fired == 3, "three shots fired")
+	check(main.boss_bar.words() == "strikes in 3 shots", "the counter starts again after the strike: " + main.boss_bar.words())
+	main._begin_stage(1, Stages.deck_for(1))
+	await process_frame
+	check(main.boss_bar == null, "no bar on an ordinary stage")
+	main.show_menu()
+	await process_frame
 
 
 ## Daily Haul: start screen, a battle, restart, and the score screen.

@@ -153,3 +153,10 @@ stage cards at level 1 (no levels, Transcended cards, gifts or Last Shot); the f
 and the first finished attempt is the score to share (copied to the clipboard). Rules: `scripts/core/daily_haul.gd`,
 screens: `scripts/ui/daily_screens.gd`. Spec: `design/gdd/daily-challenge.md`. Debug: `--daily`, `--daily-result`.
 Placeholder icons and emblems for these features are in `scripts/ui/feature_art.gd`.
+
+## Boss rules
+Each boss strikes after every third shot: **Ghost Tide** (stages 10, 40, 70, 100) raises sunken barrels, **Iron
+Kraken** (20, 50, 80) turns plain barrels to iron, **Skull Storm** (30, 60, 90) turns them into cursed skulls
+(`Stages.BOSS_RULES`, `Battle._boss_strike`). A strike affects 4% of the picture's barrels (at least 2). The bar under
+the HUD counts the shots. Boss slack and star limits were tuned with the rules (`design/gdd/boss-rules.md`).
+Debug: `--progress=39 --autostart --stage=40 --strike-demo`.

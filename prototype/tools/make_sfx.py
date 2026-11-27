@@ -149,3 +149,12 @@ save("drumroll", mix(*[offset(lowpass(tone(0.05, 190, 170, "sine", 0.25 + 0.5 * 
 # Crew cheer for a PLUNDER shot: several rising voices with breath noise.
 save("crew_cheer", mix(*[offset(lowpass(tone(0.7, f, f * 1.28, "saw", 0.22, attack=0.08, release=0.35, noise=0.18, vibrato=0.025 + 0.004 * i), 0.22), 0.025 * i)
                          for i, f in enumerate([220, 262, 294, 330, 392, 440])]))
+# Boss strikes: a ghostly swell, an iron clang with the sea under it, and falling skulls.
+save("strike_ghost", mix(tone(0.9, 196, 392, "sine", 0.45, attack=0.25, release=0.4, vibrato=0.05),
+                         tone(0.9, 294, 587, "sine", 0.28, attack=0.35, release=0.4, vibrato=0.07),
+                         lowpass(tone(0.8, 200, 200, "sine", 0.5, noise=1.0, attack=0.3, release=0.45), 0.08)))
+save("strike_armor", mix(tone(0.6, 92, 60, "sine", 0.85, release=0.55), chime(311, 0.7, 0.4, ((1.0, 1.0), (2.76, 0.6), (5.4, 0.35))),
+                         offset(chime(233, 0.6, 0.35, ((1.0, 1.0), (2.76, 0.6), (5.4, 0.35))), 0.2),
+                         lowpass(tone(0.5, 150, 150, "sine", 0.7, noise=1.0, release=0.45), 0.1)))
+save("strike_curse", mix(*[offset(tone(0.32, 900 - 90 * i, 260 - 20 * i, "tri", 0.3, release=0.2), 0.1 * i) for i in range(5)],
+                         offset(tone(0.4, 110, 82, "saw", 0.35, release=0.35), 0.45)))

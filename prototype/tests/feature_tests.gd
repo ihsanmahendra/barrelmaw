@@ -18,6 +18,7 @@ func run() -> void:
 	test_last_shot()
 	test_combo()
 	test_daily()
+	test_boss_rules()
 	SaveData.reset()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveData.path))
 	SaveData.path = path
@@ -114,3 +115,64 @@ func test_daily() -> void:
 	SaveData.daily_finish("2026-11-27", slow)
 	SaveData.reload_from_disk()
 	check(SaveData.daily_finish("2026-11-27", quick) == 0 and int(SaveData.pack_state()["doubloons"]) == 20, "a reload does not pay again")
+
+
+## design/gdd/boss-rules.md: rules, values and section 8.
+const BOSS_VALUES: Dictionary = {  # stage -> [rule, slack, 3-star turns, 2-star turns]
+	10: ["ghost", 0.62, 10, 12], 20: ["armor", 0.51, 13, 15], 30: ["curse", 0.26, 7, 9], 40: ["ghost", 0.16, 6, 8],
+	50: ["armor", 0.17, 10, 12], 60: ["curse", 0.15, 9, 11], 70: ["ghost", 0.08, 8, 10], 80: ["armor", 0.08, 7, 9],
+	90: ["curse", 0.01, 7, 9], 100: ["ghost", 0.08, 9, 11],
+}
+
+
+func test_boss_rules() -> void:
+	for i in Stages.TOTAL:
+		check(Stages.is_boss(i) == (Stages.boss_rule(i) != ""), "stage %d: every boss and no other stage has a strike" % (i + 1))
+	for stage in BOSS_VALUES:
+		var i: int = stage - 1
+		var row: Array = BOSS_VALUES[stage]
+		check(Stages.boss_rule(i) == row[0] and is_equal_approx(Stages.slack(i), row[1]), "stage %d rule and slack" % stage)
+		check(Stages.star3_turns(i) == row[2] and Stages.star2_turns(i) == row[3], "stage %d star turns" % stage)
+		check(Stages.strike_size(i) >= 2, "a strike affects at least 2 barrels")
+	# Strikes after shots 3, 6 and 9 only, and never after the winning shot.
+	for stage in [10, 20, 30]:
+		var i: int = stage - 1
+		var rule := Stages.boss_rule(i)
+		var b := Stages.new_battle(i, Stages.deck_for(i), 11)
+		var color := b.board.most_common()
+		b.queue = []
+		for k in 12:
+			b.queue.append({"color": color, "ammo": 1})  # not wild: Ghost Tide only raises colors still queued
+		for shot in range(1, 10):
+			b.fire()
+			var struck := not b.strike_last.is_empty()
+			check(struck == (shot % 3 == 0), "stage %d: strike after shot %d is %s" % [stage, shot, str(shot % 3 == 0)])
+			if struck:
+				check(b.strike_last.size() <= Stages.strike_size(i), "no more than the strike size")
+				for s in b.strike_last:
+					var p: Vector2i = s["pos"]
+					if rule == "ghost":
+						check(b.board.get_c(p.x, p.y) != "" and b.board.get_special(p.x, p.y) == "", "a barrel rose again, plain")
+					else:
+						check(b.board.get_special(p.x, p.y) == ("iron" if rule == "armor" else "curse"), "a plain barrel changed")
+		# Preview equals play for every card, and previews never strike.
+		for id in GameData.card_order:
+			var c := Stages.new_battle(i, [id, id, id], 21)
+			c.shots_fired = 2
+			var cells: Array = c.board.cells.duplicate()
+			var shown := c.preview_targets()
+			check(c.board.cells == cells, "preview_targets does not strike")
+			var after: Battle = c.preview_card(0)["battle"]
+			c.play_card(0)
+			check(after.board.cells == c.board.cells and after.board.special == c.board.special and after.queue == c.queue
+				and after.shots_fired == c.shots_fired and after.boss_rule == rule, "preview matches play for %s on stage %d" % [id, stage])
+			check(shown.size() >= 0, "preview ran")
+	var win := Stages.new_battle(9, Stages.deck_for(9), 3)
+	win.shots_fired = 2
+	for y in win.board.h:
+		for x in win.board.w:
+			win.board.remove_at(x, y)
+	win.board.cells[0] = "R"
+	win.queue = [{"color": "R", "ammo": 1, "wild": true}, {"color": "R", "ammo": 1}]
+	win.fire()
+	check(win.won and win.strike_last.is_empty(), "no strike after the winning shot")

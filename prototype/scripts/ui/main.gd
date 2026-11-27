@@ -63,6 +63,7 @@ var _intro_open: Control
 
 signal _intro_closed
 var _overlay_layer: CanvasLayer
+var boss_bar: BossBar  # on boss stages only
 var _offer: LastShotOffer  # the "So close!" panel while it is open
 var _menu_stage: PirateStage
 var packs: PackScreens  # Treasury, chest opening, Cargo Hold, Port Market
@@ -129,6 +130,8 @@ func _ready() -> void:
 					SaveData.mark_special_seen(kind)
 				for mod in Stages.ELITE_TEXT:
 					SaveData.mark_special_seen(RULE_SEEN_PREFIX + String(mod))
+				for boss in Stages.BOSS_TEXT:
+					SaveData.mark_special_seen(BOSS_SEEN_PREFIX + String(boss))
 		if a.begins_with("--stage="):
 			debug_stage = int(a.get_slice("=", 1)) - 1
 	for a in args:  # debug: --packs=N gives N of every chest, Doubloons, Pearls, some spare copies and the Transcended cards
@@ -323,6 +326,15 @@ func _ready() -> void:
 		if args.has("--cheer"):
 			await get_tree().create_timer(0.5).timeout
 			queue_view.cheer(8)  # debug: show the grin without having to land a big hit
+		if args.has("--strike-demo"):  # debug: a boss strike, held half way for a screenshot
+			await get_tree().create_timer(0.3).timeout
+			if _intro_open != null:
+				_intro_closed.emit()
+			battle.shots_fired = Battle.STRIKE_EVERY - 1
+			battle.queue = battle.queue.slice(0, 1) + battle.queue
+			battle.fire()
+			board_view.strike_hold_at = 0.45
+			_after_action("fire")
 		for a in args:  # debug: --combo=N shows the shout for a shot that removed N barrels
 			if a.begins_with("--combo="):
 				await get_tree().create_timer(0.3).timeout
@@ -913,6 +925,9 @@ func _begin_stage(index: int, deck: Array) -> void:
 	var rule := Stages.elite_modifier(index)
 	if rule != "" and not SaveData.special_seen(RULE_SEEN_PREFIX + rule):
 		_show_rule_intro(index)
+	var boss := Stages.boss_rule(index)
+	if boss != "" and not SaveData.special_seen(BOSS_SEEN_PREFIX + boss):
+		_show_boss_intro(index)
 
 
 func _build_battle_screen(title: String) -> void:
@@ -944,6 +959,10 @@ func _build_battle_screen(title: String) -> void:
 	hud = HudView.new()
 	hud.custom_minimum_size = Vector2(0, 64 if tutorial else 110)
 	box.add_child(hud)
+	boss_bar = null
+	if not tutorial and battle.boss_rule != "":
+		boss_bar = BossBar.new(battle.boss_rule, String(Stages.BOSS_TEXT[battle.boss_rule][0]))
+		box.add_child(boss_bar)  # the board below gives up the room
 
 	board_view = BoardView.new()
 	board_view.custom_minimum_size = Vector2(0, 80 if tutorial else 150)  # the board takes whatever room is left; this is only the floor
@@ -1005,6 +1024,8 @@ func _build_battle_screen(title: String) -> void:
 
 func _refresh() -> void:
 	_update_status()
+	if boss_bar != null and is_instance_valid(boss_bar):
+		boss_bar.set_state(battle.shots_fired, battle.last_fired and not battle.strike_last.is_empty() and busy)
 	for c in hand_box.get_children():
 		c.queue_free()
 	# Cards drawn since the last refresh are always the last ones in the hand.
@@ -1204,6 +1225,9 @@ func _after_action(kind: String) -> void:
 	_removed_note = ""
 	highlight.clear()
 	var origin := _shooter_origin()
+	var strikes: Array = battle.strike_last.duplicate() if kind == "fire" else []
+	if not strikes.is_empty():
+		board_view.hold_strike(strikes)  # the board shows them only when the strike plays
 	var duration := board_view.play_shots(origin)
 	_deal_delay = duration * 0.6
 	_refresh()
@@ -1213,6 +1237,12 @@ func _after_action(kind: String) -> void:
 		var kind_seen: String = _intro_queue.pop_front()
 		await get_tree().create_timer(0.25).timeout
 		await _show_special_intro(kind_seen)
+	if not strikes.is_empty():
+		sfx.play("strike_" + battle.boss_rule)
+		board_view.play_strike(battle.boss_rule)
+		await get_tree().create_timer(BoardView.STRIKE_TIME).timeout
+		if boss_bar != null and is_instance_valid(boss_bar):
+			boss_bar.set_state(battle.shots_fired, false)
 	_announce_removed_balls()
 	if battle.over:
 		if battle.won:
@@ -1677,6 +1707,8 @@ func _open_popup(index: int) -> void:
 	inner.add_child(_label(String(pic["name"]) + ("   -   " + tag if tag != "" else ""), 22, Color("d62839") if tag == "BOSS" else Color("6b4a2f"), HORIZONTAL_ALIGNMENT_CENTER, true, false))
 	if Stages.elite_modifier(index) != "":
 		inner.add_child(_rule_plate(index))
+	elif Stages.boss_rule(index) != "":
+		inner.add_child(_boss_plate(index))
 	var preview := PicturePreview.new()
 	preview.custom_minimum_size = Vector2(0, 170)
 	preview.set_picture(pic["rows"])
@@ -1960,6 +1992,46 @@ func _rule_plate(index: int) -> PanelContainer:
 	line.custom_minimum_size = Vector2(280, 0)
 	rows.add_child(line)
 	return plate
+
+
+const BOSS_SEEN_PREFIX: String = "boss_"
+
+
+## The boss rule's card in the stage pop-up: name, one line and its emblem.
+func _boss_plate(index: int) -> PanelContainer:
+	var rule := Stages.boss_rule(index)
+	var ink: Color = BossBar.COLORS[rule][0]
+	var plate := PanelContainer.new()
+	var sb := UiKit.panel_style(BossBar.COLORS[rule][1], ink.darkened(0.2), 3, 12)
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	plate.add_theme_stylebox_override("panel", sb)
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 2)
+	plate.add_child(rows)
+	rows.add_child(_label(Stages.boss_rule_name(index).to_upper(), 20, ink, HORIZONTAL_ALIGNMENT_CENTER, true, false))
+	var line := _label(Stages.boss_rule_line(index), 14, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, false, false)
+	line.custom_minimum_size = Vector2(290, 0)
+	rows.add_child(line)
+	rows.add_child(_boss_emblem(rule, 30.0, 34.0))
+	return plate
+
+
+func _boss_emblem(rule: String, size_px: float, height: float) -> Control:
+	var emblem := Control.new()
+	emblem.custom_minimum_size = Vector2(0, height)
+	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	emblem.draw.connect(func() -> void: FeatureArt.draw_boss_emblem(emblem, emblem.size / 2.0, size_px, rule))
+	return emblem
+
+
+## Pop-up shown the first time a boss with a new rule starts.
+func _show_boss_intro(index: int) -> void:
+	var rule := Stages.boss_rule(index)
+	SaveData.mark_special_seen(BOSS_SEEN_PREFIX + rule)
+	sfx.play("strike_" + rule)
+	await _open_intro("BOSS RULE", BossBar.COLORS[rule][1], BossBar.COLORS[rule][0], Stages.boss_rule_name(index),
+		_boss_emblem(rule, 70.0, 110.0), Stages.boss_rule_line(index) + "\nThe bar above the board counts the shots until then.", Color("ef476f"))
 
 
 ## Pop-up shown the first time a stage with a new elite rule starts. Waits for the player's tap.

@@ -281,8 +281,9 @@ func test_design_values() -> void:
 		check(int(PackConfig.chest(id).get("price", -1)) == int(economy["chest_prices"][id]), "chest price matches design: " + str(id))
 	var v: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("rebalance-values.json")))
 	for i in Stages.TOTAL:
-		check(is_equal_approx(Stages.slack(i), float(v["slack"][i])), "slack matches design, stage %d" % (i + 1))
-		check(Stages.star3_turns(i) == int(v["star3_turns"][i]) and Stages.star2_turns(i) == int(v["star2_turns"][i]), "star turns match design, stage %d" % (i + 1))
+		if not Stages.is_boss(i):  # boss values come from boss-rules.md instead (FeatureTests)
+			check(is_equal_approx(Stages.slack(i), float(v["slack"][i])), "slack matches design, stage %d" % (i + 1))
+			check(Stages.star3_turns(i) == int(v["star3_turns"][i]) and Stages.star2_turns(i) == int(v["star2_turns"][i]), "star turns match design, stage %d" % (i + 1))
 		var row: Dictionary = v["stages"][str(i + 1)]
 		check(Stages.elite_modifier(i) == str(row.get("mod", "")), "elite rule matches design, stage %d" % (i + 1))
 		var sp := Stages.specials_for(i)
