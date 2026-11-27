@@ -13,6 +13,7 @@ func check(cond: bool, msg: String) -> void:
 
 func _init() -> void:
 	GameData.ensure_loaded()
+	test_art_import()
 	test_data()
 	test_cards()
 	test_tutorial_script()
@@ -27,6 +28,13 @@ func _init() -> void:
 	bot_report(60)
 	print("Failures: ", failures)
 	quit(1 if failures > 0 else 0)
+
+
+## Barrels are drawn much smaller than their pictures, so they need mipmaps or they shimmer.
+func test_art_import() -> void:
+	for n in ["barrel", "barrel_atlas"]:
+		var tex: Texture2D = load("res://assets/art/%s.png" % n)
+		check(tex.get_image().has_mipmaps(), n + ".png imported with mipmaps")
 
 
 func test_data() -> void:
