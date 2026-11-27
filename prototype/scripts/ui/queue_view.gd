@@ -6,6 +6,7 @@ extends Control
 
 const PIRATE_W: float = 164.0
 const TAG_H: float = 20.0
+const IDLE_REDRAW: float = 1.0 / 30.0  # the idle rocking does not need every frame on a phone
 
 var battle: Battle
 ## Night stages: a warm lantern stands beside the pirate and lights him and the cannon.
@@ -22,6 +23,7 @@ var _load_t: float = -1.0
 var _load_color: Color = Color.WHITE
 var _smoke: Array = []  # pos, t, life, size
 var _leaving: Array = []  # cannonballs removed because their color is gone: color, number, pos, t
+var _since_draw: float = 0.0
 
 
 func _ready() -> void:
@@ -111,7 +113,11 @@ func _process(delta: float) -> void:
 		if l["t"] < 0.9:
 			still.append(l)
 	_leaving = still
-	queue_redraw()
+	_since_draw += delta
+	var busy := _recoil > 0.0 or _flash > 0.0 or _shout > 0.0 or _cheer > 0.0 or _load_t >= 0.0 or not _smoke.is_empty() or not _leaving.is_empty()
+	if busy or _since_draw >= IDLE_REDRAW:
+		_since_draw = 0.0
+		queue_redraw()
 
 
 func _draw() -> void:

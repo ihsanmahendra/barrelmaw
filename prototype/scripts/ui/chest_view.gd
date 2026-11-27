@@ -46,4 +46,7 @@ func art_bottom() -> float:
 
 func _draw() -> void:
 	var off := Vector2(sin(_time * 70.0), cos(_time * 53.0)) * shake
-	ChestArt.draw(self, _art_center() + off, _art_width(), chest_id, open_t, _time)
+	if not animate and open_t <= 0.0 and shake <= 0.0:
+		ChestArt.draw_still(self, _art_center(), _art_width(), chest_id)
+	else:
+		ChestArt.draw(self, _art_center() + off, _art_width(), chest_id, open_t, _time)

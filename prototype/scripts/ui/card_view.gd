@@ -30,11 +30,16 @@ func setup(id: String) -> CardView:
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 		add_theme_stylebox_override(state, empty)
 	custom_minimum_size = Vector2(0, 188)
-	set_process(_card["rarity"] == "transcended")  # only the shimmering cards redraw every frame
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mouse_entered.connect(queue_redraw)
 	mouse_exited.connect(queue_redraw)
 	return self
+
+
+## Only the shimmering cards run every frame. This has to be set here: Godot turns processing on when a node
+## with _process becomes ready, undoing any set_process() call made before that.
+func _ready() -> void:
+	set_process(_card.get("rarity", "") == "transcended")
 
 
 ## The shimmer of a Transcended card: redrawn at 30 fps, and only while the card is on screen (a Cargo Hold
@@ -206,5 +211,8 @@ func _draw_icon_between(dsz: Vector2, top: float, bottom: float) -> void:
 	var width := dsz.x - 40.0
 	var origin := Vector2(dsz.x / 2.0 - width / 2.0 * fit, top - ICON_TOP * fit)
 	draw_set_transform(origin * k, 0.0, Vector2(k, k) * fit)
-	UiKit.draw_card_icon(self, Rect2(Vector2.ZERO, Vector2(width, 52)), _card)
+	var card := _card
+	var box := Vector2(width, 52)
+	BakedArt.draw(self, "card:%s:%d" % [card_id, int(width)], Vector2.ZERO, Rect2(-10.0, -14.0, width + 20.0, 80.0),
+		func(item: CanvasItem, at: Vector2) -> void: UiKit.draw_card_icon(item, Rect2(at, box), card), k * fit)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(k, k))

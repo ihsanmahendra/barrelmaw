@@ -29,6 +29,13 @@ static func draw(c: CanvasItem, p: Vector2, kind: int, t: float, light: Color) -
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+## The same decoration as a still picture (see BakedArt), tinted by light. Move p to make it bob.
+static func draw_still(c: CanvasItem, p: Vector2, kind: int, light: Color) -> void:
+	var k := posmod(kind, KINDS)
+	BakedArt.draw_tinted(c, "decor:%d" % k, p, Rect2(-75.0, -70.0, 150.0, 140.0),
+		func(item: CanvasItem, at: Vector2, col: Color) -> void: draw(item, at, k, 0.0, col), light)
+
+
 static func _shape(c: CanvasItem, pts: PackedVector2Array, top: Color, bottom: Color, light: Color, outline: float = 2.2) -> void:
 	var lo := INF
 	var hi := -INF

@@ -209,6 +209,13 @@ static func _draw_heap(c: CanvasItem, body: Rect2, w: float, open_t: float, t: f
 # ---------- the whole chest ----------
 
 ## Draws a chest centered at `center`, `w` wide.
+## A shut chest that holds still, painted once and reused (see BakedArt).
+static func draw_still(c: CanvasItem, center: Vector2, w: float, chest_id: String) -> void:
+	var art_w := snappedf(w, 0.5)
+	BakedArt.draw(c, "chest:%s:%.1f" % [chest_id, art_w], center, Rect2(-art_w, -art_w, art_w * 2.0, art_w * 2.0),
+		func(item: CanvasItem, at: Vector2) -> void: draw(item, at, art_w, chest_id))
+
+
 ## How far below center the shut chest and its ground shadow reach.
 static func bottom(w: float) -> float:
 	return w * 0.5736 + 3.0
