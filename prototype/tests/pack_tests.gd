@@ -249,7 +249,7 @@ func test_first_crate_and_open_rules() -> void:
 	check(Packs.take_pending(st)["chest"] == "crate" and (st["pending"] as Array).size() == 1 and not Packs.take_pending(st).is_empty() and Packs.take_pending(st).is_empty(), "pending reveals come out in order")
 	# Buying.
 	st["doubloons"] = 700
-	check(Packs.buy(st, "iron", 10) and int(st["doubloons"]) == 100 and Packs.count(st, "iron") == 2, "buying spends Doubloons")
+	check(Packs.buy(st, "iron", 10) and int(st["doubloons"]) == 300 and Packs.count(st, "iron") == 2, "buying spends Doubloons")
 	check(not Packs.buy(st, "iron", 10) and not Packs.buy(st, "coffer", 10), "too expensive or locked chests cannot be bought")
 
 
@@ -450,22 +450,22 @@ func test_level_effects() -> void:
 		check(CardLevels.effects_for(card, 5).size() >= (card["effects"] as Array).size(), "higher levels only add effects for " + id)
 	var b := _level_battle("power_shot", 4)
 	b.play_card(0)
-	check(int(b.mods["ammo"]) == 4, "Power Shot level 4 gives +2 +1 +1 = 4 hits, got %d" % int(b.mods["ammo"]))
+	check(int(b.mods["ammo"]) == 5, "Power Shot level 4 gives +3 +1 +1 = 5 hits, got %d" % int(b.mods["ammo"]))
 	var b0 := _level_battle("power_shot", 3)
 	b0.play_card(0)
-	check(int(b0.mods["ammo"]) == 3, "Power Shot level 3 has the level 2 bonus only, got %d" % int(b0.mods["ammo"]))
+	check(int(b0.mods["ammo"]) == 4, "Power Shot level 3 has the level 2 bonus only, got %d" % int(b0.mods["ammo"]))
 	var b1 := _level_battle("power_shot", 1)
 	b1.play_card(0)
-	check(int(b1.mods["ammo"]) == 2, "Power Shot level 1 is unchanged")
+	check(int(b1.mods["ammo"]) == 3, "Power Shot level 1 is unchanged")
 	var b2 := _level_battle("reload", 4)
 	b2.play_card(0)
 	check(int(b2.queue[0]["ammo"]) == 5, "Reload level 4 adds a 5-hit ball, got %d" % int(b2.queue[0]["ammo"]))
 	var b3 := _level_battle("tidy_up", 5)
 	b3.play_card(0)
-	check(b3.removed_last.size() == 1 and int(b3.mods["ammo"]) == 4, "Tidy Up level 5 removes 1 barrel and gives +4 hits, got %d and %d" % [b3.removed_last.size(), int(b3.mods["ammo"])])
+	check(b3.removed_last.size() == 2 and int(b3.mods["ammo"]) == 5, "Tidy Up level 5 removes 2 barrels and gives +5 hits, got %d and %d" % [b3.removed_last.size(), int(b3.mods["ammo"])])
 	var b4 := _level_battle("color_bomb", 5)
 	b4.play_card(0)
-	check(b4.removed_last.size() == 7, "Color Bomb level 5 removes 5 + 1 + 1 = 7 barrels, got %d" % b4.removed_last.size())
+	check(b4.removed_last.size() == 10, "Color Bomb level 5 removes 8 + 1 + 1 = 10 barrels, got %d" % b4.removed_last.size())
 	var b5 := _level_battle("quick_draw", 5)
 	var before := b5.hand.size()
 	b5.play_card(0)
@@ -532,15 +532,15 @@ func test_transcended_effects() -> void:
 	var m2 := _board_battle(["RRRRBB", "RRRRBB"], "maelstrom")
 	m2.play_card(0)
 	check(m2.removed_last.size() == 8 and m2.board.color_counts().has("B") and not m2.board.color_counts().has("R"), "Maelstrom takes the whole color when it has fewer than 20")
-	# Jones' Ledger: two wild 5-hit balls at the front.
+	# Jones' Ledger: two wild 2-hit balls at the front.
 	var l := _board_battle(["BBBBBBBB", "BBBBBBBB"], "davy_ledger")
 	l.queue = [{"color": "R", "ammo": 3}]
 	l.play_card(0)
-	check(l.queue.size() == 3 and bool(l.queue[0].get("wild", false)) and int(l.queue[0]["ammo"]) == 3 and int(l.queue[1]["ammo"]) == 3, "Ledger adds two 3-hit wild balls")
-	check(l.shots_left() == 6, "the two wild balls count as usable shots and the red one does not, got %d" % l.shots_left())
+	check(l.queue.size() == 3 and bool(l.queue[0].get("wild", false)) and int(l.queue[0]["ammo"]) == 2 and int(l.queue[1]["ammo"]) == 2, "Ledger adds two 2-hit wild balls")
+	check(l.shots_left() == 4, "the two wild balls count as usable shots and the red one does not, got %d" % l.shots_left())
 	var before := l.board.cells.duplicate()
 	l.fire()
-	check(l.board.cells != before and l.removed_last.size() == 3, "a wild ball hits a color it does not match, removed %d" % l.removed_last.size())
+	check(l.board.cells != before and l.removed_last.size() == 2, "a wild ball hits a color it does not match, removed %d" % l.removed_last.size())
 	# A wild ball is not thrown out when its own color is gone; a normal one is.
 	var l2 := _board_battle(["BBBB"], "skip")
 	l2.queue = [{"color": "R", "ammo": 2, "wild": true}, {"color": "R", "ammo": 2}]
@@ -550,7 +550,7 @@ func test_transcended_effects() -> void:
 	var l3 := _board_battle(["BBBBBBBB", "BBBBBBBB"], "davy_ledger", 5)
 	l3.queue = []
 	l3.play_card(0)
-	check(l3.queue.size() == 2 and int(l3.queue[0]["ammo"]) == 3 and l3.removed_last.size() == 2, "Ledger level 5 adds 2 barrels instead of hits, removed %d" % l3.removed_last.size())
+	check(l3.queue.size() == 2 and int(l3.queue[0]["ammo"]) == 2 and l3.removed_last.size() == 2, "Ledger level 5 adds 2 barrels instead of hits, removed %d" % l3.removed_last.size())
 	# Ghost Compass: a free turn and 2 cards.
 	var g := _board_battle(["RRRRRRRR", "RRRRRRRR", "RRRRRRRR"], "ghost_compass")
 	g.queue = [{"color": "R", "ammo": 1}, {"color": "R", "ammo": 1}, {"color": "R", "ammo": 1}]
@@ -585,12 +585,12 @@ func test_transcended_effects() -> void:
 	var e2 := _board_battle(["RRRRRRRR", "RRRRRRRR"], "phantom_echo")
 	e2.hand = ["power_shot", "phantom_echo", "phantom_echo"]
 	e2.play_card(0)
-	check(int(e2.mods["ammo"]) == 2 and e2.last_played == "power_shot", "Power Shot adds 2 hits")
+	check(int(e2.mods["ammo"]) == 3 and e2.last_played == "power_shot", "Power Shot adds 3 hits")
 	e2.plays_left = 3
 	e2.play_card(0)  # Phantom Echo (the hand is now phantom_echo, phantom_echo)
-	check(int(e2.mods["ammo"]) == 2 + 3 + 1 and e2.last_played == "power_shot", "Echo repeats Power Shot at level 2 (+3) and adds 1 hit, got %d" % int(e2.mods["ammo"]))
+	check(int(e2.mods["ammo"]) == 3 + 4 + 1 and e2.last_played == "power_shot", "Echo repeats Power Shot at level 2 (+4) and adds 1 hit, got %d" % int(e2.mods["ammo"]))
 	e2.play_card(0)
-	check(int(e2.mods["ammo"]) == 2 + 4 + 4, "a second Echo repeats it again, got %d" % int(e2.mods["ammo"]))
+	check(int(e2.mods["ammo"]) == 3 + 5 + 5, "a second Echo repeats it again, got %d" % int(e2.mods["ammo"]))
 	# The repeat uses the level above the card's level, up to 5.
 	var e3 := _board_battle(["RRRRRRRR", "RRRRRRRR"], "phantom_echo")
 	e3.levels = {"power_shot": 4, "phantom_echo": 1}
@@ -599,11 +599,11 @@ func test_transcended_effects() -> void:
 	e3.play_card(0)
 	var after_ps := int(e3.mods["ammo"])
 	e3.play_card(0)
-	check(int(e3.mods["ammo"]) - after_ps == 6, "Echo repeats a level 4 card at level 5 (+5 hits) and adds 1, got +%d" % (int(e3.mods["ammo"]) - after_ps))
+	check(int(e3.mods["ammo"]) - after_ps == 7, "Echo repeats a level 4 card at level 5 (+6 hits) and adds 1, got +%d" % (int(e3.mods["ammo"]) - after_ps))
 	e3.levels["power_shot"] = 5
 	var b5 := int(e3.mods["ammo"])
 	e3.play_card(0)
-	check(int(e3.mods["ammo"]) - b5 == 6, "and never above level 5")
+	check(int(e3.mods["ammo"]) - b5 == 7, "and never above level 5")
 
 
 ## Previews must equal the real play for the new cards too, including Phantom Echo after another card.

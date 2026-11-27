@@ -66,7 +66,7 @@
    "rarity": "common",
    "cards": 3,
    "unlock_cleared": 0,
-   "price": 150,
+   "price": 200,
    "pity": [],
    "slots": [
     {
@@ -85,7 +85,7 @@
    "rarity": "rare",
    "cards": 4,
    "unlock_cleared": 10,
-   "price": 600,
+   "price": 400,
    "pity": [
     "epic"
    ],
@@ -114,7 +114,7 @@
    "rarity": "epic",
    "cards": 4,
    "unlock_cleared": 30,
-   "price": 2000,
+   "price": 650,
    "pity": [
     "epic",
     "legendary"
@@ -144,7 +144,7 @@
    "rarity": "legendary",
    "cards": 5,
    "unlock_cleared": 40,
-   "price": 6000,
+   "price": 1000,
    "pity": [
     "epic",
     "legendary"
@@ -174,7 +174,7 @@
    "rarity": "transcended",
    "cards": 5,
    "unlock_cleared": 50,
-   "price": 9000,
+   "price": 1500,
    "pity": [
     "epic",
     "legendary",

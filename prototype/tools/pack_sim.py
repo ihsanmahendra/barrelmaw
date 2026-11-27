@@ -13,7 +13,7 @@ def slots(tier):
     if tier=="gilded":  return [[0,55,40,5,0]]*4+[[0,0,80,18,2]]
     if tier=="vault":   return [[0,0,72,28,0]]*4+[[0,0,0,62,38]]
 GATE={"crate":0,"iron":10,"coffer":30,"gilded":41,"vault":51}
-PRICE={"crate":150,"iron":600,"coffer":2000,"gilded":6000,"vault":9000}
+PRICE={"crate":200,"iron":400,"coffer":650,"gilded":1000,"vault":1500}
 PITY={"E":30,"L":60,"T":8}  # cards-since: Epic+ every 30 cards, Legendary+ every 100, vault packs w/o new T every 8
 
 def unlocked_pool(stage):

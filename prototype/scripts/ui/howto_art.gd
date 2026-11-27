@@ -94,8 +94,8 @@ func _draw_preview() -> void:
 	draw_style_box(cb, card)
 	var font := UiKit.bold_font()
 	PirateArt.draw_cannonball(self, Vector2(52.0, 27.0), 9.0, Color("ef476f"))
-	draw_string_outline(font, Vector2(61.0, 36.0), "+2", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Color(0.1, 0.07, 0.05, 0.9))
-	draw_string(font, Vector2(61.0, 36.0), "+2", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiKit.GOLD)
+	draw_string_outline(font, Vector2(61.0, 36.0), "+3", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Color(0.1, 0.07, 0.05, 0.9))
+	draw_string(font, Vector2(61.0, 36.0), "+3", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiKit.GOLD)
 
 
 func _draw_fire() -> void:

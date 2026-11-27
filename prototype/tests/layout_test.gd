@@ -123,6 +123,32 @@ func _screen(label: String, build: Callable, wait: int = 8) -> void:
 	_check_paper_margins(label, roots)
 
 
+## Elite stages: the pop-up with the rule, the first-time explanation, a two-card hand and the longest card texts.
+func _elite_screens() -> void:
+	for i in [4, 14, 24]:
+		main.show_map(i)
+		await _frames(4)
+		main._open_popup(i)
+		await _frames(30)
+		_check("stage %d pop-up" % (i + 1), [main.popup])
+		main._close_popup()
+		main._show_rule_intro(i)
+		await _frames(30)
+		_check("%s explanation" % Stages.elite_name(i), [main._intro_open])
+		main._intro_closed.emit()
+		await _frames(2)
+	await _screen("short hand battle", func() -> void: main._begin_stage(24, Stages.deck_for(24)), 90)
+	if main._intro_open != null:
+		failures += 1
+		print("  the rule explanation showed again after it was seen")
+	await _screen("longest card texts", func() -> void:
+		main.battle.hand = ["ghost_compass", "davy_ledger"]
+		main.battle.levels = {"ghost_compass": 5, "davy_ledger": 5}
+		main.battle.drawn_total = 0
+		main._seen_drawn = 0
+		main._refresh())
+
+
 func _run() -> void:
 	_check_ribbon_art()
 	var packs: PackScreens = main.packs
@@ -145,4 +171,5 @@ func _run() -> void:
 		main.battle.over = true
 		main.battle.won = true
 		main.show_stage_result(true))
+	await _elite_screens()
 	await _screen("tutorial", func() -> void: main.start_tutorial(), 14)

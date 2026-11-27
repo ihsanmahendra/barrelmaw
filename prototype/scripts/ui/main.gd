@@ -36,7 +36,7 @@ const TUTORIAL_STEPS: Array = [
 	{"text": "Welcome! Your goal: remove every colored barrel from the board.", "advance": "next", "look": "board", "card": "", "fire": false},
 	{"text": "These are your cannonballs. The NEXT one goes into the cannon first. It only hits barrels of its own color, and the number is how many it smashes.", "advance": "next", "look": "queue", "card": "", "fire": false},
 	{"text": "Each turn you may play ONE card. Tap Power Shot to preview what it does.", "advance": "card", "look": "card", "card": "power_shot", "fire": false},
-	{"text": "Power Shot added +2 hits. The white outlines show the barrels that will be removed. Now press FIRE!", "advance": "fire", "look": "fire", "card": "", "fire": true},
+	{"text": "Power Shot added +3 hits. The white outlines show the barrels that will be removed. Now press FIRE!", "advance": "fire", "look": "fire", "card": "", "fire": true},
 	{"text": "Nice! Some cards clear more than one barrel per hit. Tap Row Strike to preview it: each hit clears a whole row of its color.", "advance": "card", "look": "card", "card": "row_strike", "fire": false},
 	{"text": "Outlined barrels are what will go. Press FIRE!", "advance": "fire", "look": "fire", "card": "", "fire": true},
 	{"text": "Last cannonball: blue. Pick any card (or skip), then press FIRE to finish the picture.", "advance": "fire", "look": "none", "card": "*", "fire": true},
@@ -124,6 +124,8 @@ func _ready() -> void:
 			if not args.has("--fresh-specials"):  # debug runs skip the first-time pop-ups
 				for kind in Board.SPECIALS:
 					SaveData.mark_special_seen(kind)
+				for mod in Stages.ELITE_TEXT:
+					SaveData.mark_special_seen(RULE_SEEN_PREFIX + String(mod))
 		if a.begins_with("--stage="):
 			debug_stage = int(a.get_slice("=", 1)) - 1
 	for a in args:  # debug: --packs=N gives N of every chest, Doubloons, Pearls, some spare copies and the Transcended cards
@@ -843,6 +845,9 @@ func _begin_stage(index: int, deck: Array) -> void:
 	_build_battle_screen(Stages.title(index))
 	if gift != "":
 		_toast("Gift card added to your deck: %s" % String(GameData.cards[gift]["name"]), 3.5)
+	var rule := Stages.elite_modifier(index)
+	if rule != "" and not SaveData.special_seen(RULE_SEEN_PREFIX + rule):
+		_show_rule_intro(index)
 
 
 func _build_battle_screen(title: String) -> void:
@@ -1547,6 +1552,8 @@ func _open_popup(index: int) -> void:
 	if Stages.is_night(index):
 		tag = (tag + "   NIGHT") if tag != "" else "NIGHT"
 	inner.add_child(_label(String(pic["name"]) + ("   -   " + tag if tag != "" else ""), 22, Color("d62839") if tag == "BOSS" else Color("6b4a2f"), HORIZONTAL_ALIGNMENT_CENTER, true, false))
+	if Stages.elite_modifier(index) != "":
+		inner.add_child(_rule_plate(index))
 	var preview := PicturePreview.new()
 	preview.custom_minimum_size = Vector2(0, 170)
 	preview.set_picture(pic["rows"])
@@ -1800,6 +1807,55 @@ func _show_special_intro(kind: String) -> void:
 	var amount := Battle.AMMO_CRATE_HITS if kind == "ammo" else Battle.CURSE_HITS
 	var info: Array = SPECIAL_INTRO[kind]
 	var body: String = String(info[1]) % amount if String(info[1]).contains("%d") else String(info[1])
+	await _open_intro("BUFF  -  helps you" if good else "DEBUFF  -  hurts you",
+		Color("2fa84f") if good else Color("c4284d"), Color("1d6b34") if good else Color("7a1230"),
+		String(info[0]), SpecialIntroIcon.new(kind), body, Color("2a9d8f") if good else Color("ef476f"))
+
+
+## Saved with the "seen" special barrels, so each elite rule is explained once.
+const RULE_SEEN_PREFIX: String = "rule_"
+
+
+## Name and one line of the stage's elite rule, on a dark plate in the stage pop-up.
+func _rule_plate(index: int) -> PanelContainer:
+	var plate := PanelContainer.new()
+	var sb := UiKit.panel_style(Color(0.24, 0.12, 0.09, 0.95), Color("d62839"), 3, 12)
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 8
+	plate.add_theme_stylebox_override("panel", sb)
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 2)
+	plate.add_child(rows)
+	rows.add_child(_label(Stages.elite_name(index).to_upper(), 19, UiKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER, true, false))
+	var line := _label(Stages.elite_line(index), 15, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, false, false)
+	line.custom_minimum_size = Vector2(280, 0)
+	rows.add_child(line)
+	return plate
+
+
+## Pop-up shown the first time a stage with a new elite rule starts. Waits for the player's tap.
+func _show_rule_intro(index: int) -> void:
+	var rule := Stages.elite_modifier(index)
+	SaveData.mark_special_seen(RULE_SEEN_PREFIX + rule)
+	sfx.play("sparkle")
+	var icon: Control
+	match rule:
+		"keg":
+			icon = SpecialIntroIcon.new("bomb", false)
+		"iron":
+			icon = SpecialIntroIcon.new("iron", false)
+		_:
+			icon = Control.new()  # two cards: the short hand
+			icon.custom_minimum_size = Vector2(0, 128)
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			icon.draw.connect(func() -> void: CardArt.draw_hand(icon, icon.size / 2.0, Stages.SHORT_HAND_SIZE, 2.4))
+	await _open_intro("ELITE RULE", Color("c4284d"), Color("7a1230"), Stages.elite_name(index), icon,
+		Stages.elite_line(index), Color("ef476f"))
+
+
+## A first-time explanation: colored tag, title, picture, text and a "Got it!" button. Await it: it returns
+## when the player closes it.
+func _open_intro(tag_text: String, tag_color: Color, tag_border: Color, title: String, icon: Control, body: String, button_color: Color) -> void:
 	_intro_open = Control.new()
 	_intro_open.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_overlay_layer.add_child(_intro_open)
@@ -1818,19 +1874,17 @@ func _show_special_intro(kind: String) -> void:
 	var inner := VBoxContainer.new()
 	inner.add_theme_constant_override("separation", 8)
 	panel.add_child(inner)
-	# Buff / debuff tag.
-	var tag := _label("BUFF  -  helps you" if good else "DEBUFF  -  hurts you", 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, false)
-	tag.add_theme_stylebox_override("normal", UiKit.panel_style(Color("2fa84f") if good else Color("c4284d"), Color("1d6b34") if good else Color("7a1230"), 3, 14))
+	var tag := _label(tag_text, 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, true, false)
+	tag.add_theme_stylebox_override("normal", UiKit.panel_style(tag_color, tag_border, 3, 14))
 	tag.custom_minimum_size = Vector2(300, 0)
 	tag.autowrap_mode = TextServer.AUTOWRAP_OFF
 	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	tag.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	inner.add_child(tag)
-	inner.add_child(_label(String(info[0]), 36, UiKit.INK, HORIZONTAL_ALIGNMENT_CENTER, true, false))
-	var icon := SpecialIntroIcon.new(kind)
+	inner.add_child(_label(title, 36, UiKit.INK, HORIZONTAL_ALIGNMENT_CENTER, true, false))
 	inner.add_child(icon)
 	inner.add_child(_label(body, 18, Color("5a3a22"), HORIZONTAL_ALIGNMENT_CENTER, false, false))
-	var ok := _button("Got it!", func() -> void: _intro_closed.emit(), Color("2a9d8f") if good else Color("ef476f"))
+	var ok := _button("Got it!", func() -> void: _intro_closed.emit(), button_color)
 	inner.add_child(ok)
 	panel.pivot_offset = Vector2(195, 230)
 	panel.scale = Vector2(0.8, 0.8)

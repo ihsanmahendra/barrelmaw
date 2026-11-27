@@ -63,7 +63,8 @@ and a night sea on the map with glowing islands and a "Night Seas" banner where 
 Some barrels in a picture are special: a **bomb** also smashes the 3x3 area around it (bombs chain), a **supply
 crate** gives a free 3-hit cannonball, an **iron barrel** takes two hits, and a **cursed skull** takes 2 hits off
 your next cannonball. They appear gradually (bombs from stage 3, crates 5, iron 8, skulls 12) and never make up
-more than a fifth of a picture (`Stages.specials_for`). The card and shot previews account for them. The first time each effect actually happens in play, a pop-up
+more than a fifth of a picture, except on Powder Keg and Iron Hull stages where they may fill two fifths
+(`Stages.specials_for`). The card and shot previews account for them. The first time each effect actually happens in play, a pop-up
 explains it (green BUFF for bombs and crates, red DEBUFF for iron and skulls) and waits for a tap.
 
 ## Stages and progress
@@ -73,8 +74,14 @@ unlocks the next and earns 1-3 stars for finishing within a turn limit (shown in
 the battle screen, limits in `Stages.STAR3_TURNS` / `STAR2_TURNS`). Every stage uses the starter deck plus the cards unlocked so far: six new cards join the deck at stages 11, 21,
 31 and 41, introduced on a "New cards!" screen (`Stages.UNLOCKS`).
 Progress is saved in `user://save.cfg` (browser storage on the web build). The first Play runs a guided
-practice picture. `tests/tune_slack.gd` re-tunes how many cannonballs each stage gets (`Stages.SLACK_TABLE`) and
-`tests/star_stats.gd` re-measures the star turn limits. Stages 21-50 pictures come from `tools/make_pictures.py`.
+practice picture. How many cannonballs each stage gets (`Stages.SLACK_TABLE`) and the star turn limits come from the
+Design tool `design/balance/rebalance.py`; they were measured together with the card numbers and the elite rules, so
+change them together. Stages 21-50 pictures come from `tools/make_pictures.py`.
+
+Elite stages (every 5th that is not a boss) each have a rule, shown in the stage pop-up, in the battle title and in a
+pop-up the first time: **Powder Keg** (stages 5, 35) packs in bombs and gives fewer cannonballs, **Iron Hull** (15, 45,
+65, 85) makes a quarter of the barrels iron, **Short Hand** (25, 55, 75, 95) offers 2 cards a turn instead of 3
+(`Stages.ELITE_RULES`).
 
 ## Web export
 Run `bash tools/export_web.sh` (exports and copies the loading-screen pictures). The loading page is

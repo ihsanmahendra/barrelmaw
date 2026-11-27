@@ -20,25 +20,65 @@ static func is_elite(index: int) -> bool:
 	return (index + 1) % 5 == 0 and not is_boss(index)
 
 
+# The rule that makes each elite stage different (design/balance/rebalance.md 3.3). Keys are stage numbers.
+# Powder Keg is day only: night stages have so few cannonballs that extra bombs would make them easier.
+const ELITE_RULES: Dictionary = {
+	5: "keg", 15: "iron", 25: "short", 35: "keg", 45: "iron",
+	55: "short", 65: "iron", 75: "short", 85: "iron", 95: "short",
+}
+# kind -> [name shown to the player, line shown to the player]
+const ELITE_TEXT: Dictionary = {
+	"keg": ["Powder Keg", "Bombs are packed in, but cannonballs are scarce. Set off chains."],
+	"iron": ["Iron Hull", "A quarter of the barrels are iron. They take two hits."],
+	"short": ["Short Hand", "Short-handed crew: 2 cards each turn instead of 3."],
+}
+const KEG_BOMB_FACTOR: int = 3
+const KEG_MIN_BOMBS: int = 5
+const IRON_SHARE: float = 0.25
+const IRON_MIN_EXTRA: int = 4
+const SHORT_HAND_SIZE: int = 2
+
+
+## The elite rule of a stage: "keg", "iron", "short" or "" for none.
+static func elite_modifier(index: int) -> String:
+	return String(ELITE_RULES.get(index + 1, ""))
+
+
+static func elite_name(index: int) -> String:
+	var mod := elite_modifier(index)
+	return "" if mod == "" else String(ELITE_TEXT[mod][0])
+
+
+static func elite_line(index: int) -> String:
+	var mod := elite_modifier(index)
+	return "" if mod == "" else String(ELITE_TEXT[mod][1])
+
+
+## Cards offered each turn.
+static func hand_size_for(index: int) -> int:
+	return SHORT_HAND_SIZE if elite_modifier(index) == "short" else GameData.hand_size
+
+
 ## Cannonballs per barrel on the board, relative to 1.0. Below 1.0 on purpose: the deck must supply
-## the missing damage. Comes from SLACK_TABLE (tests/tune_slack.gd); stages past the table use a
-## formula.
+## the missing damage. Comes from SLACK_TABLE (design/balance/rebalance.py); stages past the
+## table use a formula.
 static func slack(index: int) -> float:
 	if index < SLACK_TABLE.size():
 		return float(SLACK_TABLE[index])
 	return maxf(0.3, 0.55 - 0.004 * float(index - SLACK_TABLE.size()))
 
 
-# Per-stage slack tuned so the test bot wins about 90% of stage 1, falling to about 40-50% at stage 50 and about
-# 25-45% across the night stages 51-100 (night slack is tiny on purpose: the cards do most of the work).
-# A person who uses the card preview does clearly better than this simple bot. Late stages give very few
-# cannonballs on purpose: by then the unlocked cards (shapes, bombs, blasts) have to do the work.
-const SLACK_TABLE: Array = [0.67, 0.75, 0.6, 0.67, 0.5, 0.55, 0.5, 0.43, 0.45, 0.62, 0.5, 0.5, 0.53, 0.5, 0.45, 0.5, 0.59, 0.49, 0.63, 0.5, 0.39, 0.29, 0.42, 0.5, 0.33, 0.29, 0.3, 0.32, 0.33, 0.33, 0.15, 0.18, 0.23, 0.17, 0.23, 0.18, 0.15, 0.25, 0.17, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.02, 0.05, 0.05, 0.15, 0.02, 0.02, 0.04, 0.02, 0.02, 0.12, 0.06, 0.05, 0.08, 0.05, 0.02, 0.04, 0.07, 0.02, 0.04, 0.06, 0.02, 0.03, 0.07, 0.09, 0.04, 0.02, 0.02, 0.02, 0.07, 0.05, 0.02, 0.02, 0.02, 0.06, 0.02, 0.02, 0.02, 0.03, 0.05, 0.03, 0.04, 0.02, 0.03, 0.05, 0.04, 0.03, 0.05, 0.04, 0.05, 0.06]
+# Per-stage slack, from design/balance/rebalance-values.json: the rough test bot wins about 87% of stage 1,
+# falling to about 43% at stage 50, then 50% to 25% across the night stages 51-100 (boss and elite stages sit
+# below that). A person who uses the card preview does clearly better than this simple bot. Late stages give
+# very few cannonballs on purpose: by then the unlocked cards (shapes, bombs, blasts) have to do the work.
+# Slack, star limits and elite rules were measured together: change them together.
+const SLACK_TABLE: Array = [0.65, 0.74, 0.49, 0.58, 0.33, 0.52, 0.48, 0.41, 0.41, 0.49, 0.41, 0.44, 0.38, 0.43, 0.46, 0.35, 0.46, 0.4, 0.46, 0.37, 0.26, 0.26, 0.29, 0.41, 0.28, 0.24, 0.26, 0.28, 0.24, 0.23, 0.12, 0.18, 0.23, 0.17, 0.1, 0.16, 0.15, 0.21, 0.17, 0.13, 0.09, 0.12, 0.13, 0.08, 0.2, 0.09, 0.14, 0.16, 0.15, 0.14, 0.01, 0.03, 0.06, 0.12, 0.01, 0.01, 0.04, 0.01, 0.01, 0.13, 0.07, 0.08, 0.09, 0.06, 0.11, 0.08, 0.03, 0.06, 0.05, 0.06, 0.01, 0.05, 0.06, 0.07, 0.05, 0.01, 0.01, 0.04, 0.05, 0.06, 0.01, 0.01, 0.01, 0.06, 0.06, 0.01, 0.01, 0.03, 0.06, 0.01, 0.02, 0.04, 0.04, 0.04, 0.04, 0.06, 0.04, 0.06, 0.05, 0.05]
 
-# Turn limits for 3 and 2 stars, from tests/star_stats.gd: the test bot needs about this many turns
-# (3 stars is slightly above its median, 2 stars covers nearly all of its wins).
-const STAR3_TURNS: Array = [8, 9, 8, 10, 9, 10, 10, 10, 9, 12, 11, 13, 12, 14, 13, 12, 14, 15, 16, 15, 7, 7, 9, 10, 9, 9, 9, 10, 9, 9, 7, 7, 8, 8, 8, 8, 9, 9, 9, 8, 8, 8, 8, 8, 9, 8, 9, 10, 10, 12, 5, 5, 5, 6, 6, 6, 6, 6, 6, 10, 7, 7, 7, 6, 7, 7, 7, 7, 7, 9, 7, 7, 6, 8, 7, 8, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 8, 9, 9, 10, 10, 10]
-const STAR2_TURNS: Array = [11, 10, 11, 12, 11, 13, 12, 13, 13, 15, 14, 16, 15, 17, 16, 15, 18, 18, 20, 20, 10, 9, 12, 12, 11, 12, 11, 12, 12, 11, 9, 10, 11, 10, 11, 11, 11, 11, 11, 10, 10, 10, 10, 11, 11, 11, 11, 13, 13, 14, 7, 7, 7, 8, 8, 8, 8, 9, 9, 12, 10, 9, 9, 8, 9, 9, 9, 9, 9, 11, 10, 9, 9, 10, 9, 10, 10, 10, 10, 11, 10, 10, 9, 10, 10, 10, 11, 10, 10, 11, 10, 10, 11, 11, 10, 11, 11, 12, 13, 12]
+# Turn limits for 3 and 2 stars, from the same file: 3 stars is the median number of turns of a bot that reads
+# the card preview, 2 stars is its 80th percentile (and at least 2 turns more than 3 stars).
+const STAR3_TURNS: Array = [6, 6, 6, 7, 5, 7, 6, 7, 7, 10, 8, 9, 8, 10, 11, 8, 10, 10, 12, 11, 4, 5, 6, 7, 7, 7, 6, 7, 6, 6, 5, 5, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 6, 6, 8, 6, 7, 8, 8, 9, 3, 3, 4, 5, 5, 5, 4, 5, 5, 9, 6, 5, 5, 5, 6, 5, 5, 5, 5, 7, 6, 5, 5, 6, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 7, 6, 7, 6, 6, 7, 5, 7, 7, 7, 7, 7, 7, 8, 8, 9]
+const STAR2_TURNS: Array = [8, 8, 8, 9, 7, 9, 8, 9, 9, 12, 10, 11, 10, 12, 13, 10, 12, 12, 14, 13, 6, 7, 8, 9, 9, 9, 8, 9, 8, 8, 7, 7, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 10, 8, 9, 10, 10, 11, 5, 5, 6, 7, 7, 7, 6, 7, 7, 11, 8, 7, 7, 7, 8, 7, 7, 7, 7, 9, 8, 7, 7, 8, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 9, 8, 9, 8, 8, 9, 7, 9, 9, 9, 9, 9, 9, 10, 10, 11]
 
 
 ## Turn limit for 3 stars; falls back to a size-based guess if the table is short.
@@ -51,7 +91,8 @@ static func star2_turns(index: int) -> int:
 
 
 ## How many special barrels of each kind a stage has. They appear gradually: bombs from stage 3,
-## supply crates from stage 5, iron barrels from stage 8 and cursed skulls from stage 12.
+## supply crates from stage 5, iron barrels from stage 8 and cursed skulls from stage 12. Powder Keg and
+## Iron Hull stages then add far more bombs or iron.
 static func specials_for(index: int) -> Dictionary:
 	var cells := 0
 	for r in picture(index)["rows"]:
@@ -72,14 +113,36 @@ static func specials_for(index: int) -> Dictionary:
 		d["iron"] = int(d.get("iron", 0)) + 2 + (index - NIGHT_START) / 12
 		d["curse"] = int(d.get("curse", 0)) + 1 + (index - NIGHT_START) / 18
 	# Never more than a fifth of the barrels are special: trim whichever kind has the most.
-	var limit := maxi(1, cells / 5)
+	_trim_specials(d, maxi(1, cells / 5))
+	_apply_elite_rule(d, elite_modifier(index), cells)
+	return d
+
+
+## Takes special barrels away until at most `limit` are left, one at a time from whichever kind has the most.
+## The kind in `keep` is only trimmed when nothing else is left to trim.
+static func _trim_specials(d: Dictionary, limit: int, keep: String = "") -> void:
 	while _special_total(d) > limit:
 		var biggest := ""
 		for kind in ["iron", "curse", "bomb", "ammo"]:
-			if int(d.get(kind, 0)) > int(d.get(biggest, 0)):
+			if kind != keep and int(d.get(kind, 0)) > int(d.get(biggest, 0)):
 				biggest = kind
+		if biggest == "":
+			biggest = keep
 		d[biggest] = int(d[biggest]) - 1
-	return d
+
+
+## Powder Keg packs in bombs and Iron Hull iron barrels; those stages may be 40% special instead of 20%.
+static func _apply_elite_rule(d: Dictionary, mod: String, cells: int) -> void:
+	var kind := ""
+	if mod == "keg":
+		kind = "bomb"
+		d[kind] = maxi(KEG_MIN_BOMBS, KEG_BOMB_FACTOR * int(d.get(kind, 0)))
+	elif mod == "iron":
+		kind = "iron"
+		d[kind] = maxi(int(d.get(kind, 0)) + IRON_MIN_EXTRA, int(round(cells * IRON_SHARE)))
+	else:
+		return
+	_trim_specials(d, cells * 2 / 5, kind)
 
 
 static func _special_total(d: Dictionary) -> int:
@@ -110,12 +173,13 @@ static func picture(index: int) -> Dictionary:
 
 
 static func title(index: int) -> String:
-	var tag := "  BOSS" if is_boss(index) else ("  ELITE" if is_elite(index) else "")
+	var rule := elite_name(index)
+	var tag := "  BOSS" if is_boss(index) else ("  " + rule.to_upper() if rule != "" else "")
 	return "Stage %d  -  %s%s" % [index + 1, picture(index)["name"], tag]
 
 
 static func new_battle(index: int, deck: Array, seed_value: int, levels: Dictionary = {}) -> Battle:
-	var b := Battle.new(picture(index)["rows"], deck, slack(index), GameData.hand_size, seed_value, {}, specials_for(index))
+	var b := Battle.new(picture(index)["rows"], deck, slack(index), hand_size_for(index), seed_value, {}, specials_for(index))
 	b.levels = levels
 	b.star2_turns = star2_turns(index)
 	b.star3_turns = star3_turns(index)
