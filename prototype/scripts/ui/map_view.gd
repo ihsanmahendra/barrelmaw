@@ -19,6 +19,9 @@ var _last_scroll: int = -1
 var _since_redraw: float = 0.0
 
 const CULL_MARGIN: float = 260.0
+const COMPASS_CENTER: Vector2 = Vector2(62.0, 86.0)  # top left: the last island and its treasure are on the right
+const SHIP_SCALE: float = 0.95
+const CHEST_WIDTH: float = 42.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0  # the map animates gently, 30 fps is plenty
 var _sb := StyleBoxFlat.new()
 
@@ -61,6 +64,51 @@ func _boundary_y() -> float:
 
 func _radius(i: int) -> float:
 	return 40.0 if Stages.is_boss(i) else (34.0 if Stages.is_elite(i) else 29.0)
+
+
+# ---------- where the pictures sit (the layout test checks that they do not cover each other) ----------
+
+func _chest_pos(i: int) -> Vector2:
+	var r := _radius(i)
+	return node_pos(i) + Vector2(-r - 18.0, -r * 0.5)
+
+
+func chest_rect(i: int) -> Rect2:
+	return Rect2(_chest_pos(i) + Vector2(-26.0, -15.0), Vector2(52.0, 39.0))
+
+
+## The ship waiting at the current stage, without its bobbing. It alternates sides, but moors on the right
+## when the stage's reward chest has the left.
+func _ship_pos(i: int) -> Vector2:
+	var r := _radius(i)
+	var left := i % 2 == 0 and not reward_chests.has(i)
+	return node_pos(i) + Vector2(-r - 30.0 if left else r + 30.0, -4.0)
+
+
+func ship_rect(i: int) -> Rect2:
+	return Rect2(_ship_pos(i) + Vector2(-19.0, -35.0), Vector2(38.0, 49.0))
+
+
+## The compass with its "N" above it.
+func compass_rect() -> Rect2:
+	var c := COMPASS_CENTER
+	return Rect2(c + Vector2(-46.0, -74.0), Vector2(92.0, 120.0))
+
+
+## Where the treasure box sits above the last island.
+func _treasure_pos() -> Vector2:
+	var i := Stages.TOTAL - 1
+	var key := _island_name(i)
+	var tex := _island_tex(key)
+	if tex == null:
+		return node_pos(i) + Vector2(0, -(60.0 if Stages.is_boss(i) else 44.0) - 38.0)
+	var s := _island_size(i, key, tex)
+	var anchor: Vector2 = ISLAND_ANCHORS[key]
+	return node_pos(i) + Vector2(0, -s.y * anchor.y - 18.0)
+
+
+func treasure_rect() -> Rect2:
+	return Rect2(_treasure_pos() + Vector2(-27.0, -30.0), Vector2(54.0, 58.0))
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -231,9 +279,9 @@ func _draw_start_label() -> void:
 
 
 func _draw_compass() -> void:
-	if not _visible(70.0, 80.0):
+	if not _visible(COMPASS_CENTER.y, 80.0):
 		return
-	var c := Vector2(size.x - 62.0, 70.0)
+	var c := COMPASS_CENTER
 	draw_circle(c, 44.0, Color(0.96, 0.89, 0.7, 0.85))
 	draw_arc(c, 44.0, 0.0, TAU, 32, Color("8a5a30"), 4.0)
 	for k in 8:
@@ -269,6 +317,16 @@ static func _island_tex(island_name: String) -> Texture2D:
 	return _islands[island_name]
 
 
+## The glow of a night island, never past halfway to the next stage.
+static func night_glow_radius(island_width: float) -> float:
+	return minf(island_width * 0.62, GAP * 0.5 - 2.0)
+
+
+# Islands of one kind differ in size.
+func _island_size(i: int, key: String, tex: Texture2D) -> Vector2:
+	return Vector2(tex.get_width(), tex.get_height()) * (0.82 if key == "skull" else 0.68 + 0.04 * float((i * 7) % 3))
+
+
 func _island_name(i: int) -> String:
 	if Stages.is_boss(i):
 		return "skull"
@@ -284,23 +342,23 @@ func _draw_island(i: int, t: float) -> void:
 	var key := _island_name(i)
 	var tex := _island_tex(key)
 	if tex != null:
-		# Islands of one kind differ in size, and every other pair is mirrored.
-		var s := Vector2(tex.get_width(), tex.get_height()) * (0.82 if key == "skull" else 0.68 + 0.04 * float((i * 7) % 3))
+		var s := _island_size(i, key, tex)  # every other pair is mirrored
 		var bob := sin(t * 1.3 + float(i)) * 2.0
 		var anchor: Vector2 = ISLAND_ANCHORS[key]
 		var mirrored := key != "skull" and (i / 2) % 2 == 1
 		var pos := p - s * Vector2(1.0 - anchor.x if mirrored else anchor.x, anchor.y) + Vector2(0, bob)
 		if Stages.is_night(i):  # a warm glow from the island's own lights, and moonlit colors
 			var gp := p + Vector2(0, -s.y * 0.1)
+			var glow := night_glow_radius(s.x)
 			for gi in 3:
-				draw_circle(gp, s.x * (0.62 - 0.14 * gi), Color(1.0, 0.78, 0.4, 0.05 + 0.03 * gi + 0.01 * sin(t * 2.0 + i)))
+				draw_circle(gp, glow * (1.0 - 0.23 * gi), Color(1.0, 0.78, 0.4, 0.05 + 0.03 * gi + 0.01 * sin(t * 2.0 + i)))
 		var tint := Color(0.7, 0.78, 1.0) if Stages.is_night(i) else Color.WHITE
 		if mirrored:  # a negative width flips the picture
 			draw_texture_rect(tex, Rect2(pos, Vector2(-s.x, s.y)), false, tint)
 		else:
 			draw_texture_rect(tex, Rect2(pos, s), false, tint)
 		if i == Stages.TOTAL - 1:
-			_draw_treasure(p + Vector2(0, -s.y * anchor.y - 18.0))
+			_draw_treasure(_treasure_pos())
 		return
 	_draw_island_fallback(i, t)
 
@@ -325,7 +383,7 @@ func _draw_island_fallback(i: int, t: float) -> void:
 		_palm(p + Vector2(-rx * 0.7, ry * 0.25), 70.0, 0.3, t + i)
 		_palm(p + Vector2(rx * 0.72, ry * 0.3), 62.0, -0.3, t + i + 2.0)
 	if i == Stages.TOTAL - 1:
-		_draw_treasure(p + Vector2(0, -ry - 38.0))
+		_draw_treasure(_treasure_pos())
 
 
 func _draw_treasure(c: Vector2) -> void:
@@ -438,13 +496,13 @@ func _draw_node(i: int, highest: int, t: float) -> void:
 	elif Stages.is_elite(i):
 		UiKit.draw_star(self, p + Vector2(r * 0.8, -r * 0.8), 13.0, Color("e08a1e"), Color("5a3a22"))
 	if reward_chests.has(i):  # the chest this stage pays the first time
-		ChestArt.draw(self, p + Vector2(-r - 18.0, -r * 0.5), 42.0, str(reward_chests[i]), 0.0, t)
+		ChestArt.draw(self, _chest_pos(i), CHEST_WIDTH, str(reward_chests[i]), 0.0, t)
 	if cleared:
 		for k in 3:
 			var sc := p + Vector2((k - 1) * 19.0, r + 20.0 - (6.0 if k != 1 else 0.0))
 			UiKit.draw_star(self, sc, 9.0, UiKit.GOLD if k < stars else Color(0.2, 0.13, 0.08, 0.7), Color("a8651a") if k < stars else Color(0.5, 0.4, 0.3, 0.8))
 	if current:
-		_draw_ship(p + Vector2(-r - 30.0 if i % 2 == 0 else r + 30.0, -4.0 + sin(t * 2.2) * 4.0), 0.95)
+		_draw_ship(_ship_pos(i) + Vector2(0, sin(t * 2.2) * 4.0), SHIP_SCALE)
 
 
 func _lock_icon(c: Vector2, s: float) -> void:

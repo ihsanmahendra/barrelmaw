@@ -14,6 +14,7 @@ func check(cond: bool, msg: String) -> void:
 func _init() -> void:
 	GameData.ensure_loaded()
 	test_art_import()
+	test_effect_spacing()
 	test_data()
 	test_cards()
 	test_tutorial_script()
@@ -28,6 +29,30 @@ func _init() -> void:
 	bot_report(60)
 	print("Failures: ", failures)
 	quit(1 if failures > 0 else 0)
+
+
+## Effects drawn over the game keep to their own space.
+func test_effect_spacing() -> void:
+	# Floating texts that appear at the same spot ("BOOM!" and "+N") do not print over each other.
+	var view := BoardView.new()
+	var at := Vector2(200, 300)
+	for text in ["BOOM!", "+7", "BOOM!", "+3 hits"]:
+		view._add_popup(at, text, 30, Color.WHITE)
+	for age in [0.0, 0.1, 0.4]:
+		var ys: Array = []
+		for pu in view._popups:
+			pu["t"] = age
+			ys.append(view._popup_pos(pu).y)
+		ys.sort()
+		for i in ys.size() - 1:
+			check(ys[i + 1] - ys[i] >= 30.0, "popups overlap at age %.1f: %s" % [age, str(ys)])
+	view.free()
+	# The how-to chest's light stays inside its picture frame, however far the lid is open.
+	for open_t in [0.3, 0.55, 0.8]:
+		var top := ChestArt.glow_top(HowtoArt.CHEST_CENTER, HowtoArt.CHEST_WIDTH, open_t, HowtoArt.CHEST_GLOW)
+		check(top >= 3.0, "how-to chest light leaves its frame (top %.1f)" % top)
+	# A night island's glow stops halfway to the next stage.
+	check(MapView.night_glow_radius(400.0) <= MapView.GAP / 2.0, "night glow reaches the neighbouring island")
 
 
 ## Barrels are drawn much smaller than their pictures, so they need mipmaps or they shimmer.

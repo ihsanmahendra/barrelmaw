@@ -91,6 +91,49 @@ func _check_ribbon_art() -> void:
 		print("  ribbon: BAND_CENTER %.2f but the red band's centre in the picture is %.2f" % [RibbonLabel.BAND_CENTER, measured])
 
 
+## Pictures drawn on the map must not cover each other: the stage ship and its reward chest, and the last
+## island's treasure box and the compass (whose "N" must also stay clear of the wooden frame).
+func _check_map_art() -> void:
+	var map: MapView = main.map_view
+	var side := Rect2(Vector2.ZERO, map.size)
+	for i in Stages.TOTAL:
+		var ship := map.ship_rect(i)
+		if not Rect2(side.position, side.size).encloses(ship):
+			failures += 1
+			print("  map: the ship at stage %d leaves the map (%s)" % [i + 1, str(ship)])
+			break
+		if map.reward_chests.has(i) and ship.intersects(map.chest_rect(i)):
+			failures += 1
+			print("  map: the ship covers the reward chest of stage %d" % (i + 1))
+			break
+	var compass := map.compass_rect()
+	if compass.intersects(map.treasure_rect()):
+		failures += 1
+		print("  map: the treasure box %s overlaps the compass %s" % [str(map.treasure_rect()), str(compass)])
+	if compass.position.y < 9.0 or not side.encloses(compass):
+		failures += 1
+		print("  map: the compass is under the map frame (%s)" % str(compass))
+
+
+## "Tap the chest to open it" starts below the chest and its shadow.
+func _check_chest_hint() -> void:
+	var chest: ChestView = null
+	var hint: Label = null
+	for n in _all(main.screen):
+		if n is ChestView:
+			chest = n
+		if n is Label and (n as Label).text.begins_with("Tap the chest"):
+			hint = n
+	if chest == null or hint == null:
+		failures += 1
+		print("  opening: chest or hint not found")
+		return
+	var bottom := chest.global_position.y + chest.art_bottom()
+	if hint.global_position.y < bottom:
+		failures += 1
+		print("  opening: the hint starts at %.0f, the chest reaches %.0f" % [hint.global_position.y, bottom])
+
+
 ## Paper panels must keep their content off the curled edges: content margin at least half the edge depth.
 func _check_paper_margins(label: String, roots: Array) -> void:
 	for r in roots:
@@ -129,6 +172,9 @@ func _run() -> void:
 	await _screen("menu", func() -> void: main.show_menu())
 	await _screen("how to play", func() -> void: main.show_howto())
 	await _screen("map", func() -> void: main.show_map(20))
+	_check_map_art()
+	await _screen("opening", func() -> void: packs.open_and_show("crate"))
+	_check_chest_hint()
 	await _screen("treasury", func() -> void: packs.show_treasury())
 	await _screen("cargo hold", func() -> void: packs.show_cargo())
 	await _screen("market", func() -> void: packs.show_market())
