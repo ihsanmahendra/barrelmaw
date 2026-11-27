@@ -24,11 +24,22 @@ const SHIP_SCALE: float = 0.95
 const CHEST_WIDTH: float = 42.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0  # the map animates gently, 30 fps is plenty
 var _sb := StyleBoxFlat.new()
+## The map is three layers so that a frame repaints only what moves: the sea behind (waves, glints, things
+## floating), this control (islands, path, stage buttons; repainted when scrolled) and the life on top.
+var _sea := Control.new()
+var _life := Control.new()
 
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(0, TOP_PAD + BOTTOM_PAD + GAP * (Stages.TOTAL - 1) + NIGHT_GAP)
 	mouse_filter = Control.MOUSE_FILTER_PASS  # taps are handled here, drags must still reach the ScrollContainer
+	_sea.show_behind_parent = true
+	for layer in [_sea, _life]:
+		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(layer)
+	_sea.draw.connect(_draw_sea_layer)
+	_life.draw.connect(_draw_life_layer)
 
 
 func _process(delta: float) -> void:
@@ -40,9 +51,12 @@ func _process(delta: float) -> void:
 		_last_scroll = sc.scroll_vertical
 		_view_top = float(sc.scroll_vertical)
 		_view_bottom = _view_top + sc.size.y
+	if scrolled:
+		queue_redraw()
 	if scrolled or _since_redraw >= REDRAW_INTERVAL:
 		_since_redraw = 0.0
-		queue_redraw()
+		_sea.queue_redraw()
+		_life.queue_redraw()
 
 
 ## True when something at map height y is on screen (with a margin so nothing pops in at the edges).
@@ -131,38 +145,60 @@ func _tap(p: Vector2) -> void:
 		stage_tapped.emit(best)
 
 
-func _draw() -> void:
+func _draw_sea_layer() -> void:
 	var t := float(Time.get_ticks_msec()) / 1000.0
-	_draw_sea(t)
-	_draw_decor(t)
-	_draw_start_beach(t)
+	_draw_sea(_sea, t)
+	_draw_decor(_sea, t)
+
+
+func _draw() -> void:
+	_draw_start_beach()
 	_draw_compass()
 	for k in Stages.TOTAL:  # far islands (top of the map) first so near ones overlap them
-		_draw_island(Stages.TOTAL - 1 - k, t)
+		_draw_island(Stages.TOTAL - 1 - k)
 	_draw_path()
 	var highest := SaveData.highest_unlocked()
 	for i in Stages.TOTAL:
-		_draw_node(i, highest, t)
+		_draw_node(i, highest)
+
+
+## The pulsing ring and the ship at the current stage.
+func _draw_life_layer() -> void:
+	var i := SaveData.highest_unlocked()
+	var p := node_pos(i)
+	if SaveData.stars(i) > 0 or not _visible(p.y, 120.0):
+		return
+	var t := float(Time.get_ticks_msec()) / 1000.0
+	var pulse := 0.5 + 0.5 * sin(t * 4.0)
+	_life.draw_arc(p, _radius(i) + 8.0 + 5.0 * pulse, 0.0, TAU, 32, Color(1, 0.9, 0.4, 0.9 - 0.5 * pulse), 5.0)
+	_draw_ship(_life, _ship_pos(i) + Vector2(0, sin(t * 2.2) * 4.0), SHIP_SCALE)
+
+
+## A filled circle from a cached texture: hundreds of them cost a few draw calls instead of one each.
+func _disc(c: CanvasItem, center: Vector2, r: float, col: Color) -> void:
+	var rr := snappedf(r, 0.1)
+	BakedArt.draw_tinted(c, "disc:%.1f" % rr, center, Rect2(-rr - 1.0, -rr - 1.0, rr * 2.0 + 2.0, rr * 2.0 + 2.0),
+		func(item: CanvasItem, at: Vector2, tint: Color) -> void: item.draw_circle(at, rr, tint), col)
 
 
 # ---------- scenery ----------
 
-func _strip(y0: float, y1: float, top: Color, bottom: Color) -> void:
+func _strip(c: CanvasItem, y0: float, y1: float, top: Color, bottom: Color) -> void:
 	if y1 < _view_top - 40.0 or y0 > _view_bottom + 40.0:
 		return
-	draw_polygon(PackedVector2Array([Vector2(0, y0), Vector2(size.x, y0), Vector2(size.x, y1), Vector2(0, y1)]),
+	c.draw_polygon(PackedVector2Array([Vector2(0, y0), Vector2(size.x, y0), Vector2(size.x, y1), Vector2(0, y1)]),
 		PackedColorArray([top, top, bottom, bottom]))
 
 
-func _draw_sea(t: float) -> void:
+func _draw_sea(c: CanvasItem, t: float) -> void:
 	# Day sea from the start up to stage 50, a dusk band, then the dark night sea up to the end.
 	var yb := _boundary_y()
 	var band := 260.0
-	_strip(yb + band * 0.5, size.y, Color("2278a0"), Color("3ec4d8"))
-	_strip(yb - band * 0.5, yb + band * 0.5 + 1.0, Color("0f2a58"), Color("2278a0"))
-	_strip(0.0, yb - band * 0.5 + 1.0, Color("050b22"), Color("0f2a58"))
+	_strip(c, yb + band * 0.5, size.y, Color("2278a0"), Color("3ec4d8"))
+	_strip(c, yb - band * 0.5, yb + band * 0.5 + 1.0, Color("0f2a58"), Color("2278a0"))
+	_strip(c, 0.0, yb - band * 0.5 + 1.0, Color("050b22"), Color("0f2a58"))
 	if _visible(yb, 300.0):
-		_night_banner(yb)
+		_night_banner(c, yb)
 	var first := maxf(0.0, floorf((_view_top - 80.0) / 64.0)) * 64.0 + 40.0
 	var y := first
 	var row := int(first / 64.0)
@@ -172,7 +208,7 @@ func _draw_sea(t: float) -> void:
 		while x <= size.x + 12.0:
 			pts.append(Vector2(x, y + sin(x * 0.035 + t * 1.2 + row * 1.9) * 3.5))
 			x += 12.0
-		draw_polyline(pts, Color(1, 1, 1, 0.13 if y > yb else 0.07), 2.0)
+		c.draw_polyline(pts, Color(1, 1, 1, 0.13 if y > yb else 0.07), 2.0)
 		y += 64.0
 		row += 1
 	# Sparkles on the day sea; twinkling stars on the night sea.
@@ -184,20 +220,20 @@ func _draw_sea(t: float) -> void:
 			continue
 		var a := 0.5 + 0.5 * sin(t * 2.0 + float(i))
 		if py > yb:
-			draw_line(Vector2(px - 4, py), Vector2(px + 4, py), Color(1, 1, 1, 0.35 * a), 2.0)
+			c.draw_line(Vector2(px - 4, py), Vector2(px + 4, py), Color(1, 1, 1, 0.35 * a), 2.0)
 		else:
-			draw_circle(Vector2(px, py), 1.2 + float(i % 3) * 0.6, Color(1, 1, 0.92, 0.25 + 0.55 * a))
+			_disc(c, Vector2(px, py), 1.2 + float(i % 3) * 0.6, Color(1, 1, 0.92, 0.25 + 0.55 * a))
 	if _visible(node_pos(Stages.NIGHT_START + 22).y, 200.0):
 		var m := Vector2(size.x * 0.16, node_pos(Stages.NIGHT_START + 22).y)
-		draw_circle(m, 74.0, Color(1.0, 0.98, 0.85, 0.10))
-		draw_circle(m, 54.0, Color(1.0, 0.98, 0.85, 0.18))
-		draw_circle(m, 38.0, Color("f6f0d8"))
-		draw_circle(m + Vector2(-12, -8), 7.0, Color(0.82, 0.8, 0.7, 0.8))
-		draw_circle(m + Vector2(10, 11), 5.0, Color(0.82, 0.8, 0.7, 0.8))
+		c.draw_circle(m, 74.0, Color(1.0, 0.98, 0.85, 0.10))
+		c.draw_circle(m, 54.0, Color(1.0, 0.98, 0.85, 0.18))
+		c.draw_circle(m, 38.0, Color("f6f0d8"))
+		c.draw_circle(m + Vector2(-12, -8), 7.0, Color(0.82, 0.8, 0.7, 0.8))
+		c.draw_circle(m + Vector2(10, 11), 5.0, Color(0.82, 0.8, 0.7, 0.8))
 
 
 ## Reefs, ships and sea creatures on the open water opposite the path (drawing only).
-func _draw_decor(t: float) -> void:
+func _draw_decor(c: CanvasItem, t: float) -> void:
 	var yb := _boundary_y()
 	for k in Stages.TOTAL - 1:
 		var mid := (node_pos(k) + node_pos(k + 1)) / 2.0
@@ -210,11 +246,11 @@ func _draw_decor(t: float) -> void:
 			continue  # the moon hangs there
 		var at := Vector2(size.x * (0.5 - signf(lean) * 0.32), mid.y + sin(float(k) * 2.3) * 34.0)
 		var light := Color(0.52, 0.62, 0.9) if mid.y < yb else Color.WHITE
-		MapDecor.draw(self, at, k * 5 + k / 7, t, light)
+		MapDecor.draw_still(c, at + Vector2(0, sin(t * 1.5 + float(k)) * 2.5), k * 5 + k / 7, light)
 
 
 ## "Night seas" ribbon across the map where stage 51 begins.
-func _night_banner(yb: float) -> void:
+func _night_banner(c: CanvasItem, yb: float) -> void:
 	var tex := UiKit.ui_texture("ribbon")
 	var font := UiKit.bold_font()
 	var w := minf(size.x - 40.0, 420.0)
@@ -223,16 +259,16 @@ func _night_banner(yb: float) -> void:
 	var band_c := h * RibbonLabel.BAND_CENTER if tex != null else h * 0.5
 	var r := Rect2(Vector2((size.x - w) / 2.0, yb - band_c), Vector2(w, h))
 	if tex != null:
-		draw_texture_rect(tex, r, false)
+		c.draw_texture_rect(tex, r, false)
 	var txt := "Night Seas"
 	var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
 	var pos := Vector2(size.x / 2.0 - tw / 2.0, yb + 11.0)
-	draw_string_outline(font, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, 8, Color(0.35, 0.05, 0.08, 0.95))
-	draw_string(font, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, UiKit.CREAM)
+	c.draw_string_outline(font, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, 8, Color(0.35, 0.05, 0.08, 0.95))
+	c.draw_string(font, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, UiKit.CREAM)
 	var sub := "Stages 51 - 100"
 	var sw := ThemeDB.fallback_font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
-	draw_string_outline(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, r.position.y - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, 5, Color(0, 0, 0, 0.7))
-	draw_string(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, r.position.y - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("c9d6ff"))
+	c.draw_string_outline(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, r.position.y - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, 5, Color(0, 0, 0, 0.7))
+	c.draw_string(ThemeDB.fallback_font, Vector2(size.x / 2.0 - sw / 2.0, r.position.y - 6.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("c9d6ff"))
 
 
 const START_BEACH_PATH: String = "res://assets/art/map_start_beach.png"
@@ -241,7 +277,7 @@ static var _start_beach_checked: bool = false
 
 
 ## The starting beach is cut from the gameplay background (sand, foam, rocks and the two palms).
-func _draw_start_beach(t: float) -> void:
+func _draw_start_beach() -> void:
 	if not _visible(size.y - 200.0, 420.0):
 		return
 	if not _start_beach_checked:
@@ -252,7 +288,7 @@ func _draw_start_beach(t: float) -> void:
 		var h := float(_start_beach.get_height()) * k
 		draw_texture_rect(_start_beach, Rect2(0.0, size.y - h + 50.0, size.x, h), false)
 	else:
-		_draw_start_beach_fallback(t)
+		_draw_start_beach_fallback(0.0)
 	_draw_start_label()
 
 
@@ -335,7 +371,7 @@ func _island_name(i: int) -> String:
 	return "palm" if i % 2 == 0 else "dock"
 
 
-func _draw_island(i: int, t: float) -> void:
+func _draw_island(i: int) -> void:
 	var p := node_pos(i)
 	if not _visible(p.y, 330.0):
 		return
@@ -343,15 +379,14 @@ func _draw_island(i: int, t: float) -> void:
 	var tex := _island_tex(key)
 	if tex != null:
 		var s := _island_size(i, key, tex)  # every other pair is mirrored
-		var bob := sin(t * 1.3 + float(i)) * 2.0
 		var anchor: Vector2 = ISLAND_ANCHORS[key]
 		var mirrored := key != "skull" and (i / 2) % 2 == 1
-		var pos := p - s * Vector2(1.0 - anchor.x if mirrored else anchor.x, anchor.y) + Vector2(0, bob)
+		var pos := p - s * Vector2(1.0 - anchor.x if mirrored else anchor.x, anchor.y)
 		if Stages.is_night(i):  # a warm glow from the island's own lights, and moonlit colors
 			var gp := p + Vector2(0, -s.y * 0.1)
 			var glow := night_glow_radius(s.x)
 			for gi in 3:
-				draw_circle(gp, glow * (1.0 - 0.23 * gi), Color(1.0, 0.78, 0.4, 0.05 + 0.03 * gi + 0.01 * sin(t * 2.0 + i)))
+				_disc(self, gp, glow * (1.0 - 0.23 * gi), Color(1.0, 0.78, 0.4, 0.05 + 0.03 * gi))
 		var tint := Color(0.7, 0.78, 1.0) if Stages.is_night(i) else Color.WHITE
 		if mirrored:  # a negative width flips the picture
 			draw_texture_rect(tex, Rect2(pos, Vector2(-s.x, s.y)), false, tint)
@@ -360,7 +395,7 @@ func _draw_island(i: int, t: float) -> void:
 		if i == Stages.TOTAL - 1:
 			_draw_treasure(_treasure_pos())
 		return
-	_draw_island_fallback(i, t)
+	_draw_island_fallback(i, 0.0)
 
 
 ## Drawn island used when the generated pictures are missing.
@@ -409,12 +444,12 @@ func _palm(base: Vector2, h: float, lean: float, t: float) -> void:
 	draw_circle(top + Vector2(-4, 5), 4.5, Color("5a3a22"))
 
 
-func _draw_ship(c: Vector2, s: float) -> void:
-	draw_colored_polygon(PackedVector2Array([c + Vector2(-20, 0) * s, c + Vector2(20, 0) * s, c + Vector2(13, 10) * s, c + Vector2(-13, 10) * s]), Color("6b4423"))
-	draw_line(c + Vector2(0, 0), c + Vector2(0, -32) * s, Color("3a261a"), 3.0 * s)
-	draw_colored_polygon(PackedVector2Array([c + Vector2(2, -30) * s, c + Vector2(20, -6) * s, c + Vector2(2, -6) * s]), Color("f6ead0"))
-	draw_colored_polygon(PackedVector2Array([c + Vector2(-2, -26) * s, c + Vector2(-14, -6) * s, c + Vector2(-2, -6) * s]), Color("e8d9b5"))
-	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -32) * s, c + Vector2(12, -29) * s, c + Vector2(0, -26) * s]), Color("d62839"))
+func _draw_ship(on: CanvasItem, c: Vector2, s: float) -> void:
+	on.draw_colored_polygon(PackedVector2Array([c + Vector2(-20, 0) * s, c + Vector2(20, 0) * s, c + Vector2(13, 10) * s, c + Vector2(-13, 10) * s]), Color("6b4423"))
+	on.draw_line(c + Vector2(0, 0), c + Vector2(0, -32) * s, Color("3a261a"), 3.0 * s)
+	on.draw_colored_polygon(PackedVector2Array([c + Vector2(2, -30) * s, c + Vector2(20, -6) * s, c + Vector2(2, -6) * s]), Color("f6ead0"))
+	on.draw_colored_polygon(PackedVector2Array([c + Vector2(-2, -26) * s, c + Vector2(-14, -6) * s, c + Vector2(-2, -6) * s]), Color("e8d9b5"))
+	on.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -32) * s, c + Vector2(12, -29) * s, c + Vector2(0, -26) * s]), Color("d62839"))
 
 
 # ---------- path and nodes ----------
@@ -442,13 +477,28 @@ func _draw_path() -> void:
 				var f := (next_dot - travelled) / maxf(seg, 0.001)
 				var pos := a.lerp(b, f)
 				if cleared:
-					draw_circle(pos, 6.0, Color("8a5a1a"))
-					draw_circle(pos, 4.5, UiKit.GOLD)
+					_dot(pos, true)
 				else:
-					draw_circle(pos, 4.2, Color(0.35, 0.22, 0.1, 0.55))
-					draw_circle(pos, 3.0, Color(1, 0.96, 0.85, 0.8))
+					_dot(pos, false)
 				next_dot += 17.0
 			travelled += seg
+
+
+## One dot of the path: gold once travelled.
+func _dot(pos: Vector2, cleared: bool) -> void:
+	BakedArt.draw(self, "dot:%s" % cleared, pos, Rect2(-7.0, -7.0, 14.0, 14.0), func(item: CanvasItem, at: Vector2) -> void:
+		item.draw_circle(at, 6.0 if cleared else 4.2, Color("8a5a1a") if cleared else Color(0.35, 0.22, 0.1, 0.55))
+		item.draw_circle(at, 4.5 if cleared else 3.0, UiKit.GOLD if cleared else Color(1, 0.96, 0.85, 0.8)))
+
+
+## The round stage button without its number or badges.
+func _button_art(p: Vector2, r: float, ring: Color, fill: Color) -> void:
+	BakedArt.draw(self, "stage:%d:%s:%s" % [int(r), ring.to_html(), fill.to_html()], p, Rect2(-r - 6.0, -r - 6.0, r * 2.0 + 12.0, r * 2.0 + 18.0),
+		func(item: CanvasItem, at: Vector2) -> void:
+			item.draw_circle(at + Vector2(0, 5), r + 3.0, Color(0, 0, 0, 0.3))
+			item.draw_circle(at, r + 4.0, ring)
+			item.draw_circle(at, r, fill)
+			item.draw_circle(at + Vector2(-r * 0.25, -r * 0.3), r * 0.38, Color(1, 1, 1, 0.22)))
 
 
 func _catmull(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, u: float) -> Vector2:
@@ -457,7 +507,7 @@ func _catmull(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, u: float) -> V
 	return 0.5 * ((2.0 * p1) + (-p0 + p2) * u + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * u2 + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * u3)
 
 
-func _draw_node(i: int, highest: int, t: float) -> void:
+func _draw_node(i: int, highest: int) -> void:
 	var p := node_pos(i)
 	if not _visible(p.y, 120.0):
 		return
@@ -469,16 +519,12 @@ func _draw_node(i: int, highest: int, t: float) -> void:
 	var boss := Stages.is_boss(i)
 	var ring := Color("d62839") if boss else (Color("e08a1e") if Stages.is_elite(i) else Color("5a3a22"))
 	var fill := Color("f2c14e") if cleared else (Color("ef476f") if current else Color("8d7b6a"))
-	if current:
-		var pulse := 0.5 + 0.5 * sin(t * 4.0)
-		draw_arc(p, r + 8.0 + 5.0 * pulse, 0.0, TAU, 32, Color(1, 0.9, 0.4, 0.9 - 0.5 * pulse), 5.0)
-	draw_circle(p + Vector2(0, 5), r + 3.0, Color(0, 0, 0, 0.3))
-	draw_circle(p, r + 4.0, ring)
-	draw_circle(p, r, fill)
-	draw_circle(p + Vector2(-r * 0.25, -r * 0.3), r * 0.38, Color(1, 1, 1, 0.22))
+	_button_art(p, r, ring, fill)
 	var font := UiKit.bold_font()
 	if locked:
-		_lock_icon(p, r * 0.5)
+		var ls := r * 0.5
+		BakedArt.draw(self, "lock:%d" % int(r), p, Rect2(-ls * 1.4, -ls * 1.4, ls * 2.8, ls * 2.8),
+			func(item: CanvasItem, at: Vector2) -> void: _lock_icon(item, at, ls))
 	else:
 		var label := str(i + 1)
 		var fs := int(r * 0.95)
@@ -487,28 +533,29 @@ func _draw_node(i: int, highest: int, t: float) -> void:
 		draw_string_outline(font, pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, Color(0.25, 0.12, 0.04, 0.95) if cleared else Color(0.35, 0.05, 0.1, 0.9))
 		draw_string(font, pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 	if boss:  # skull badge
-		var b := p + Vector2(r * 0.8, -r * 0.8)
-		draw_circle(b, 12.0, Color("fbefd0"))
-		draw_arc(b, 12.0, 0.0, TAU, 16, Color("3a261a"), 2.5)
-		draw_circle(b + Vector2(-4, -1), 2.8, Color("3a261a"))
-		draw_circle(b + Vector2(4, -1), 2.8, Color("3a261a"))
-		draw_rect(Rect2(b + Vector2(-3, 4), Vector2(6, 4)), Color("3a261a"))
+		BakedArt.draw(self, "skull_badge", p + Vector2(r * 0.8, -r * 0.8), Rect2(-15.0, -15.0, 30.0, 30.0), _skull_badge)
 	elif Stages.is_elite(i):
 		UiKit.draw_star(self, p + Vector2(r * 0.8, -r * 0.8), 13.0, Color("e08a1e"), Color("5a3a22"))
 	if reward_chests.has(i):  # the chest this stage pays the first time
-		ChestArt.draw(self, _chest_pos(i), CHEST_WIDTH, str(reward_chests[i]), 0.0, t)
+		ChestArt.draw_still(self, _chest_pos(i), CHEST_WIDTH, str(reward_chests[i]))
 	if cleared:
 		for k in 3:
 			var sc := p + Vector2((k - 1) * 19.0, r + 20.0 - (6.0 if k != 1 else 0.0))
 			UiKit.draw_star(self, sc, 9.0, UiKit.GOLD if k < stars else Color(0.2, 0.13, 0.08, 0.7), Color("a8651a") if k < stars else Color(0.5, 0.4, 0.3, 0.8))
-	if current:
-		_draw_ship(_ship_pos(i) + Vector2(0, sin(t * 2.2) * 4.0), SHIP_SCALE)
 
 
-func _lock_icon(c: Vector2, s: float) -> void:
+func _skull_badge(item: CanvasItem, b: Vector2) -> void:
+	item.draw_circle(b, 12.0, Color("fbefd0"))
+	item.draw_arc(b, 12.0, 0.0, TAU, 16, Color("3a261a"), 2.5)
+	item.draw_circle(b + Vector2(-4, -1), 2.8, Color("3a261a"))
+	item.draw_circle(b + Vector2(4, -1), 2.8, Color("3a261a"))
+	item.draw_rect(Rect2(b + Vector2(-3, 4), Vector2(6, 4)), Color("3a261a"))
+
+
+func _lock_icon(item: CanvasItem, c: Vector2, s: float) -> void:
 	_sb.bg_color = Color(1, 1, 1, 0.85)
 	_sb.set_corner_radius_all(int(s * 0.3))
 	_sb.set_border_width_all(0)
-	draw_style_box(_sb, Rect2(c + Vector2(-s * 0.8, -s * 0.1), Vector2(s * 1.6, s * 1.2)))
-	draw_arc(c + Vector2(0, -s * 0.1), s * 0.55, PI, TAU, 14, Color(1, 1, 1, 0.85), maxf(3.0, s * 0.22))
-	draw_circle(c + Vector2(0, s * 0.5), s * 0.2, Color(0.35, 0.28, 0.22))
+	item.draw_style_box(_sb, Rect2(c + Vector2(-s * 0.8, -s * 0.1), Vector2(s * 1.6, s * 1.2)))
+	item.draw_arc(c + Vector2(0, -s * 0.1), s * 0.55, PI, TAU, 14, Color(1, 1, 1, 0.85), maxf(3.0, s * 0.22))
+	item.draw_circle(c + Vector2(0, s * 0.5), s * 0.2, Color(0.35, 0.28, 0.22))

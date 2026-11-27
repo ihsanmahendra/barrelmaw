@@ -14,6 +14,13 @@ Headless checks plus a bot that plays 200 full runs:
 
 `tests/sfx_test.gd` (same command, other script name) checks that sound effects do not cut each other off.
 
+## Performance
+Code-drawn art costs about one draw call per shape, which phones feel. Art that holds still (card icons, shut chests,
+map decorations, path dots and stage buttons) goes through `BakedArt` (`scripts/ui/baked_art.gd`): painted once into a
+texture, then one draw call. The web build runs at 60 fps at most and at most 2 device pixels per CSS pixel
+(`web/shell.html`). `godot --path . --resolution 540x960 --script res://tests/perf_budget_test.gd` (needs a visible
+window) fails if a screen exceeds its draw-call budget, if ordinary cards run every frame, or if cached art differs.
+
 ## Layout
 - `data/cards.json`: 33 cards, rarity weights, starter deck. Balance lives here.
 - `data/pictures.json`: 10 pictures and the color palette.

@@ -6,6 +6,7 @@ extends Control
 const BARREL_COLORS: Array = ["ef476f", "4cc9f0", "ffd166", "06d6a0", "9b5de5"]
 const FLIGHT_TIME: float = 1.3
 const RESPAWN_DELAY: float = 1.5
+const IDLE_REDRAW: float = 1.0 / 30.0  # the idle rocking does not need every frame on a phone
 
 ## Emitted when the player taps the pirate and he fires.
 signal tapped
@@ -20,6 +21,7 @@ var _cheer: float = 0.0
 var _cheer_text: String = "HA HA!"
 var _smoke: Array = []
 var _balls: Array = []
+var _since_draw: float = 0.0
 
 
 func _ready() -> void:
@@ -67,7 +69,11 @@ func _process(delta: float) -> void:
 			still.append(b)
 	_balls = still
 	_smoke = _advance(_smoke, delta, 0.0)
-	queue_redraw()
+	_since_draw += delta
+	var busy := _recoil > 0.0 or _shout > 0.0 or _cheer > 0.0 or not _balls.is_empty() or not _smoke.is_empty()
+	if busy or _since_draw >= IDLE_REDRAW:
+		_since_draw = 0.0
+		queue_redraw()
 
 
 func _advance(list: Array, delta: float, gravity: float) -> Array:
