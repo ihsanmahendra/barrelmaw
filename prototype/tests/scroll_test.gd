@@ -189,7 +189,8 @@ func _run() -> void:
 	var card_ctl := _first(sc, func(n): return n is CardView)
 	var flick_from := card_ctl.get_global_rect().get_center() + Vector2(0, 120)
 	await _drag(flick_from, Vector2(0, -90), 3)
-	await _tap(_first(sc, func(n): return n is CardView and (n as CardView).get_global_rect().has_point(Vector2(270, 300))))
+	# A card whose middle is inside the list (its height depends on what sits above it).
+	await _tap(_first(sc, func(n): return n is CardView and sc.get_global_rect().grow(-40.0).has_point((n as CardView).get_global_rect().get_center())))
 	check(packs._detail == null, "Cargo Hold: a tap while the list coasts only stops it")
 	sc.scroll_vertical = 0
 	await _frames(40)
