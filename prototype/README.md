@@ -159,7 +159,8 @@ Opens after stage 10. One of the 48 ordinary stages from 41 to 99, picked and se
 stage cards at level 1 (no levels, Transcended cards, gifts or Last Shot); the first win of a date pays 20 Doubloons
 and the first finished attempt is the score to share (copied to the clipboard). Rules: `scripts/core/daily_haul.gd`,
 screens: `scripts/ui/daily_screens.gd`. Spec: `design/gdd/daily-challenge.md`. Debug: `--daily`, `--daily-result`.
-Placeholder icons and emblems for these features are in `scripts/ui/feature_art.gd`.
+The menu icons, boss emblems, strike effects and elite rule icons are drawn in `scripts/ui/feature_art.gd`
+(`FeatureIcon` puts one in a control).
 
 ## Boss rules
 Each boss strikes after every third shot: **Ghost Tide** (stages 10, 40, 70, 100) raises sunken barrels, **Iron

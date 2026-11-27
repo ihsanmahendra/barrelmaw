@@ -586,8 +586,8 @@ func _draw_overlay() -> void:
 func _draw_strike(cs: float, origin: Vector2) -> void:
 	var k := clampf(_strike_t / STRIKE_TIME, 0.0, 1.0)
 	var fade := clampf((1.0 - k) * 4.0, 0.0, 1.0) * clampf(k * 6.0, 0.0, 1.0)
-	var ink: Color = BossBar.COLORS[_strike_rule][0]
-	var plate: Color = BossBar.COLORS[_strike_rule][1]
+	var ink: Color = FeatureArt.BOSS_COLORS[_strike_rule]["light"]
+	var plate: Color = FeatureArt.BOSS_COLORS[_strike_rule]["dark"]
 	var tray := Rect2(origin, Vector2(battle.board.w, battle.board.h) * cs).grow(10.0)
 	# The wash rises over the board from below.
 	var rise := clampf(k * 2.5, 0.0, 1.0)
@@ -599,15 +599,13 @@ func _draw_strike(cs: float, origin: Vector2) -> void:
 		var local := clampf(k * 1.5 - 0.04 * i, 0.0, 1.0)
 		match _strike_rule:
 			"ghost":
-				var col := GameData.color_of(battle.board.get_c(p.x, p.y))
-				var at := center + Vector2(0, (1.0 - local) * cs * 1.8)
-				if k < 0.65:
-					PirateArt.draw_barrel(_overlay, at, cs * 0.9, cs, Color(col.lightened(0.25), 0.35 + 0.65 * local))
-				_overlay.draw_arc(center, cs * (0.4 + 0.5 * local), 0.0, TAU, 20, Color(ink, fade), 2.0, true)
+				if k < 0.65:  # after that the real barrel is on the board
+					FeatureArt.draw_rising_barrel(_overlay, center, cs, GameData.color_of(battle.board.get_c(p.x, p.y)), local)
 			"armor":
-				_overlay.draw_arc(center, cs * (1.1 - 0.6 * local), 0.0, TAU, 20, Color(ink, fade), 3.0, true)
+				if k < 0.8:
+					FeatureArt.draw_iron_clamp(_overlay, center, cs, local)
 			_:
-				FeatureArt.draw_falling_skull(_overlay, center, cs * 1.15, clampf(k * 1.1 - 0.03 * i, 0.0, 1.0))
+				FeatureArt.draw_falling_skull(_overlay, center, cs, clampf(k * 1.3 - 0.03 * i, 0.0, 1.0))
 	if _strike_rule == "armor":
 		var from := Vector2(tray.position.x - 10.0, tray.end.y)
 		var to := Vector2(tray.end.x, tray.position.y + tray.size.y * 0.35)

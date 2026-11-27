@@ -133,11 +133,6 @@ static func draw(c: CanvasItem, rect: Rect2, card: Dictionary) -> void:
 		_extra_play_art(c, mid, "+1")
 
 
-## A fanned hand of `n` cards, used by the Short Hand pop-up.
-static func draw_hand(c: CanvasItem, mid: Vector2, n: int, size_scale: float) -> void:
-	_cards(c, mid, n, size_scale)
-
-
 ## "Play another card": a card pushed along by a gust of wind.
 static func _extra_play_art(c: CanvasItem, mid: Vector2, label: String) -> void:
 	for i in 3:  # a gust of wind behind the card

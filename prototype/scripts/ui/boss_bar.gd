@@ -3,12 +3,6 @@ extends Control
 ## The bar under the HUD on a boss stage: the rule's name and how many shots until it strikes again
 ## (design/gdd/boss-rules.md). Pulses when the next shot brings the strike.
 
-const COLORS: Dictionary = {  # rule -> [ink, plate]
-	"ghost": [Color("8ff0e4"), Color("123c46")],
-	"armor": [Color("c9d4e8"), Color("27304a")],
-	"curse": [Color("d7b3ff"), Color("321c4a")],
-}
-
 var rule: String = "ghost"
 var title: String = ""
 var done: int = 0  # shots fired since the last strike (0 to 2)
@@ -41,8 +35,8 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	var ink: Color = COLORS[rule][0]
-	var plate: Color = COLORS[rule][1]
+	var ink: Color = FeatureArt.BOSS_COLORS[rule]["light"]
+	var plate: Color = FeatureArt.BOSS_COLORS[rule]["dark"]
 	var warn := not striking and done == Battle.STRIKE_EVERY - 1
 	var pulse := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) / 170.0) if warn else 0.0
 	var sb := StyleBoxFlat.new()

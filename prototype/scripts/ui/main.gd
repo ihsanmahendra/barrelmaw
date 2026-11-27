@@ -2027,12 +2027,19 @@ func _rule_plate(index: int) -> PanelContainer:
 	sb.content_margin_top = 6
 	sb.content_margin_bottom = 8
 	plate.add_theme_stylebox_override("panel", sb)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	plate.add_child(row)
+	var badge := _rule_badge(Stages.elite_modifier(index), 46.0)
+	badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(badge)
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 2)
-	plate.add_child(rows)
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(rows)
 	rows.add_child(_label(Stages.elite_name(index).to_upper(), 19, UiKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER, true, false))
 	var line := _label(Stages.elite_line(index), 15, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, false, false)
-	line.custom_minimum_size = Vector2(280, 0)
+	line.custom_minimum_size = Vector2(236, 0)
 	rows.add_child(line)
 	return plate
 
@@ -2043,29 +2050,34 @@ const BOSS_SEEN_PREFIX: String = "boss_"
 ## The boss rule's card in the stage pop-up: name, one line and its emblem.
 func _boss_plate(index: int) -> PanelContainer:
 	var rule := Stages.boss_rule(index)
-	var ink: Color = BossBar.COLORS[rule][0]
+	var ink: Color = FeatureArt.BOSS_COLORS[rule]["light"]
 	var plate := PanelContainer.new()
-	var sb := UiKit.panel_style(BossBar.COLORS[rule][1], ink.darkened(0.2), 3, 12)
+	var sb := UiKit.panel_style(FeatureArt.BOSS_COLORS[rule]["dark"], ink.darkened(0.2), 3, 12)
 	sb.content_margin_top = 6
 	sb.content_margin_bottom = 6
 	plate.add_theme_stylebox_override("panel", sb)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	plate.add_child(row)
+	var badge := _rule_badge(rule, 52.0)
+	badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(badge)
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 2)
-	plate.add_child(rows)
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(rows)
 	rows.add_child(_label(Stages.boss_rule_name(index).to_upper(), 20, ink, HORIZONTAL_ALIGNMENT_CENTER, true, false))
 	var line := _label(Stages.boss_rule_line(index), 14, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, false, false)
-	line.custom_minimum_size = Vector2(290, 0)
+	line.custom_minimum_size = Vector2(230, 0)
 	rows.add_child(line)
-	rows.add_child(_boss_emblem(rule, 30.0, 34.0))
 	return plate
 
 
-func _boss_emblem(rule: String, size_px: float, height: float) -> Control:
-	var emblem := Control.new()
-	emblem.custom_minimum_size = Vector2(0, height)
-	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	emblem.draw.connect(func() -> void: FeatureArt.draw_boss_emblem(emblem, emblem.size / 2.0, size_px, rule))
-	return emblem
+## A boss rule's emblem or an elite rule's icon, centered in its row.
+func _rule_badge(kind: String, side: float) -> FeatureIcon:
+	var badge := FeatureIcon.new(kind, side)
+	badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	return badge
 
 
 ## Pop-up shown the first time a boss with a new rule starts.
@@ -2073,8 +2085,8 @@ func _show_boss_intro(index: int) -> void:
 	var rule := Stages.boss_rule(index)
 	SaveData.mark_special_seen(BOSS_SEEN_PREFIX + rule)
 	sfx.play("strike_" + rule)
-	await _open_intro("BOSS RULE", BossBar.COLORS[rule][1], BossBar.COLORS[rule][0], Stages.boss_rule_name(index),
-		_boss_emblem(rule, 70.0, 110.0), Stages.boss_rule_line(index) + "\nThe bar above the board counts the shots until then.", Color("ef476f"))
+	await _open_intro("BOSS RULE", FeatureArt.BOSS_COLORS[rule]["dark"], FeatureArt.BOSS_COLORS[rule]["light"], Stages.boss_rule_name(index),
+		_rule_badge(rule, 110.0), Stages.boss_rule_line(index) + "\nThe bar above the board counts the shots until then.", Color("ef476f"))
 
 
 ## Pop-up shown the first time a stage with a new elite rule starts. Waits for the player's tap.
@@ -2082,18 +2094,7 @@ func _show_rule_intro(index: int) -> void:
 	var rule := Stages.elite_modifier(index)
 	SaveData.mark_special_seen(RULE_SEEN_PREFIX + rule)
 	sfx.play("sparkle")
-	var icon: Control
-	match rule:
-		"keg":
-			icon = SpecialIntroIcon.new("bomb", false)
-		"iron":
-			icon = SpecialIntroIcon.new("iron", false)
-		_:
-			icon = Control.new()  # two cards: the short hand
-			icon.custom_minimum_size = Vector2(0, 128)
-			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			icon.draw.connect(func() -> void: CardArt.draw_hand(icon, icon.size / 2.0, Stages.SHORT_HAND_SIZE, 2.4))
-	await _open_intro("ELITE RULE", Color("c4284d"), Color("7a1230"), Stages.elite_name(index), icon,
+	await _open_intro("ELITE RULE", Color("c4284d"), Color("7a1230"), Stages.elite_name(index), _rule_badge(rule, 118.0),
 		Stages.elite_line(index), Color("ef476f"))
 
 
