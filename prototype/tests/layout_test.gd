@@ -233,4 +233,11 @@ func _run() -> void:
 	_check("Last Shot offer", [main._offer])
 	_check_paper_margins("Last Shot offer", [main._offer])
 	main._close_offer()
+	await _screen("daily haul", func() -> void: main.daily.show_start(), 14)
+	_check_paper_margins("daily haul", [main.screen])
+	await _screen("daily result", func() -> void:
+		var made := {"won": true, "turns": 14, "hits": 2}
+		main.daily.show_result(SaveData.today(), made, SaveData.daily_finish(SaveData.today(), made)), 90)
+	await _screen("daily battle", func() -> void: main._begin_daily(SaveData.today()), 14)
+	await _screen("menu with daily", func() -> void: main.show_menu())
 	await _screen("tutorial", func() -> void: main.start_tutorial(), 14)

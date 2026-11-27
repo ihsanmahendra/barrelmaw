@@ -146,3 +146,10 @@ it earns 1 star. Spec: `design/gdd/last-shot.md`. Debug: `--autostart --stage=40
 One press of FIRE that removes 15, 27 or 40 barrels shouts "Broadside!", "Full broadside!" or a "PLUNDER!" stamp with
 a shake (`scripts/ui/combo_fx.gd`); the pirate grins from 15 (it was 6). Presentation only. Debug:
 `--autostart --stage=40 --combo=31`.
+
+## Daily Haul
+Opens after stage 10. One of the 48 ordinary stages from 41 to 99, picked and seeded by the local date, with all 34
+stage cards at level 1 (no levels, Transcended cards, gifts or Last Shot); the first win of a date pays 20 Doubloons
+and the first finished attempt is the score to share (copied to the clipboard). Rules: `scripts/core/daily_haul.gd`,
+screens: `scripts/ui/daily_screens.gd`. Spec: `design/gdd/daily-challenge.md`. Debug: `--daily`, `--daily-result`.
+Placeholder icons and emblems for these features are in `scripts/ui/feature_art.gd`.

@@ -19,6 +19,8 @@ static var _last_shot_count: int = 0  # Last Shots taken that day
 
 const LAST_SHOT_FREE_PER_DAY: int = 1
 
+static var _daily: Dictionary = {}  # Daily Haul: date -> {first, best, paid} (see DailyHaul.record)
+
 
 static func _ensure_loaded() -> void:
 	if _loaded:
@@ -36,6 +38,9 @@ static func _ensure_loaded() -> void:
 	_gift_card = str(cfg.get_value("progress", "gift_card", ""))
 	_last_shot_date = str(cfg.get_value("progress", "last_shot_date", ""))
 	_last_shot_count = int(cfg.get_value("progress", "last_shot_count", 0))
+	var haul: Variant = cfg.get_value("progress", "daily_haul", {})
+	if haul is Dictionary:
+		_daily = haul
 	var sp: Variant = cfg.get_value("progress", "specials_seen", {})
 	if sp is Dictionary:
 		for k in sp:
@@ -69,6 +74,7 @@ static func save() -> void:
 	cfg.set_value("progress", "gift_card", _gift_card)
 	cfg.set_value("progress", "last_shot_date", _last_shot_date)
 	cfg.set_value("progress", "last_shot_count", _last_shot_count)
+	cfg.set_value("progress", "daily_haul", _daily)
 	cfg.set_value("progress", "specials_seen", _specials_seen)
 	var seen_out := {}
 	for k in _intros:
@@ -176,6 +182,26 @@ static func use_last_shot(date: String = "") -> bool:
 	return true
 
 
+## True once the Daily Haul is open to the player.
+static func daily_haul_open() -> bool:
+	return stars(DailyHaul.UNLOCK_STAGE - 1) > 0
+
+
+## Today's Daily Haul record ({first, best, paid}), or {} before the first finished attempt.
+static func daily_entry(date: String) -> Dictionary:
+	_ensure_loaded()
+	return _daily.get(date, {})
+
+
+## Records a finished Daily Haul attempt, pays its Doubloons and returns how many it paid.
+static func daily_finish(date: String, result: Dictionary) -> int:
+	_ensure_loaded()
+	var pay := DailyHaul.record(_daily, date, result)
+	_packs["doubloons"] = int(_packs["doubloons"]) + pay
+	save()
+	return pay
+
+
 static func special_seen(kind: String) -> bool:
 	_ensure_loaded()
 	return _specials_seen.has(kind)
@@ -238,6 +264,7 @@ static func reload_from_disk() -> void:
 	_gift_card = ""
 	_last_shot_date = ""
 	_last_shot_count = 0
+	_daily = {}
 	tutorial_done = false
 	debug_unlock = false
 	_packs = {}
@@ -254,6 +281,7 @@ static func reset() -> void:
 	_gift_card = ""
 	_last_shot_date = ""
 	_last_shot_count = 0
+	_daily = {}
 	tutorial_done = false
 	debug_unlock = false
 	_loaded = true

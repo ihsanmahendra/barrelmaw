@@ -86,6 +86,7 @@ func _initialize() -> void:
 	main.show_menu()
 	await process_frame
 	await _last_shot(main)
+	await _daily(main)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://smoke_save.cfg"))
 	print("Screens smoke test failures: ", failures)
 	quit(1 if failures > 0 else 0)
@@ -104,6 +105,37 @@ func _lose_with(main: Control, barrels: int) -> void:
 	b.over = true
 	main.busy = true
 	main._on_battle_over()
+
+
+## Daily Haul: start screen, a battle, restart, and the score screen.
+func _daily(main: Control) -> void:
+	main.daily.show_start()
+	await process_frame
+	var today := SaveData.today()
+	main._begin_daily(today)
+	await process_frame
+	check(main._daily_date == today and main.battle.hand.size() == 3, "the daily battle starts")
+	main._options_restart()
+	await process_frame
+	check(main._daily_date == today, "restarting stays in the daily")
+	var gold := int(SaveData.pack_state()["doubloons"])
+	var stars := SaveData.total_stars()
+	_lose_with(main, 3)
+	await process_frame
+	check(main._offer == null and not SaveData.daily_entry(today).is_empty(), "no Last Shot in the daily; the score is kept")
+	check(int(SaveData.pack_state()["doubloons"]) == gold and SaveData.total_stars() == stars, "a loss pays nothing and no stars change")
+	main._begin_daily(today)
+	await process_frame
+	main.battle.won = true
+	main.battle.over = true
+	main._on_battle_over()
+	await process_frame
+	check(int(SaveData.pack_state()["doubloons"]) == gold + DailyHaul.REWARD and SaveData.total_stars() == stars, "the first win pays 20 and no stars change")
+	main._begin_stage(1, Stages.deck_for(1))
+	await process_frame
+	check(main._daily_date == "", "a stage is not a daily")
+	main.show_menu()
+	await process_frame
 
 
 ## Last Shot: offered after a close loss, taken once, then the free use of the day is gone.

@@ -66,6 +66,8 @@ var _overlay_layer: CanvasLayer
 var _offer: LastShotOffer  # the "So close!" panel while it is open
 var _menu_stage: PirateStage
 var packs: PackScreens  # Treasury, chest opening, Cargo Hold, Port Market
+var daily: DailyScreens
+var _daily_date: String = ""  # set while a Daily Haul battle is on the screen (the date it belongs to)
 var _last_rewards: Dictionary = {}  # what the latest win paid (Doubloons and chests), for the results screen
 var screen: Control
 var board_view: BoardView
@@ -106,6 +108,7 @@ func _ready() -> void:
 	add_child(highlight)
 	_make_mute_button()
 	packs = PackScreens.new(self)
+	daily = DailyScreens.new(self)
 	var args := OS.get_cmdline_user_args()
 	for a in args:  # debug: --safe=left,top,right,bottom pretends the phone keeps that space (viewport units)
 		if a.begins_with("--safe="):
@@ -148,7 +151,12 @@ func _ready() -> void:
 		_begin_stage(1, Stages.deck_for(1))
 		print("GIFTPLAY second stage deck=", _stage_deck.size(), " base=", Stages.deck_for(1).size())
 		return
-	if args.has("--treasury"):
+	if args.has("--daily"):  # debug: today's Daily Haul screen
+		daily.show_start()
+	elif args.has("--daily-result"):  # debug: a finished Daily Haul score
+		var made := {"won": true, "turns": DailyHaul.par(SaveData.today()) + 2, "hits": 3}
+		daily.show_result(SaveData.today(), made, SaveData.daily_finish(SaveData.today(), made))
+	elif args.has("--treasury"):
 		packs.show_treasury()
 	elif args.has("--cargo"):
 		var filter := "all"
@@ -638,6 +646,12 @@ func show_menu() -> void:
 		gift_btn.custom_minimum_size = Vector2(0, 52)
 		gift_btn.add_theme_font_size_override("font_size", 21)
 		box.add_child(gift_btn)
+	var features := _menu_features()
+	if features.get_child_count() > 0:
+		stage_view.custom_minimum_size = Vector2(0, 190)  # the extra row takes its room from the pirate
+		box.add_child(features)
+	else:
+		features.free()
 	# Treasury and Cargo Hold, with a red dot when something is waiting.
 	var pack_row := HBoxContainer.new()
 	pack_row.add_theme_constant_override("separation", 8)
@@ -699,6 +713,23 @@ func show_menu() -> void:
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_menu_extras.append(ver)
 	_sync_menu_deck()
+
+
+## Row of the menu's extra places (Daily Haul, once it is open), with a red dot when something waits.
+func _menu_features() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	if SaveData.daily_haul_open():
+		var haul := _button("Daily Haul", func() -> void: daily.show_start(), Color("3a6ea5"))
+		FeatureArt.add_icon(haul, FeatureArt.draw_haul_icon)
+		haul.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		haul.custom_minimum_size = Vector2(0, 52)
+		haul.add_theme_font_size_override("font_size", 21)
+		var entry := SaveData.daily_entry(SaveData.today())
+		if entry.is_empty() or not bool(entry["paid"]):
+			_add_red_dot(haul)
+		row.add_child(haul)
+	return row
 
 
 ## A small red dot on the top right of a button: something is waiting there.
@@ -805,6 +836,7 @@ func show_howto() -> void:
 # ---------- battle screen ----------
 
 func start_tutorial() -> void:
+	_daily_date = ""
 	tutorial = true
 	tut_step = 0
 	battle = Battle.new(TUTORIAL_ROWS, GameData.starter_deck, 1.0, GameData.hand_size, 1,
@@ -849,7 +881,18 @@ func _debug_packs(n: int) -> void:
 
 
 ## Starts a stage with the given deck (see Stages.deck_for).
+## Today's challenge: its own deck and seed; nothing from the player's collection or gifts.
+func _begin_daily(date: String) -> void:
+	tutorial = false
+	_daily_date = date
+	stage = DailyHaul.stage_index(date)
+	_prev_best = 0
+	battle = DailyHaul.new_battle(date)
+	_build_battle_screen("Daily Haul  -  %s" % Stages.picture(stage)["name"])
+
+
 func _begin_stage(index: int, deck: Array) -> void:
+	_daily_date = ""
 	tutorial = false
 	stage = index
 	deck = Collection.deck_with_equipped(deck, SaveData.pack_state(), SaveData.highest_unlocked(), GameData.cards)
@@ -1413,6 +1456,12 @@ func _on_battle_over() -> void:
 		_on_tutorial_over()
 		return
 	_last_rewards = {}
+	if _daily_date != "":  # no stars, stage rewards or Last Shot: only the day's score
+		var result := DailyHaul.result_of(battle)
+		var paid := SaveData.daily_finish(_daily_date, result)
+		sfx.play("reward" if battle.won else "lose")
+		daily.show_result(_daily_date, result, paid)
+		return
 	if not battle.won and battle.can_last_shot() and SaveData.last_shot_left() > 0:
 		_offer_last_shot()
 		return
@@ -1820,7 +1869,8 @@ func _options_show(view: String) -> void:
 		_build_settings(inner)
 		return
 	inner.add_child(_label("Paused", 40, UiKit.INK, HORIZONTAL_ALIGNMENT_CENTER, true, false))
-	inner.add_child(_label("Practice" if tutorial else Stages.title(stage), 17, Color("8a5a30"), HORIZONTAL_ALIGNMENT_CENTER, false, false))
+	var where := "Practice" if tutorial else ("Daily Haul" if _daily_date != "" else Stages.title(stage))
+	inner.add_child(_label(where, 17, Color("8a5a30"), HORIZONTAL_ALIGNMENT_CENTER, false, false))
 	inner.add_child(_button("Resume", _close_options))
 	var sound := _button("Sound: Off" if Sfx.muted else "Sound: On", func() -> void: pass, Color("2a9d8f"))
 	sound.pressed.connect(func() -> void:
@@ -1835,7 +1885,7 @@ func _options_show(view: String) -> void:
 	inner.add_child(music_btn)
 	inner.add_child(_button("How to play", func() -> void: _options_show("howto"), Color("3a6ea5")))
 	inner.add_child(_button("Restart " + ("practice" if tutorial else "stage"), _options_restart, WOOD))
-	var quit := _button("Quit to map" if not tutorial else "Quit to menu", func() -> void: pass, WOOD)
+	var quit := _button("Quit to menu" if tutorial or _daily_date != "" else "Quit to map", func() -> void: pass, WOOD)
 	quit.pressed.connect(func() -> void:
 		if not _quit_armed:
 			_quit_armed = true
@@ -1851,14 +1901,16 @@ func _options_restart() -> void:
 	_close_options()
 	if tutorial:
 		start_tutorial()
+	elif _daily_date != "":
+		_begin_daily(_daily_date)
 	else:
 		_begin_stage(stage, _stage_deck)
 
 
 func _options_quit() -> void:
-	var was_tutorial := tutorial
+	var to_menu := tutorial or _daily_date != ""
 	_close_options()
-	if was_tutorial:
+	if to_menu:
 		show_menu()
 	else:
 		show_map(stage)
