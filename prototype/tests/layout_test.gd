@@ -159,6 +159,7 @@ func _all(node: Node, out: Array = []) -> Array:
 func _screen(label: String, build: Callable, wait: int = 8) -> void:
 	build.call()
 	await _frames(wait)
+	await create_timer(0.9).timeout  # dealt cards are still flying after a fixed number of fast frames
 	var roots: Array = [main.screen, main.mute_button]
 	if main.gear_button.visible:
 		roots.append(main.gear_button)

@@ -747,7 +747,7 @@ func _menu_features() -> HBoxContainer:
 	row.add_theme_constant_override("separation", 8)
 	if SaveData.daily_haul_open():
 		var haul := _button("Daily Haul", func() -> void: daily.show_start(), Color("3a6ea5"))
-		_add_icon(haul, "haul", 40.0)
+		_add_icon(haul, "haul", 44.0)
 		haul.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		haul.custom_minimum_size = Vector2(0, 52)
 		haul.add_theme_font_size_override("font_size", 21)
@@ -756,18 +756,27 @@ func _menu_features() -> HBoxContainer:
 			_add_red_dot(haul)
 		row.add_child(haul)
 	var log_btn := _button("Captain's Log", func() -> void: album.show(), Color("8a5a30"))
-	_add_icon(log_btn, "log", 36.0)
+	_add_icon(log_btn, "log", 44.0)
 	log_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	log_btn.custom_minimum_size = Vector2(0, 52)
 	log_btn.add_theme_font_size_override("font_size", 21)
 	if Album.waiting(SaveData.pack_state(), SaveData.best_stars()):
 		_add_red_dot(log_btn)
 	row.add_child(log_btn)
-	if row.get_child_count() == 2:  # two buttons side by side: keep the words clear of the pictures
-		for b in row.get_children():
+	for b in row.get_children():
+		if row.get_child_count() == 2:
 			b.add_theme_font_size_override("font_size", 18)
-			(b as Button).alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		_pad_for_icon(b)
 	return row
+
+
+## Keeps a menu button's words between its picture on the left and the red dot in the right corner.
+func _pad_for_icon(b: Button) -> void:
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style: StyleBox = b.get_theme_stylebox(state).duplicate()
+		style.content_margin_left = 68.0
+		style.content_margin_right = 30.0
+		b.add_theme_stylebox_override(state, style)
 
 
 ## A FeatureArt picture on the left side of a button.
@@ -775,8 +784,8 @@ func _add_icon(b: Button, kind: String, side: float) -> void:
 	var icon := FeatureIcon.new(kind, side)
 	icon.anchor_top = 0.5
 	icon.anchor_bottom = 0.5
-	icon.offset_left = 12.0
-	icon.offset_right = 12.0 + side
+	icon.offset_left = 20.0  # past the plank's curved end
+	icon.offset_right = 20.0 + side
 	icon.offset_top = -side / 2.0 - 2.0
 	icon.offset_bottom = side / 2.0 - 2.0
 	b.add_child(icon)
@@ -2030,7 +2039,7 @@ func _rule_plate(index: int) -> PanelContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	plate.add_child(row)
-	var badge := _rule_badge(Stages.elite_modifier(index), 46.0)
+	var badge := _rule_badge(Stages.elite_modifier(index), 66.0)
 	badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(badge)
 	var rows := VBoxContainer.new()
@@ -2039,7 +2048,7 @@ func _rule_plate(index: int) -> PanelContainer:
 	row.add_child(rows)
 	rows.add_child(_label(Stages.elite_name(index).to_upper(), 19, UiKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER, true, false))
 	var line := _label(Stages.elite_line(index), 15, UiKit.CREAM, HORIZONTAL_ALIGNMENT_CENTER, false, false)
-	line.custom_minimum_size = Vector2(236, 0)
+	line.custom_minimum_size = Vector2(214, 0)
 	rows.add_child(line)
 	return plate
 
