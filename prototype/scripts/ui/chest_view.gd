@@ -31,7 +31,19 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
+func _art_width() -> float:
+	return minf(size.x, size.y * 1.25) * 0.86
+
+
+func _art_center() -> Vector2:
+	return size / 2.0 + Vector2(0, size.y * 0.04)
+
+
+## Lowest point of the shut chest and its shadow, in this control's pixels (it can reach past the control).
+func art_bottom() -> float:
+	return _art_center().y + ChestArt.bottom(_art_width())
+
+
 func _draw() -> void:
-	var w := minf(size.x, size.y * 1.25) * 0.86
 	var off := Vector2(sin(_time * 70.0), cos(_time * 53.0)) * shake
-	ChestArt.draw(self, size / 2.0 + Vector2(0, size.y * 0.04) + off, w, chest_id, open_t, _time)
+	ChestArt.draw(self, _art_center() + off, _art_width(), chest_id, open_t, _time)

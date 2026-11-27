@@ -171,7 +171,7 @@ func show_dud(shooter_origin: Vector2) -> void:
 
 ## Grey "Miss" feedback with a small wobble.
 func show_miss() -> void:
-	_popups.append({"pos": size / 2.0, "text": "MISS", "t": 0.0, "size": 44, "color": Color("a9adc8")})
+	_add_popup(size / 2.0, "MISS", 44, Color("a9adc8"))
 	_shake = maxf(_shake, 5.0)
 	set_process(true)
 
@@ -293,6 +293,27 @@ func _step_sequence() -> void:
 		_finish_sequence(cs, origin)
 
 
+## Floating text. A new one that would print over an older one starts above it instead.
+func _add_popup(pos: Vector2, text: String, fs: int, color: Color) -> void:
+	var at := pos
+	var moved := true
+	while moved:
+		moved = false
+		for pu in _popups:
+			var other := _popup_pos(pu)
+			var gap := float(maxi(fs, int(pu["size"]))) * 1.1
+			if absf(other.x - at.x) < 110.0 and absf(other.y - at.y) < gap:
+				at.y = other.y - gap
+				moved = true
+	_popups.append({"pos": at, "text": text, "t": 0.0, "size": fs, "color": color})
+
+
+## Where a floating text is now: it rises, quickly at first.
+func _popup_pos(pu: Dictionary) -> Vector2:
+	var k: float = float(pu["t"]) / POPUP_TIME
+	return pu["pos"] + Vector2(0, -50.0 * (1.0 - pow(1.0 - k, 2.0)))
+
+
 ## Visual and sound cue for a special barrel that just triggered.
 func _special_effect(ev: Dictionary, cs: float, origin: Vector2) -> void:
 	var pos := _cell_center(ev["pos"], cs, origin)
@@ -302,17 +323,17 @@ func _special_effect(ev: Dictionary, cs: float, origin: Vector2) -> void:
 			_burst(pos, Color("ffb347"), cs * 1.6, 14)
 			_burst(pos, Color("ff6a3d"), cs * 1.3, 10)
 			_shake = maxf(_shake, 12.0)
-			_popups.append({"pos": pos + Vector2(0, -cs * 0.4), "text": "BOOM!", "t": 0.0, "size": 30, "color": Color("ff9a3c")})
+			_add_popup(pos + Vector2(0, -cs * 0.4), "BOOM!", 30, Color("ff9a3c"))
 		"ammo":
 			_burst(pos, Color("ffd166"), cs * 1.2, 10)
-			_popups.append({"pos": pos + Vector2(0, -cs * 0.4), "text": "+%d hits" % int(ev["amount"]), "t": 0.0, "size": 30, "color": Color("ffd166")})
+			_add_popup(pos + Vector2(0, -cs * 0.4), "+%d hits" % int(ev["amount"]), 30, Color("ffd166"))
 		"curse":
 			_burst(pos, Color("8e3fd6"), cs * 1.2, 10)
 			_shake = maxf(_shake, 5.0)
-			_popups.append({"pos": pos + Vector2(0, -cs * 0.4), "text": "-%d hits" % int(ev["amount"]), "t": 0.0, "size": 30, "color": Color("c77dff")})
+			_add_popup(pos + Vector2(0, -cs * 0.4), "-%d hits" % int(ev["amount"]), 30, Color("c77dff"))
 		"iron":
 			_burst(pos, Color("b9c0d4"), cs, 6)
-			_popups.append({"pos": pos + Vector2(0, -cs * 0.3), "text": "CLANG!", "t": 0.0, "size": 22, "color": Color("d6dbe8")})
+			_add_popup(pos + Vector2(0, -cs * 0.3), "CLANG!", 22, Color("d6dbe8"))
 	special_event.emit(ev["kind"])
 
 
@@ -324,15 +345,11 @@ func _finish_sequence(cs: float, origin: Vector2) -> void:
 			sum += s["to"]
 		var mid: Vector2 = sum / float(_shots.size())
 		var big := n >= 6
-		_popups.append({
-			"pos": mid, "text": "+%d" % n, "t": 0.0,
-			"size": 30 if n < 6 else (40 if n < 12 else 52),
-			"color": Color("ffd166") if big else Color.WHITE,
-		})
+		_add_popup(mid, "+%d" % n, 30 if n < 6 else (40 if n < 12 else 52), Color("ffd166") if big else Color.WHITE)
 		if big:
 			_shake = maxf(_shake, minf(16.0, 4.0 + float(n)))
 		if n >= 12:
-			_popups.append({"pos": mid + Vector2(0, -46), "text": "BIG HIT!", "t": 0.0, "size": 30, "color": Color("ef476f")})
+			_add_popup(mid + Vector2(0, -46), "BIG HIT!", 30, Color("ef476f"))
 	_shots.clear()
 	sequence_done.emit(n)
 
@@ -438,10 +455,9 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	for pu in _popups:
 		var k2: float = float(pu["t"]) / POPUP_TIME
-		var rise: float = 50.0 * (1.0 - pow(1.0 - k2, 2.0))
 		var alpha: float = 1.0 if k2 < 0.6 else (1.0 - (k2 - 0.6) / 0.4)
 		var fs: int = int(float(pu["size"]) * (1.0 + 0.35 * maxf(0.0, 1.0 - k2 * 6.0)))
-		var pos: Vector2 = pu["pos"] + Vector2(-150.0, -rise)
+		var pos: Vector2 = _popup_pos(pu) + Vector2(-150.0, 0)
 		var tc: Color = pu["color"]
 		tc.a = alpha
 		draw_string_outline(font, pos, pu["text"], HORIZONTAL_ALIGNMENT_CENTER, 300.0, fs, 8, Color(0.08, 0.09, 0.15, alpha))

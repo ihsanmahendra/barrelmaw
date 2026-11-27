@@ -381,7 +381,7 @@ func show_opening(back: Callable = Callable()) -> void:
 	var intro := VBoxContainer.new()
 	intro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	intro.alignment = BoxContainer.ALIGNMENT_CENTER
-	intro.add_theme_constant_override("separation", 10)
+	intro.add_theme_constant_override("separation", 40)  # the chest's feet and shadow reach below its box
 	intro.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage.add_child(intro)
 	var chest_view := ChestView.new(chest_id, true)

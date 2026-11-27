@@ -209,7 +209,20 @@ static func _draw_heap(c: CanvasItem, body: Rect2, w: float, open_t: float, t: f
 # ---------- the whole chest ----------
 
 ## Draws a chest centered at `center`, `w` wide.
-static func draw(c: CanvasItem, center: Vector2, w: float, chest_id: String, open_t: float = 0.0, t: float = 0.0) -> void:
+## How far below center the shut chest and its ground shadow reach.
+static func bottom(w: float) -> float:
+	return w * 0.5736 + 3.0
+
+
+## Highest point reached by the light around an open chest. glow scales the aura and rays (1 is full size).
+static func glow_top(center: Vector2, w: float, open_t: float, glow: float = 1.0) -> float:
+	var origin_y := center.y + w * 0.84 * 0.04
+	var aura := w * 0.94 * glow
+	var ray := w * (0.85 + 0.65 * open_t) * glow if open_t > 0.05 else 0.0
+	return origin_y - maxf(aura, ray + 2.0)
+
+
+static func draw(c: CanvasItem, center: Vector2, w: float, chest_id: String, open_t: float = 0.0, t: float = 0.0, glow: float = 1.0) -> void:
 	var lk := look(chest_id)
 	var wood: Array = lk["wood"]
 	var metal: Array = lk["metal"]
@@ -231,13 +244,13 @@ static func draw(c: CanvasItem, center: Vector2, w: float, chest_id: String, ope
 	if chest_id == "vault":
 		aura += 0.07 + 0.05 * sin(t * 2.4)
 	for i in 4:
-		c.draw_circle(Vector2(center.x, body.position.y), w * (0.55 + 0.13 * float(i)), Color(gl.r, gl.g, gl.b, aura * 0.35))
+		c.draw_circle(Vector2(center.x, body.position.y), w * (0.55 + 0.13 * float(i)) * glow, Color(gl.r, gl.g, gl.b, aura * 0.35))
 	# Rays of light when open.
 	if open_t > 0.05:
 		var origin := Vector2(center.x, hinge_y - 2.0)
 		for i in 11:
 			var a := -PI / 2.0 + (float(i) - 5.0) * 0.15
-			var length := w * (0.85 + 0.65 * open_t) * (0.8 + 0.2 * sin(t * 3.0 + float(i) * 1.7))
+			var length := w * (0.85 + 0.65 * open_t) * glow * (0.8 + 0.2 * sin(t * 3.0 + float(i) * 1.7))
 			var tip := origin + Vector2(cos(a), sin(a)) * length
 			var side := Vector2(-sin(a), cos(a)) * (w * 0.02)
 			c.draw_colored_polygon(PackedVector2Array([origin + side, origin - side, tip - side * 3.0, tip + side * 3.0]), Color(gl.r, gl.g, gl.b, 0.17 * open_t))

@@ -134,3 +134,5 @@ when the window changes shape; the background still fills the whole screen. Debu
 fakes the insets. Test: `godot --path . --resolution 390x844 --script res://tests/layout_test.gd` builds every screen
 with a fake notch and fails if any label, button or panel is outside the safe area (try 540x960, 360x800, 320x568,
 768x1024, 800x600). It needs a window, not `--headless`.
+It also fails if map pictures cover each other (stage ship and reward chest, treasure box and compass) or the
+chest-opening hint sits on the chest.

@@ -4,6 +4,9 @@ extends Control
 ## cards and buttons so players see exactly what they will meet in a stage.
 
 const SIZE := Vector2(112, 82)
+const CHEST_CENTER := Vector2(34.0, 40.0)
+const CHEST_WIDTH: float = 52.0
+const CHEST_GLOW: float = 0.45  # a full-size glow would spill out of the frame
 
 var kind: int = 0  # 0 smash barrels, 1 cannonball queue, 2 card preview, 3 fire and stars, 4 specials, 5 chests
 
@@ -127,7 +130,7 @@ func _draw_fire() -> void:
 ## A chest, an arrow, and a card that has just gone up a level.
 func _draw_chests() -> void:
 	var now := float(Time.get_ticks_msec()) / 1000.0
-	ChestArt.draw(self, Vector2(34.0, 40.0), 52.0, "iron", 0.55 + 0.45 * sin(now * 2.0) * 0.5, now)
+	ChestArt.draw(self, CHEST_CENTER, CHEST_WIDTH, "iron", 0.55 + 0.45 * sin(now * 2.0) * 0.5, now, CHEST_GLOW)
 	draw_line(Vector2(60.0, 41.0), Vector2(72.0, 41.0), UiKit.CREAM, 3.0)
 	draw_colored_polygon(PackedVector2Array([Vector2(70.0, 34.0), Vector2(80.0, 41.0), Vector2(70.0, 48.0)]), UiKit.CREAM)
 	var card := Rect2(Vector2(82.0, 14.0), Vector2(24.0, 54.0))
